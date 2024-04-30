@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImGui;
+import imgui.ImGuiIO;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
@@ -34,9 +35,13 @@ public class ImGuiUtil {
         ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NavEnableKeyboard);
         ImGui.getIO().addConfigFlags(ImGuiConfigFlags.DockingEnable);
         ImGui.getIO().setConfigMacOSXBehaviors(MinecraftClient.IS_SYSTEM_MAC);
+
+        ImGuiIO io = ImGui.getIO();
+        io.addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
         
         imGLFW.init(client.getWindow().getHandle(), true);
         imGL3.init(GLSL_VERSION);
+        initialized = true;
     }
 
     public static boolean isInitialized() {

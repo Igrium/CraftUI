@@ -3,7 +3,9 @@
 	"package": "com.igriu.craftui.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [
-		"ExampleMixin"
+	],
+	"client": [
+		"MinecraftClientMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
