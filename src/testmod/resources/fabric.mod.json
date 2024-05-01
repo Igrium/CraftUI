@@ -1,0 +1,18 @@
+{
+    "schemaVersion": 1,
+    "id": "craftui-test",
+    "version": "${version}",
+    "description": "Simple test mod for CraftUI",
+    "entrypoints": {
+        "client": [
+            "com.igrium.craftui.testmod.TestmodClient"
+        ]
+    },
+    "depends": {
+        "fabricloader": ">=0.15.10",
+        "minecraft": "~1.20.4",
+        "java": ">=17",
+        "fabric-api": "*",
+        "craftui": "*"
+    }
+}

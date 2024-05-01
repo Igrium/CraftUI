@@ -1,11 +1,13 @@
-package com.igrium.craftui.test;
+package com.igrium.craftui.testmod;
 
+import com.igrium.craftui.test.ImGuiTestApp;
 import com.mojang.brigadier.CommandDispatcher;
 
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.command.CommandRegistryAccess;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
+
 
 public class AppTestCommand {
 
