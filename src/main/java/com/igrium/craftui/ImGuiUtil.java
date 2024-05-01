@@ -1,4 +1,4 @@
-package com.igriu.craftui;
+package com.igrium.craftui;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

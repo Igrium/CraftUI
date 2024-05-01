@@ -1,6 +1,6 @@
 {
 	"required": true,
-	"package": "com.igriu.craftui.mixin",
+	"package": "com.igrium.craftui.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [
 	],

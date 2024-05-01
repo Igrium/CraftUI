@@ -1,4 +1,4 @@
-package com.igriu.craftui.test;
+package com.igrium.craftui.test;
 
 import com.mojang.brigadier.CommandDispatcher;
 

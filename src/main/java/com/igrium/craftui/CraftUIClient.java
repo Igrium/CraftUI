@@ -1,6 +1,6 @@
-package com.igriu.craftui;
+package com.igrium.craftui;
 
-import com.igriu.craftui.test.AppTestCommand;
+import com.igrium.craftui.test.AppTestCommand;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;

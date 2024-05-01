@@ -1,11 +1,11 @@
-package com.igriu.craftui.test;
-
-import com.igriu.craftui.ImGuiUtil;
+package com.igrium.craftui.test;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
 
 import static org.lwjgl.glfw.GLFW.*;
+
+import com.igrium.craftui.ImGuiUtil;
 
 public class ImGuiTestApp {
 
