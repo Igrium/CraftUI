@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.igrium.craftui.test.ImGuiTestApp;
+import com.igrium.craftui.AppManager;
 
 import net.minecraft.client.MinecraftClient;
 
@@ -15,8 +15,6 @@ public class MinecraftClientMixin {
 
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gl/Framebuffer;draw(II)V", shift = Shift.AFTER))
     void craftui$afterMainBlit(boolean tick, CallbackInfo ci) {
-        if (ImGuiTestApp.isOpen()) {
-            ImGuiTestApp.render();
-        }
+        AppManager.render();
     }
 }

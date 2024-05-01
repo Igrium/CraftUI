@@ -13,8 +13,8 @@ import imgui.glfw.ImGuiImplGlfw;
 import net.minecraft.client.MinecraftClient;
 
 public class ImGuiUtil {
-    public static final ImGuiImplGlfw imGLFW = new ImGuiImplGlfw();
-    public static final ImGuiImplGl3 imGL3 = new ImGuiImplGl3();
+    public static final ImGuiImplGlfw IM_GLFW = new ImGuiImplGlfw();
+    public static final ImGuiImplGl3 IM_GL3 = new ImGuiImplGl3();
 
     private static final String GLSL_VERSION = "#version 150";
 
@@ -39,8 +39,8 @@ public class ImGuiUtil {
         ImGuiIO io = ImGui.getIO();
         io.addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
         
-        imGLFW.init(client.getWindow().getHandle(), true);
-        imGL3.init(GLSL_VERSION);
+        IM_GLFW.init(client.getWindow().getHandle(), true);
+        IM_GL3.init(GLSL_VERSION);
         initialized = true;
     }
 
