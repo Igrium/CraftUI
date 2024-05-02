@@ -3,10 +3,10 @@ package com.igrium.craftui;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.igrium.craftui.event.ImGuiEvents;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImGui;
-import imgui.ImGuiIO;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
@@ -32,15 +32,19 @@ public class ImGuiUtil {
         }
 
         ImGui.createContext();
+        ImGuiEvents.PRE_INIT.invoker().preInit();
+
         ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NavEnableKeyboard);
         ImGui.getIO().addConfigFlags(ImGuiConfigFlags.DockingEnable);
         ImGui.getIO().setConfigMacOSXBehaviors(MinecraftClient.IS_SYSTEM_MAC);
+        ImGui.getIO().addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
 
-        ImGuiIO io = ImGui.getIO();
-        io.addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
+        ImGuiEvents.INIT_IO.invoker().initIO(ImGui.getIO());
         
         IM_GLFW.init(client.getWindow().getHandle(), true);
         IM_GL3.init(GLSL_VERSION);
+
+        ImGuiEvents.POST_INIT.invoker().postInit();
         initialized = true;
     }
 

@@ -12,10 +12,12 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.igrium.craftui.CraftApp.ViewportBounds;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
+import net.minecraft.client.gl.Framebuffer;
 
 public final class AppManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(AppManager.class);
@@ -47,7 +49,27 @@ public final class AppManager {
 
     private static boolean rendering;
 
-    public static void render() {
+    public static void preRender(Framebuffer framebuffer) {
+        RenderSystem.assertOnRenderThread();
+        if (!apps.isEmpty()) {
+            rendering = true;
+            for (CraftApp app : apps) {
+                app.preRender(framebuffer);
+            }
+            rendering = false;
+        }
+    }
+
+    public static ViewportBounds getCustomViewportBounds() {
+        for (CraftApp app : apps) {
+            var bounds = app.getCustomViewportBounds();
+            if (bounds != null)
+                return bounds;
+        }
+        return null;
+    }
+
+    public static void render(Framebuffer framebuffer) {
         RenderSystem.assertOnRenderThread();
 
         if (!apps.isEmpty()) {
@@ -61,7 +83,7 @@ public final class AppManager {
             ImGui.newFrame();
         
             for (CraftApp app : apps) {
-                app.render();
+                app.render(framebuffer);
             }
             
             ImGui.render();
