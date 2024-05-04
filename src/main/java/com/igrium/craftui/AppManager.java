@@ -3,11 +3,12 @@ package com.igrium.craftui;
 import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
 import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -26,8 +27,9 @@ public final class AppManager {
 
     private static final Set<CraftApp> apps = new HashSet<>();
 
-    // Removal queue ensures deals with situations where apps try to remove themselves during the render function.
-    private static Set<CraftApp> removalQueue = new HashSet<>();
+    // Queues deal with situations where apps try to add or remove themselves during the render function.
+    private static final Queue<CraftApp> addQueue = new ArrayDeque<>();
+    private static final Queue<CraftApp> removeQueue = new ArrayDeque<>();
 
     private static ViewportBounds currentViewportBounds;
     private static ViewportBounds prevViewportBounds;
@@ -40,25 +42,55 @@ public final class AppManager {
         return Collections.unmodifiableSet(apps);
     }
     
+    /**
+     * Queue an app for opening. App will be opened at the beginning of the next render cycle.
+     * @param app The app to open. May not be <code>null</code>.
+     */
     public static void openApp(CraftApp app) {
+        RenderSystem.assertOnRenderThread();
         if (app == null) {
-            throw new NullPointerException("app may not be null");
+            throw new NullPointerException("app may not be null.");
         }
-        if (apps.contains(app)) {
+        if (app.isOpen() || addQueue.contains(app)) {
             LOGGER.warn("CraftApp ({}) is already open!", app);
             return;
         }
-        apps.add(app);
-        app.onOpen();
+
+        addQueue.add(app);
     }
 
-    private static boolean rendering;
+    /**
+     * Queue an app for closing. App will be closed at the beginning of the next render cycle.
+     * @param app The app to close. May not be <code>null</code>
+     */
+    public static void closeApp(CraftApp app) {
+        RenderSystem.assertOnRenderThread();
+        if (app == null) {
+            throw new NullPointerException("app may not be null");
+        }
+        if (!app.isOpen() || removeQueue.contains(app)) {
+            LOGGER.warn("CraftApp ({}) is not open!");
+            return;
+        }
+
+        removeQueue.add(app);
+    }
 
     public static void preRender(MinecraftClient client) {
         RenderSystem.assertOnRenderThread();
 
+        while (!removeQueue.isEmpty()) {
+            CraftApp app = removeQueue.poll();
+            app.onClose();
+            apps.remove(app);
+        }
+
+        while (!addQueue.isEmpty()) {
+            CraftApp app = addQueue.poll();
+            apps.add(app);
+            app.onOpen();
+        }
         
-        rendering = true;
         prevViewportBounds = currentViewportBounds;
         currentViewportBounds = null;
 
@@ -80,7 +112,6 @@ public final class AppManager {
             app.preRender(client);
         }
 
-        rendering = false;
     }
 
     private static void updateViewportBounds(MinecraftClient client) {
@@ -99,71 +130,32 @@ public final class AppManager {
 
     public static ViewportBounds getCustomViewportBounds() {
         return currentViewportBounds;
-        // for (CraftApp app : apps) {
-        //     var bounds = app.getCustomViewportBounds();
-        //     if (bounds != null)
-        //         return bounds;
-        // }
-        // return null;
     }
 
     public static void render(MinecraftClient client) {
         RenderSystem.assertOnRenderThread();
 
-        if (!apps.isEmpty()) {
-            if (!ImGuiUtil.isInitialized()) {
-                ImGuiUtil.init();
-            }
+        if (apps.isEmpty()) return;
 
-            rendering = true;
-
-            ImGuiUtil.IM_GLFW.newFrame();
-            ImGui.newFrame();
-        
-            for (CraftApp app : apps) {
-                app.render(client);
-            }
-
-            
-            
-            ImGui.render();
-            ImGuiUtil.IM_GL3.renderDrawData(ImGui.getDrawData());
-
-            if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
-                long backupWindowPtr = glfwGetCurrentContext();
-                ImGui.updatePlatformWindows();
-                ImGui.renderPlatformWindowsDefault();
-                glfwMakeContextCurrent(backupWindowPtr);
-            }
-
-            rendering = false;
+        if (!ImGuiUtil.isInitialized()) {
+            ImGuiUtil.init();
         }
 
-
-        if (!removalQueue.isEmpty()) {
-            Iterator<CraftApp> iter = removalQueue.iterator();
-            while (iter.hasNext()) {
-                CraftApp app = iter.next();
-                app.onClose();
-                iter.remove();
-            }
-        }
-    }
-
-    public static void closeApp(CraftApp app) {
-        if (app == null) {
-            throw new NullPointerException("app may not be null");
-        }
-        if (!apps.contains(app) || removalQueue.contains(app)) {
-            LOGGER.warn("CraftApp ({}) is not open!", app);
-            return;
+        ImGuiUtil.IM_GLFW.newFrame();
+        ImGui.newFrame();
+    
+        for (CraftApp app : apps) {
+            app.render(client);
         }
 
-        if (rendering) {
-            removalQueue.add(app);
-        } else {
-            app.onClose();
-            apps.remove(app);
+        ImGui.render();
+        ImGuiUtil.IM_GL3.renderDrawData(ImGui.getDrawData());
+
+        if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
+            long backupWindowPtr = glfwGetCurrentContext();
+            ImGui.updatePlatformWindows();
+            ImGui.renderPlatformWindowsDefault();
+            glfwMakeContextCurrent(backupWindowPtr);
         }
     }
 }

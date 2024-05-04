@@ -7,12 +7,16 @@ import net.minecraft.client.MinecraftClient;
  */
 public abstract class CraftApp {
 
-    public static record ViewportBounds(int x, int y, int width, int height) {
-        
+    public static record ViewportBounds(int x, int y, int width, int height) {}
+
+    private boolean isOpen;
+
+    public final boolean isOpen() {
+        return isOpen;
     }
 
     protected void onOpen() {
-
+        isOpen = true;
     }
 
     /**
@@ -46,6 +50,6 @@ public abstract class CraftApp {
     }
 
     protected void onClose() {
-
+        isOpen = false;
     }
 }
