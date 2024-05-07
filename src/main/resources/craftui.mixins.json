@@ -7,7 +7,8 @@
 	"client": [
 		"MinecraftClientMixin",
 		"FramebufferMixin",
-		"WindowMixin"
+		"WindowMixin",
+		"MouseMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

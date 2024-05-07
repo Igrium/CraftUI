@@ -18,7 +18,7 @@ public class TestApp extends CraftApp {
 
     @Override
     protected ViewportBounds getCustomViewportBounds() {
-        return new ViewportBounds(256, 256, 512, 512);
+        return new ViewportBounds(256, 256, 768, 768);
     }
     
 }
