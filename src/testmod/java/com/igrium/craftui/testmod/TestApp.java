@@ -10,6 +10,7 @@ public class TestApp extends DockSpaceApp {
     @Override
     protected void renderApp(MinecraftClient client, int dockSpaceId) {
         if (beginViewport("Viewport", 0)) {
+            ImGui.button("This is a button in the viewport!");
             ImGui.text("This is the viewport!");
             ImGui.end();
         }

@@ -1,6 +1,7 @@
 package com.igrium.craftui;
 
 import imgui.ImGui;
+import imgui.flag.ImGuiConfigFlags;
 import imgui.flag.ImGuiDockNodeFlags;
 import imgui.flag.ImGuiWindowFlags;
 import net.minecraft.client.MinecraftClient;
@@ -29,12 +30,36 @@ public abstract class DockSpaceApp extends CraftApp {
             return false;
         }
 
-        int viewportX = (int) ImGui.getWindowPosX();
-        int viewportY = (int) ImGui.getWindowPosY();
-        int viewportWidth = (int) ImGui.getWindowWidth();
-        int viewportHeight = (int) ImGui.getWindowHeight();
+        float minX = ImGui.getWindowContentRegionMinX();
+        float maxX = ImGui.getWindowContentRegionMaxX();
+        float minY = ImGui.getWindowContentRegionMinY();
+        float maxY = ImGui.getWindowContentRegionMaxY();
 
-        viewportBounds = new ViewportBounds(viewportX, viewportY, viewportWidth, viewportHeight);
+        float xPos;
+        float yPos;
+
+        if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
+            xPos = ImGui.getWindowPosX() - ImGui.getWindowViewport().getPosX() + minX;
+            yPos = ImGui.getWindowPosY() - ImGui.getWindowViewport().getPosY() + minY;
+        } else {
+            xPos = ImGui.getWindowPosX() + minX;
+            yPos = ImGui.getWindowPosY() + minY;
+        }
+
+        // TODO: Can I deal with the OpenGL flipped y bullshittary better?
+        yPos = ImGui.getWindowViewport().getSizeY() - yPos - (maxY - minY);
+
+        float width = Math.max(maxX - minX, 1);
+        float height = Math.max(maxY - minY, 1);
+
+        viewportBounds = new ViewportBounds((int) xPos, (int) yPos, (int) width, (int) height);
+
+        // int viewportX = (int) ImGui.getWindowPosX();
+        // int viewportY = (int) ImGui.getWindowPosY();
+        // int viewportWidth = (int) ImGui.getWindowWidth();
+        // int viewportHeight = (int) ImGui.getWindowHeight();
+
+        // viewportBounds = new ViewportBounds(viewportX, viewportY, viewportWidth, viewportHeight);
 
         return true;
     }
