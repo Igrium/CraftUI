@@ -1,5 +1,6 @@
 package com.igrium.craftui.mixin;
 
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -15,6 +16,7 @@ import com.llamalad7.mixinextras.sugar.ref.LocalDoubleRef;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
+import net.minecraft.client.util.InputUtil;
 
 @Mixin(Mouse.class)
 public class MouseMixin {
@@ -22,6 +24,15 @@ public class MouseMixin {
     @Shadow
     @Final
     MinecraftClient client;
+
+    @Shadow
+    boolean cursorLocked;
+
+    @Shadow
+    double x;
+
+    @Shadow
+    double y;
 
     @Inject(method = "onCursorPos", at = @At("HEAD"))
     void craftui$onCursorPos(long window, double mouseX, double mouseY, CallbackInfo ci,
@@ -41,5 +52,27 @@ public class MouseMixin {
         //     x.set(x.get() + 512);
         //     y.set(y.get() - viewport.y());
         // }
+    }
+
+    @Inject(method = "unlockCursor", at = @At("HEAD"), cancellable = true)
+    void craftui$unlockCursor(CallbackInfo ci) {
+        // Do the if check again because it's easier to mix into the head.
+        if (!cursorLocked) {
+            return;
+        }
+
+        ViewportBounds viewport = AppManager.getCustomViewportBounds();
+        if (viewport != null) {
+
+            this.cursorLocked = false;
+            this.x = viewport.x() + viewport.width() / 2;
+            this.y = viewport.y() + viewport.height() / 2;
+
+            InputUtil.setCursorParameters(client.getWindow().getHandle(), InputUtil.GLFW_CURSOR_NORMAL, x, y);
+            
+            // For some reason, setCursorParameters attempts to set the cursor pos BEFORE changing its mode, making the x and y args useless.
+            GLFW.glfwSetCursorPos(client.getWindow().getHandle(), x, y); 
+            ci.cancel();
+        }
     }
 }
