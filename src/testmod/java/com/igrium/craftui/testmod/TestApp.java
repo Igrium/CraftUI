@@ -12,13 +12,14 @@ public class TestApp extends DockSpaceApp {
         if (beginViewport("Viewport", 0)) {
             ImGui.button("This is a button in the viewport!");
             ImGui.text("This is the viewport!");
-            ImGui.end();
         }
+        ImGui.end();
+
 
         if (ImGui.begin("Upper Window")) {
             ImGui.button("This is the upper window!");
-            ImGui.end();
         }
+        ImGui.end();
     }
 
     // @Override

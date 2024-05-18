@@ -2,7 +2,6 @@ package com.igrium.craftui;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
-import imgui.flag.ImGuiDockNodeFlags;
 import imgui.flag.ImGuiWindowFlags;
 import net.minecraft.client.MinecraftClient;
 
@@ -18,14 +17,14 @@ public abstract class DockSpaceApp extends CraftApp {
     @Override
     protected void render(MinecraftClient client) {
         ImGui.setNextWindowBgAlpha(0f);
-        dockSpaceId = ImGui.dockSpaceOverViewport(ImGui.getMainViewport(), ImGuiDockNodeFlags.NoCentralNode);
+        dockSpaceId = ImGui.dockSpaceOverViewport(ImGui.getMainViewport());
         renderApp(client, dockSpaceId);
     }
     
     protected abstract void renderApp(MinecraftClient client, int dockSpaceId);
 
     protected final boolean beginViewport(String name, int imGuiWindowFlags) {
-        // ImGui.setNextWindowDockID(dockSpaceId);
+        ImGui.setNextWindowDockID(dockSpaceId);
         if (!ImGui.begin(name, imGuiWindowFlags | ImGuiWindowFlags.NoBackground)) {
             return false;
         }
