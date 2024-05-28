@@ -44,6 +44,7 @@ dependencies {
     implementation include("io.github.spair:imgui-java-natives-macos:${project.imgui_version}")
     api include("io.github.spair:imgui-java-lwjgl3:${project.imgui_version}")
 
+    testmodImplementation sourceSets.main.output
     modTestmodImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     
 }
