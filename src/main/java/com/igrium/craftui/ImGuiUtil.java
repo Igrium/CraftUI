@@ -39,6 +39,7 @@ public class ImGuiUtil {
         ImGui.getIO().setConfigMacOSXBehaviors(MinecraftClient.IS_SYSTEM_MAC);
         ImGui.getIO().addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
         ImGui.getIO().setIniFilename(null);
+        
         ImGuiEvents.INIT_IO.invoker().initIO(ImGui.getIO());
         
         IM_GLFW.init(client.getWindow().getHandle(), true);
