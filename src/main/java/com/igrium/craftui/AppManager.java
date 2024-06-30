@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.CraftApp.ViewportBounds;
+import com.igrium.craftui.util.ImFontManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImGui;
@@ -79,6 +80,10 @@ public final class AppManager {
     public static void preRender(MinecraftClient client) {
         RenderSystem.assertOnRenderThread();
 
+        if (!ImGuiUtil.isInitialized()) {
+            ImGuiUtil.init();
+        }
+
         while (!removeQueue.isEmpty()) {
             CraftApp app = removeQueue.poll();
             app.onClose();
@@ -136,10 +141,9 @@ public final class AppManager {
         RenderSystem.assertOnRenderThread();
 
         if (apps.isEmpty()) return;
-
-        if (!ImGuiUtil.isInitialized()) {
-            ImGuiUtil.init();
-        }
+        // if (!ImFontManager.getInstance().isInitialized()) {
+        //     ImFontManager.getInstance().initFonts();
+        // }
 
         ImGuiUtil.IM_GLFW.newFrame();
         ImGui.newFrame();
