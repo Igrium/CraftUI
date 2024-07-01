@@ -1,10 +1,12 @@
 package com.igrium.craftui.testmod;
 
 import com.igrium.craftui.DockSpaceApp;
+import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.font.ImFontManager;
 
 import imgui.ImGui;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 public class TestApp extends DockSpaceApp {
@@ -20,7 +22,16 @@ public class TestApp extends DockSpaceApp {
 
 
         if (ImGui.begin("Upper Window")) {
-            ImGui.button("This is the upper window!");
+            boolean clicked = ImGui.button("This is the upper window!");
+            if (clicked) {
+                FileDialogs.openDialog(client.runDirectory.getAbsolutePath()).thenAcceptAsync(opt -> {
+                    if (opt.isPresent()) {
+                        client.player.sendMessage(Text.literal("You chose " + opt.get()));
+                    } else {
+                        client.player.sendMessage(Text.literal("You didn't select a file."));
+                    }
+                }, client);
+            }
         }
         ImGui.end();
         ImGui.popFont();
