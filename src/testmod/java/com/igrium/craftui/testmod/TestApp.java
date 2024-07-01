@@ -1,7 +1,7 @@
 package com.igrium.craftui.testmod;
 
 import com.igrium.craftui.DockSpaceApp;
-import com.igrium.craftui.ImFontManager;
+import com.igrium.craftui.font.ImFontManager;
 
 import imgui.ImGui;
 import net.minecraft.client.MinecraftClient;

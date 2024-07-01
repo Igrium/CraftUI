@@ -1,8 +1,9 @@
-package com.igrium.craftui;
+package com.igrium.craftui.font;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,15 +16,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 import org.apache.commons.io.FilenameUtils;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import com.google.gson.annotations.JsonAdapter;
+import com.igrium.craftui.ImGuiUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImFont;
 import imgui.ImFontAtlas;
 import imgui.ImGui;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
+import net.minecraft.client.util.math.Vector2f;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
@@ -110,6 +123,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         LOGGER.info("Created font atlas with " + fonts.size() + " font(s)");
     }
 
+
     /**
      * Get all the loaded fonts.
      * @return An unmodifiable map of fonts.
@@ -149,4 +163,72 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         return new Identifier("craftui:fonts");
     }
     
+    public static class FontSubDefinition {
+        /**
+         * Base sizse of the font in pixels
+         */
+        public float size;
+
+        public Identifier name;
+
+        @Nullable
+        public Integer oversampleH;
+
+        @Nullable
+        public Integer oversampleV;
+
+        @Nullable
+        public Boolean pixelSnapH;
+
+        @Nullable
+        public Vector2f glyphExtraSpacing;
+
+        @Nullable
+        public Vector2f glyphOffset;
+
+        public final List<GlyphRange> glyphRanges = new ArrayList<>();
+
+        @Nullable
+        public Float glyphMinAdvanceX;
+        
+    }
+
+    @JsonAdapter(GlyphRangeJsonAdapter.class)
+    public static record GlyphRange(short min, short max) {};
+
+    private static class GlyphRangeJsonAdapter implements JsonSerializer<GlyphRange>, JsonDeserializer<GlyphRange> {
+
+        @Override
+        public GlyphRange deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+                throws JsonParseException {
+            JsonArray array = json.getAsJsonArray();
+            if (array.size() != 2) {
+                throw new JsonParseException("Improper array size (%d) != 2".formatted(array.size()));
+            }
+            JsonPrimitive first = array.get(0).getAsJsonPrimitive();
+            JsonPrimitive second = array.get(1).getAsJsonPrimitive();
+
+            short min;
+            short max;
+
+            if (first.isString()) {
+                min = Short.parseShort(first.getAsString(), 16);
+                max = Short.parseShort(second.getAsString(), 16);
+            } else {
+                min = first.getAsShort();
+                max = second.getAsShort();
+            }
+
+            return new GlyphRange(min, max);
+        }
+
+        @Override
+        public JsonElement serialize(GlyphRange src, Type typeOfSrc, JsonSerializationContext context) {
+            JsonArray array = new JsonArray(2);
+            array.add(Integer.toHexString(src.min));
+            array.add(Integer.toHexString(src.max));
+            return array;
+        }
+        
+    }
 }
