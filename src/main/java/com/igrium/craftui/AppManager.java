@@ -79,6 +79,10 @@ public final class AppManager {
     public static void preRender(MinecraftClient client) {
         RenderSystem.assertOnRenderThread();
 
+        if (!ImGuiUtil.isInitialized()) {
+            ImGuiUtil.init();
+        }
+
         while (!removeQueue.isEmpty()) {
             CraftApp app = removeQueue.poll();
             app.onClose();
@@ -136,10 +140,6 @@ public final class AppManager {
         RenderSystem.assertOnRenderThread();
 
         if (apps.isEmpty()) return;
-
-        if (!ImGuiUtil.isInitialized()) {
-            ImGuiUtil.init();
-        }
 
         ImGuiUtil.IM_GLFW.newFrame();
         ImGui.newFrame();

@@ -1,14 +1,17 @@
 package com.igrium.craftui.testmod;
 
 import com.igrium.craftui.DockSpaceApp;
+import com.igrium.craftui.ImFontManager;
 
 import imgui.ImGui;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.Identifier;
 
 public class TestApp extends DockSpaceApp {
 
     @Override
     protected void renderApp(MinecraftClient client, int dockSpaceId) {
+        ImGui.pushFont(ImFontManager.getFont(new Identifier("craftui:fake-font")));
         if (beginViewport("Viewport", 0)) {
             ImGui.button("This is a button in the viewport!");
             ImGui.text("This is the viewport!");
@@ -20,6 +23,7 @@ public class TestApp extends DockSpaceApp {
             ImGui.button("This is the upper window!");
         }
         ImGui.end();
+        ImGui.popFont();
     }
 
     // @Override

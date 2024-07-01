@@ -24,6 +24,16 @@ public class ImGuiUtil {
 
     private static boolean initialized;
 
+    public static void ensureInitialized() {
+        if (initialized)
+            return;
+        if (!RenderSystem.isOnRenderThreadOrInit()) {
+            RenderSystem.recordRenderCall(ImGuiUtil::ensureInitialized);
+        } else {
+            init();
+        }
+    }
+
     public static void init() {
         RenderSystem.assertOnRenderThread();
         if (initialized) {
