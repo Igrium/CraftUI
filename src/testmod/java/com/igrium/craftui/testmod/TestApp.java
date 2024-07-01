@@ -13,7 +13,7 @@ public class TestApp extends DockSpaceApp {
 
     @Override
     protected void renderApp(MinecraftClient client, int dockSpaceId) {
-        ImGui.pushFont(ImFontManager.getFont(new Identifier("craftui:fake-font")));
+        ImGui.pushFont(ImFontManager.getFont(new Identifier("craftui:inter-regular")));
         if (beginViewport("Viewport", 0)) {
             ImGui.button("This is a button in the viewport!");
             ImGui.text("This is the viewport!");
@@ -24,7 +24,7 @@ public class TestApp extends DockSpaceApp {
         if (ImGui.begin("Upper Window")) {
             boolean clicked = ImGui.button("This is the upper window!");
             if (clicked) {
-                FileDialogs.openDialog(client.runDirectory.getAbsolutePath()).thenAcceptAsync(opt -> {
+                FileDialogs.saveDialog(client.runDirectory.getAbsolutePath(), "file.json").thenAcceptAsync(opt -> {
                     if (opt.isPresent()) {
                         client.player.sendMessage(Text.literal("You chose " + opt.get()));
                     } else {
