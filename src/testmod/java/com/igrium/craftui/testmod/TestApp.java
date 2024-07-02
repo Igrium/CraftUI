@@ -24,7 +24,7 @@ public class TestApp extends DockSpaceApp {
         if (ImGui.begin("Upper Window")) {
             boolean clicked = ImGui.button("This is the upper window!");
             if (clicked) {
-                FileDialogs.saveDialog(client.runDirectory.getAbsolutePath(), "file.json").thenAcceptAsync(opt -> {
+                FileDialogs.pickFolder(client.runDirectory.getAbsolutePath()).thenAcceptAsync(opt -> {
                     if (opt.isPresent()) {
                         client.player.sendMessage(Text.literal("You chose " + opt.get()));
                     } else {

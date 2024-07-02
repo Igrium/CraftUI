@@ -20,17 +20,25 @@ public class FileDialogs {
             try {
                 impl = new NFDFileDialog();
                 impl.init();
+                return true;
             } catch (Throwable e) {
                 LOGGER.error("Error initializing NFD. Falling back to AWT", e);
-                try {
-                    impl = new AWTFileDialog();
-                    impl.init();
-                } catch (Throwable t) {
-                    LOGGER.error("Error initializing file dialogs.", t);
-                    return false;
-
-                }
             }
+            try {
+                impl = new AWTFileDialog();
+                impl.init();
+                return true;
+            } catch (Throwable t) {
+                LOGGER.error("Error initializing AWT file dialog. Falling back to ImGUI approach.", t);
+            }
+            try {
+                impl = new ImFileDialog();
+                impl.init();
+                return true;
+            } catch (Throwable t) {
+                LOGGER.error("Error initializing file dialogs", t);
+            }
+            return false;
         }
 
         return true;

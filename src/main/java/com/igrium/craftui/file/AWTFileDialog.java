@@ -20,6 +20,7 @@ public class AWTFileDialog implements FileDialogInterface {
 
     @Override
     public void init() throws Exception {
+        System.setProperty("java.awt.headless", "false");
         if (GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException("AWT thinks we're headless, so AWT file dialog will not work.");
         }
