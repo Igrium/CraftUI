@@ -1,18 +1,17 @@
 package com.igrium.craftui.font;
 
 import java.io.BufferedInputStream;
-import java.io.IOException;
+import java.io.BufferedReader;
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 import org.apache.commons.io.FilenameUtils;
@@ -20,20 +19,16 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
-import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.igrium.craftui.ImGuiUtil;
+import com.igrium.craftui.util.IdentifierJsonAdapter;
+import com.igrium.craftui.util.Vector2fJsonAdapter;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImFont;
 import imgui.ImFontAtlas;
+import imgui.ImFontConfig;
 import imgui.ImGui;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.minecraft.client.util.math.Vector2f;
@@ -60,9 +55,17 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
     }
 
     private final Logger LOGGER = LoggerFactory.getLogger(getClass());
+    private final Gson GSON = new GsonBuilder()
+            .registerTypeAdapter(Identifier.class, new IdentifierJsonAdapter())
+            .registerTypeAdapter(Vector2f.class, new Vector2fJsonAdapter())
+            .setPrettyPrinting()
+            .create();
 
     private final Map<Identifier, ImFont> fonts = new HashMap<>();
     private ImFont defaultFont;
+
+    // Store byte data of font files for fast scale changes
+    private final Map<Identifier, LoadedFontFile> fontFiles = new HashMap<>();
 
     // Keep track of the missing fonts that have already been complained about in
     // console so we don't get spam every frame.
@@ -70,37 +73,68 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
     @Override
     public CompletableFuture<Void> reload(Synchronizer synchronizer, ResourceManager manager, Profiler prepareProfiler, Profiler applyProfiler,
-            Executor prepareExecutor, Executor applyExecuytor) {
+            Executor prepareExecutor, Executor applyExecutor) {
         
-        Map<Identifier, byte[]> buffers = new ConcurrentHashMap<>();
-        Map<Identifier, Resource> resources = manager.findResources("fonts", i -> i.getPath().endsWith(".ttf"));
+        fontFiles.clear();
+        
+        List<CompletableFuture<?>> futures = new ArrayList<>();
+        for (var entry : manager.findResources("fonts", id -> id.getPath().endsWith(".ttf")).entrySet()) {
+            /* Calculate font ID and create font file entry */
+            final Identifier fileName = entry.getKey();
+
+            String fontPath = fileName.getPath().substring("fonts/".length());
+            fontPath = FilenameUtils.removeExtension(fontPath);
+            final Identifier fontID = new Identifier(fileName.getNamespace(), fontPath);
             
-        List<CompletableFuture<?>> futures = new ArrayList<>(resources.size());
-        for (var entry : resources.entrySet()) {
+            final LoadedFontFile file = new LoadedFontFile();
+            fontFiles.put(fontID, file);
+
+            // async
             futures.add(CompletableFuture.runAsync(() -> {
 
-                String trimmedPath = entry.getKey().getPath();
-                trimmedPath = trimmedPath.substring("fonts/".length());
-                trimmedPath = FilenameUtils.removeExtension(trimmedPath);
-                Identifier trimmedId = new Identifier(entry.getKey().getNamespace(), trimmedPath);
-                LOGGER.info("Loading font " + entry.getKey() + " as " + trimmedId);
+                /* Find and load config */
+                Identifier configId = new Identifier(fontID.getNamespace(), "fonts/" + fontID.getPath() + ".json");
+                Optional<Resource> configFile = manager.getResource(configId);
+                FontConfig config = new FontConfig();
 
-                try(InputStream in = new BufferedInputStream(entry.getValue().getInputStream())) {
-                    buffers.put(trimmedId, in.readAllBytes());
-                } catch (IOException e) {
-                    LOGGER.error("Error reading " + entry.getKey(), e);
+                if (configFile.isPresent()) {
+                    try(BufferedReader reader = configFile.get().getReader()) {
+                        config = GSON.fromJson(reader, FontConfig.class);
+                    } catch (Exception e) {
+                        // If the config errors, we still have the default config.
+                        LOGGER.error("Error loading font config file " + configId, e);
+                    }
                 }
 
-            }, prepareExecutor));    
+                file.config = config;
+
+                /* Load the font file contents itself */
+                LOGGER.info("Loading font {} as {}", fileName, fontID);
+                try(InputStream in = new BufferedInputStream(entry.getValue().getInputStream())) {
+                    file.fileContents = in.readAllBytes();
+                } catch (Exception e) {
+                    LOGGER.error("Error loading font " + fontID, e);
+                }
+
+            }, prepareExecutor));
         }
-        
+
+        // After all the above futures are done, fontFiles should be populated with all
+        // loaded fonts.
         return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
                 .thenCompose(synchronizer::whenPrepared)
-                .thenRunAsync(() -> loadFonts(buffers), applyExecuytor);
+                .thenRunAsync(this::renderFonts, applyExecutor);
+
     }
 
-    // TODO: make this configurable
-    private void loadFonts(Map<Identifier, byte[]> buffers) {
+    /**
+     * Re-render all loaded fonts. Call this when UI size changes.
+     */
+    public void renderFonts() {
+        renderFonts(this.fontFiles);
+    }
+
+    private void renderFonts(Map<Identifier, LoadedFontFile> files) {
         RenderSystem.assertOnRenderThreadOrInit();
         ImGuiUtil.ensureInitialized();
 
@@ -112,9 +146,19 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         
         defaultFont = atlas.addFontDefault();
 
-        for (var entry : buffers.entrySet()) {
-            ImFont font = atlas.addFontFromMemoryTTF(entry.getValue(), 16);
-            fonts.put(entry.getKey(), font);
+        for (var entry : files.entrySet()) {
+            LoadedFontFile file = entry.getValue();
+            if (file.fileContents == null || file.fileContents.length == 0) {
+                LOGGER.warn("Font {} did not have any file contents. Check above for errors.", entry.getKey());
+                continue;
+            }
+
+            try {
+                ImFont font = renderFont(atlas, file);
+                fonts.put(entry.getKey(), font);
+            } catch (Exception e) {
+                LOGGER.error("Error rendering font {}. The ttf file was likely invalid.", e, entry.getKey());
+            }
         }
         atlas.build();
         ImGuiUtil.IM_GL3.updateFontsTexture();
@@ -123,6 +167,38 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         LOGGER.info("Created font atlas with " + fonts.size() + " font(s)");
     }
 
+    private ImFont renderFont(ImFontAtlas atlas, LoadedFontFile file) {
+        FontConfig config = file.config;
+        ImFontConfig imConfig = new ImFontConfig();
+        float size = config.size * 16; // TODO: UI scaling
+        try {
+            imConfig.setSizePixels(size);
+            if (config.oversampleH != null)
+                imConfig.setOversampleH(config.oversampleH);
+            if (config.oversampleV != null)
+                imConfig.setOversampleV(config.oversampleV);
+            if (config.pixelSnapH != null)
+                imConfig.setPixelSnapH(config.pixelSnapH);
+            if (config.glyphMinAdvanceX != null)
+                imConfig.setGlyphMinAdvanceX(config.glyphMinAdvanceX);
+            if (config.glyphMaxAdvanceX != null)
+                imConfig.setGlyphMaxAdvanceX(config.glyphMaxAdvanceX);
+
+            if (config.glyphExtraSpacing != null)
+                imConfig.setGlyphExtraSpacing(
+                        config.glyphExtraSpacing.getX(),
+                        config.glyphExtraSpacing.getY());
+
+            if (config.glyphOffset != null)
+                imConfig.setGlyphOffset(
+                        config.glyphOffset.getX(),
+                        config.glyphOffset.getY());
+            
+            return atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig);
+        } finally {
+            imConfig.destroy();
+        }
+    }
 
     /**
      * Get all the loaded fonts.
@@ -163,13 +239,11 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         return new Identifier("craftui:fonts");
     }
     
-    public static class FontSubDefinition {
+    public static class FontConfig {
         /**
          * Base sizse of the font in pixels
          */
-        public float size;
-
-        public Identifier name;
+        public float size = 1f;
 
         @Nullable
         public Integer oversampleH;
@@ -181,54 +255,20 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         public Boolean pixelSnapH;
 
         @Nullable
+        public Float glyphMinAdvanceX;
+
+        @Nullable
+        public Float glyphMaxAdvanceX;
+
+        @Nullable
         public Vector2f glyphExtraSpacing;
 
         @Nullable
         public Vector2f glyphOffset;
-
-        public final List<GlyphRange> glyphRanges = new ArrayList<>();
-
-        @Nullable
-        public Float glyphMinAdvanceX;
-        
     }
 
-    @JsonAdapter(GlyphRangeJsonAdapter.class)
-    public static record GlyphRange(short min, short max) {};
-
-    private static class GlyphRangeJsonAdapter implements JsonSerializer<GlyphRange>, JsonDeserializer<GlyphRange> {
-
-        @Override
-        public GlyphRange deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-                throws JsonParseException {
-            JsonArray array = json.getAsJsonArray();
-            if (array.size() != 2) {
-                throw new JsonParseException("Improper array size (%d) != 2".formatted(array.size()));
-            }
-            JsonPrimitive first = array.get(0).getAsJsonPrimitive();
-            JsonPrimitive second = array.get(1).getAsJsonPrimitive();
-
-            short min;
-            short max;
-
-            if (first.isString()) {
-                min = Short.parseShort(first.getAsString(), 16);
-                max = Short.parseShort(second.getAsString(), 16);
-            } else {
-                min = first.getAsShort();
-                max = second.getAsShort();
-            }
-
-            return new GlyphRange(min, max);
-        }
-
-        @Override
-        public JsonElement serialize(GlyphRange src, Type typeOfSrc, JsonSerializationContext context) {
-            JsonArray array = new JsonArray(2);
-            array.add(Integer.toHexString(src.min));
-            array.add(Integer.toHexString(src.max));
-            return array;
-        }
-        
+    private static class LoadedFontFile {
+        FontConfig config;
+        byte[] fileContents;
     }
 }
