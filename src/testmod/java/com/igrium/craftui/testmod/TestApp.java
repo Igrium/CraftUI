@@ -2,18 +2,18 @@ package com.igrium.craftui.testmod;
 
 import com.igrium.craftui.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
+import com.igrium.craftui.font.Fonts;
 import com.igrium.craftui.font.ImFontManager;
 
 import imgui.ImGui;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 
 public class TestApp extends DockSpaceApp {
 
     @Override
     protected void renderApp(MinecraftClient client, int dockSpaceId) {
-        ImGui.pushFont(ImFontManager.getFont(new Identifier("craftui:inter-regular")));
+        ImGui.pushFont(Fonts.inter());
         if (beginViewport("Viewport", 0)) {
             ImGui.button("This is a button in the viewport!");
             ImGui.text("This is the viewport!");
