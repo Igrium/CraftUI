@@ -19,8 +19,8 @@ public class TestApp2 extends CraftApp {
 
         ImGui.text("Hello World!");
 
-        if (ImGui.button("Save")) {
-            count++;
+        if (ImGui.button("Close Me")) {
+            close();
         }
 
         ImGui.sameLine();

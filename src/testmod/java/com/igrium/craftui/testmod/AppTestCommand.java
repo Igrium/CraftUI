@@ -1,6 +1,6 @@
 package com.igrium.craftui.testmod;
 
-import com.igrium.craftui.UIAppScreen;
+import com.igrium.craftui.CraftAppScreen;
 import com.mojang.brigadier.CommandDispatcher;
 
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -13,7 +13,7 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
 
 public class AppTestCommand {
 
-    private static UIAppScreen<TestApp2> appInstance;
+    private static CraftAppScreen<TestApp2> appInstance;
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher,
             CommandRegistryAccess registryAccess) {
@@ -22,7 +22,7 @@ public class AppTestCommand {
             literal("open").executes(c -> {
                 if (appInstance != null && appInstance.getApp().isOpen())
                     return 0;
-                appInstance = new UIAppScreen<>(Text.literal("test"), new TestApp2());
+                appInstance = new CraftAppScreen<>(Text.literal("test"), new TestApp2());
                 // Execute async so chat window has a chance to close
                 MinecraftClient.getInstance().send(() -> {
                     MinecraftClient.getInstance().setScreen(appInstance);

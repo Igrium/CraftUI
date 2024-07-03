@@ -6,15 +6,14 @@ import net.minecraft.text.Text;
 /**
  * A Minecraft screen that renders a GUI app while it's open.
  */
-public class UIAppScreen<T extends CraftApp> extends Screen {
+public class CraftAppScreen<T extends CraftApp> extends Screen {
 
     private final T app;
 
-    private boolean isAppOpen;
-
-    public UIAppScreen(Text title, T app) {
+    public CraftAppScreen(Text title, T app) {
         super(title);
         this.app = app;
+        app.closeEvent().addListener(this::onAppClosed);
     }
 
     public final T getApp() {
@@ -24,18 +23,23 @@ public class UIAppScreen<T extends CraftApp> extends Screen {
     @Override
     public void onDisplayed() {
         super.onDisplayed();
-        if (!isAppOpen) {
+        if (!app.isOpen()) {
             AppManager.openApp(app);
-            isAppOpen = true;
         }
     }
 
     @Override
     public void removed() {
-        if (isAppOpen) {
+        if (app.isOpen()) {
             AppManager.closeApp(app);
-            isAppOpen = false;
         }
         super.removed();
+    }
+
+    private void onAppClosed() {
+        // For some reason, close() doesn't check if the screen's actually open
+        if (client.currentScreen == this) {
+            this.close();
+        }
     }
 }

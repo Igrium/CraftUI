@@ -1,5 +1,7 @@
 package com.igrium.craftui;
 
+import com.igrium.craftui.event.UIEvent;
+
 import net.minecraft.client.MinecraftClient;
 
 /**
@@ -9,6 +11,18 @@ public abstract class CraftApp {
 
     public static record ViewportBounds(int x, int y, int width, int height) {}
 
+    private final UIEvent<Runnable> openEvent = UIEvent.ofRunnable();
+
+    public UIEvent<Runnable> openEvent() {
+        return openEvent;
+    }
+
+    private final UIEvent<Runnable> closeEvent = UIEvent.ofRunnable();
+
+    public UIEvent<Runnable> closeEvent() {
+        return closeEvent;
+    }
+
     private boolean isOpen;
 
     public final boolean isOpen() {
@@ -17,6 +31,7 @@ public abstract class CraftApp {
 
     protected void onOpen() {
         isOpen = true;
+        openEvent.invoker().run();
     }
 
     /**
@@ -51,5 +66,13 @@ public abstract class CraftApp {
 
     protected void onClose() {
         isOpen = false;
+        closeEvent.invoker().run();
+    }
+
+    /**
+     * Close this app. Shortcut for <code>AppManager.closeApp(this)</code>
+     */
+    public final void close() {
+        AppManager.closeApp(this);
     }
 }
