@@ -11,62 +11,71 @@ public class FileDialogs {
     public static record FileFilter(String name, String... extensions) {
     }
 
-    private static FileDialogInterface impl;
-
     private static final Logger LOGGER = LoggerFactory.getLogger(FileDialogs.class);
 
-    private static synchronized boolean init() {
-        if (impl == null) {
-            try {
-                impl = new NFDFileDialog();
-                impl.init();
-                return true;
-            } catch (Throwable e) {
-                LOGGER.error("Error initializing NFD. Falling back to AWT", e);
-            }
-            try {
-                impl = new AWTFileDialog();
-                impl.init();
-                return true;
-            } catch (Throwable t) {
-                LOGGER.error("Error initializing AWT file dialog. Falling back to ImGUI approach.", t);
-            }
-            try {
-                impl = new ImFileDialog();
-                impl.init();
-                return true;
-            } catch (Throwable t) {
-                LOGGER.error("Error initializing file dialogs", t);
-            }
-            return false;
-        }
+    private static boolean preferNative = true;
 
+    public static boolean isPreferNative() {
+        return preferNative;
+    }
+
+    public static void setPreferNative(boolean preferNative) {
+        if (FileDialogs.preferNative != preferNative) {
+            FileDialogs.preferNative = preferNative;
+            impl = null;
+        }
+    }
+
+    private static NFDFileDialog nfdImpl;
+    private static ImFileDialog imImpl;
+
+    private static FileDialogInterface impl;
+
+    private static synchronized void init() {
+        if (impl == null) {
+            if (!(preferNative && initNfd())) {
+                initInternal();
+            }
+        }
+    }
+
+    private static boolean initNfd() {
+        if (nfdImpl == null) {
+            try {
+                NFDFileDialog newImpl = new NFDFileDialog();
+                newImpl.init();
+                nfdImpl = newImpl;
+            } catch (Throwable e) {
+                LOGGER.error("Error initializing NFD. Falling back to internal.", e);
+                return false;
+            }
+        }
+        impl = nfdImpl;
         return true;
+    }
+
+    private static void initInternal() {
+        if (imImpl == null) {
+            imImpl = new ImFileDialog();
+            imImpl.init();
+        }
+        impl = imImpl;
     }
 
     public static CompletableFuture<Optional<String>> saveDialog(@Nullable String defaultPath,
             @Nullable String defaultName, FileFilter... filters) {
-        if (init()) {
-            return impl.saveDialog(defaultPath, defaultName, filters).exceptionally(FileDialogs::handle);
-        } else {
-            return CompletableFuture.completedFuture(Optional.empty());
-        }
+        init();
+        return impl.saveDialog(defaultPath, defaultName, filters).exceptionally(FileDialogs::handle);
     }
 
     public static CompletableFuture<Optional<String>> openDialog(@Nullable String defaultPath, FileFilter... filters) {
-        if (init()) {
-            return impl.openDialog(defaultPath, filters).exceptionally(FileDialogs::handle);
-        } else {
-            return CompletableFuture.completedFuture(Optional.empty());
-        }
+        init();
+        return impl.openDialog(defaultPath, filters).exceptionally(FileDialogs::handle);
     }
 
     public static CompletableFuture<Optional<String>> pickFolder(@Nullable String defaultPath) {
-        if (init()) {
-            return impl.pickFolder(defaultPath).exceptionally(FileDialogs::handle);
-        } else {
-            return CompletableFuture.completedFuture(Optional.empty());
-        }
+        init();
+        return impl.pickFolder(defaultPath).exceptionally(FileDialogs::handle);
     }
 
     private static Optional<String> handle(Throwable e) {

@@ -2,8 +2,8 @@ package com.igrium.craftui.event;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -17,10 +17,9 @@ public interface UIEvent<T> {
     public void removeListener(Object listener);
 
     /**
-     * Create a new UI event backed by a collection and invoker factory. Listeners
-     * are stored using weak references so they can still be garbage collected.
+     * Create a new UI event backed by a collection and invoker factory.
      * 
-     * @param <T> Event type
+     * @param <T>            Event type
      * @param invokerFactory Invoker factory
      * @return The event
      */
@@ -29,8 +28,7 @@ public interface UIEvent<T> {
     }
 
     /**
-     * Create a new UI event with consumers as listeners. Listeners are stored using
-     * weak references so they can still be garbage collected.
+     * Create a new UI event with consumers as listeners.
      * 
      * @param <T> Event argument type
      * @return The event
@@ -45,8 +43,6 @@ public interface UIEvent<T> {
 
     /**
      * Create a new UI event that will not pass any parameters to its listeners.
-     * Listeners are stored using weak references so they can still be garbage
-     * collected.
      * 
      * @return The event
      */
@@ -67,7 +63,7 @@ class CollectionBackedUIEvent<T> implements UIEvent<T> {
         this.invokerFactory = invokerFactory;
     }
 
-    private final Set<T> listeners = Collections.newSetFromMap(new WeakHashMap<>());
+    private final Set<T> listeners = new HashSet<>();
     private final Set<T> unmodifiableListeners = Collections.unmodifiableSet(listeners);
 
     @Override

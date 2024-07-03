@@ -21,8 +21,8 @@ public class AppTestCommand {
             literal("open").executes(c -> {
                 if (appInstance != null && appInstance.getApp().isOpen())
                     return 0;
-                appInstance = new CraftAppScreen<>(new TestApp2());
-                appInstance.setCloseOnEsc(false);
+                appInstance = new CraftAppScreen<>(new TestApp());
+                // appInstance.setCloseOnEsc(false);
                 // Execute async so chat window has a chance to close
                 MinecraftClient.getInstance().send(() -> {
                     MinecraftClient.getInstance().setScreen(appInstance);

@@ -13,10 +13,8 @@ import com.igrium.craftui.file.FileDialogs.FileFilter;
 
 public class ImFileDialog implements FileDialogInterface {
 
-    
-
     @Override
-    public void init() throws Exception {
+    public void init() {
 
     }
 
