@@ -3,7 +3,6 @@ package com.igrium.craftui.testmod;
 import com.igrium.craftui.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.font.Fonts;
-import com.igrium.craftui.font.ImFontManager;
 
 import imgui.ImGui;
 import net.minecraft.client.MinecraftClient;

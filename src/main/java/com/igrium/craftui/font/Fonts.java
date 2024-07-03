@@ -9,18 +9,14 @@ import net.minecraft.util.Identifier;
 public final class Fonts {
     private Fonts() {}
 
-    private static ImFont inter;
+    public static final Identifier INTER = new Identifier("craftui:inter");
     public static ImFont inter() {
-        return inter;
+        return ImFontManager.getFont(INTER);
     }
 
-    private static ImFont interMedium;
+    public static final Identifier INTER_MEDIUM = new Identifier("craftui:inter-medium");
     public static ImFont interMedium() {
-        return interMedium;
+        return ImFontManager.getFont(INTER_MEDIUM);
     }
-    
-    public static void reload(ImFontManager manager) {
-        inter = manager.get(new Identifier("craftui:inter"));
-        interMedium = manager.get(new Identifier("craftui:inter-medium"));
-    }
+
 }

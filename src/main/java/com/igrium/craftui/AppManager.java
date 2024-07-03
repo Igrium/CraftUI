@@ -51,11 +51,11 @@ public final class AppManager {
         if (app == null) {
             throw new NullPointerException("app may not be null.");
         }
+        removeQueue.remove(app);
         if (app.isOpen() || addQueue.contains(app)) {
             LOGGER.warn("CraftApp ({}) is already open!", app);
             return;
         }
-
         addQueue.add(app);
     }
 
@@ -65,14 +65,13 @@ public final class AppManager {
      */
     public static void closeApp(CraftApp app) {
         RenderSystem.assertOnRenderThread();
-        if (app == null) {
-            throw new NullPointerException("app may not be null");
-        }
+        if (app == null)
+            return;
+        addQueue.remove(app);
         if (!app.isOpen() || removeQueue.contains(app)) {
-            LOGGER.warn("CraftApp ({}) is not open!");
+            LOGGER.warn("CraftApp ({}) is not open!", app);
             return;
         }
-
         removeQueue.add(app);
     }
 
