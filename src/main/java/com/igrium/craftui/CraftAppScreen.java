@@ -10,8 +10,10 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
 
     private final T app;
 
-    public CraftAppScreen(Text title, T app) {
-        super(title);
+    private boolean closeOnEsc;
+
+    public CraftAppScreen(T app) {
+        super(Text.empty());
         this.app = app;
         app.closeEvent().addListener(this::onAppClosed);
     }
@@ -41,5 +43,14 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
         if (client.currentScreen == this) {
             this.close();
         }
+    }
+
+    public void setCloseOnEsc(boolean closeOnEscape) {
+        this.closeOnEsc = closeOnEscape;
+    }
+    
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return closeOnEsc;
     }
 }

@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.CraftApp.ViewportBounds;
+import com.igrium.craftui.font.Fonts;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImGui;
@@ -143,9 +144,11 @@ public final class AppManager {
         ImGuiUtil.IM_GLFW.newFrame();
         ImGui.newFrame();
     
+        ImGui.pushFont(Fonts.inter());
         for (CraftApp app : apps) {
             app.render(client);
         }
+        ImGui.popFont();
 
         ImGui.render();
         ImGuiUtil.IM_GL3.renderDrawData(ImGui.getDrawData());
