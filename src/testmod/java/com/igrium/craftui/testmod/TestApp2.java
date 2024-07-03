@@ -1,6 +1,6 @@
 package com.igrium.craftui.testmod;
 
-import com.igrium.craftui.CraftApp;
+import com.igrium.craftui.app.CraftApp;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiInputTextFlags;

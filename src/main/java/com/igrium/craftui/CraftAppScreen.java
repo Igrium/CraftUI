@@ -1,5 +1,8 @@
 package com.igrium.craftui;
 
+import com.igrium.craftui.app.AppManager;
+import com.igrium.craftui.app.CraftApp;
+
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 

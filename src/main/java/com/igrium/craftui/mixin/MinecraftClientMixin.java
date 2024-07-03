@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.igrium.craftui.AppManager;
+import com.igrium.craftui.app.AppManager;
 
 import net.minecraft.client.MinecraftClient;
 

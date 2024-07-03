@@ -1,4 +1,4 @@
-package com.igrium.craftui;
+package com.igrium.craftui.app;
 
 import com.igrium.craftui.event.UIEvent;
 

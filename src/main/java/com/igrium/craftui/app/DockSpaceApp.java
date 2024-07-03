@@ -1,4 +1,6 @@
-package com.igrium.craftui;
+package com.igrium.craftui.app;
+
+import com.igrium.craftui.app.CraftApp.ViewportBounds;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;

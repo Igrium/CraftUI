@@ -3,7 +3,7 @@ package com.igrium.craftui.file;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import com.igrium.craftui.CraftApp;
+import com.igrium.craftui.app.CraftApp;
 
 import imgui.extension.imguifiledialog.ImGuiFileDialog;
 import imgui.extension.imguifiledialog.flag.ImGuiFileDialogFlags;

@@ -4,8 +4,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-import com.igrium.craftui.AppManager;
-import com.igrium.craftui.CraftApp.ViewportBounds;
+import com.igrium.craftui.app.AppManager;
+import com.igrium.craftui.app.CraftApp.ViewportBounds;
 import com.mojang.blaze3d.platform.GlStateManager;
 
 import net.minecraft.client.gl.Framebuffer;

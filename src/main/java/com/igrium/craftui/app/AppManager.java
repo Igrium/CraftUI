@@ -1,4 +1,4 @@
-package com.igrium.craftui;
+package com.igrium.craftui.app;
 
 import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
 import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
@@ -14,8 +14,9 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.igrium.craftui.CraftApp.ViewportBounds;
+import com.igrium.craftui.app.CraftApp.ViewportBounds;
 import com.igrium.craftui.font.Fonts;
+import com.igrium.craftui.util.ImGuiUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImGui;

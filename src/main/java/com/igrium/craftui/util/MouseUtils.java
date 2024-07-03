@@ -1,6 +1,6 @@
 package com.igrium.craftui.util;
 
-import com.igrium.craftui.CraftApp.ViewportBounds;
+import com.igrium.craftui.app.CraftApp.ViewportBounds;
 
 import net.minecraft.client.MinecraftClient;
 

@@ -1,6 +1,6 @@
 package com.igrium.craftui.testmod;
 
-import com.igrium.craftui.DockSpaceApp;
+import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.font.Fonts;
 
