@@ -10,7 +10,7 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
 
     private final T app;
 
-    private boolean closeOnEsc;
+    private boolean closeOnEsc = true;
 
     public CraftAppScreen(T app) {
         super(Text.empty());
