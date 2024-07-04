@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.config.CraftUIConfig;
+import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.font.ImFontManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -57,6 +58,7 @@ public class CraftUI implements ClientModInitializer {
     public static void applyConfig(boolean save) {
         RenderSystem.assertOnRenderThreadOrInit();
         // Apply config shit here
+        FileDialogs.clearImpl();
         LOGGER.info("Applied CraftUI config update");
         if (save) {
             saveConfigAsync();

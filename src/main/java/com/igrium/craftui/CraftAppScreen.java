@@ -15,6 +15,8 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
 
     private boolean closeOnEsc = true;
 
+    private Screen parent;
+
     public CraftAppScreen(T app) {
         super(Text.empty());
         this.app = app;
@@ -55,5 +57,19 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
     @Override
     public boolean shouldCloseOnEsc() {
         return closeOnEsc;
+    }
+
+    public Screen getParent() {
+        return parent;
+    }
+
+    public CraftAppScreen<T> setParent(Screen parent) {
+        this.parent = parent;
+        return this;
+    }
+
+    @Override
+    public void close() {
+        this.client.setScreen(parent);
     }
 }

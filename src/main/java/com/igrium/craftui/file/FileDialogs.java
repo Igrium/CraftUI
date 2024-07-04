@@ -57,6 +57,10 @@ public class FileDialogs {
         impl = imImpl;
     }
 
+    public static void clearImpl() {
+        impl = null;
+    }
+
     public static CompletableFuture<Optional<String>> saveDialog(@Nullable String defaultPath,
             @Nullable String defaultName, FileFilter... filters) {
         init();
