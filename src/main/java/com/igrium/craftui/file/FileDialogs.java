@@ -7,24 +7,19 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.igrium.craftui.CraftUI;
+
 public class FileDialogs {
     public static record FileFilter(String name, String... extensions) {
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileDialogs.class);
 
-    private static boolean preferNative = true;
 
-    public static boolean isPreferNative() {
-        return preferNative;
+    private static boolean isPreferNative() {
+        return CraftUI.getConfig().preferNativeFileDialog();
     }
 
-    public static void setPreferNative(boolean preferNative) {
-        if (FileDialogs.preferNative != preferNative) {
-            FileDialogs.preferNative = preferNative;
-            impl = null;
-        }
-    }
 
     private static NFDFileDialog nfdImpl;
     private static ImFileDialog imImpl;
@@ -33,7 +28,7 @@ public class FileDialogs {
 
     private static synchronized void init() {
         if (impl == null) {
-            if (!(preferNative && initNfd())) {
+            if (!(isPreferNative() && initNfd())) {
                 initInternal();
             }
         }
