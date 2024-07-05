@@ -17,6 +17,7 @@ public class CraftUIOptionsApp extends CraftApp {
     private SaveConfirmation saveConfirmation = new SaveConfirmation(this::save, this::close);
 
     private ImBoolean preferNativeFileDialog = new ImBoolean(CraftUI.getConfig().preferNativeFileDialog());
+    private ImBoolean enableViewports = new ImBoolean(CraftUI.getConfig().enableViewports());
 
     @Override
     protected void render(MinecraftClient client) {
@@ -26,9 +27,8 @@ public class CraftUIOptionsApp extends CraftApp {
         if (ImGui.begin(
                 "CraftUI Options", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDecoration
                 | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoMove)) {
-            if (checkbox("options.craftui.preferNativeFileDialog", preferNativeFileDialog)) {
-                onUpdate();
-            };
+            checkbox("options.craftui.preferNativeFileDialog", preferNativeFileDialog);
+            checkbox("options.craftui.enableViewports", enableViewports);
 
             ImGui.separator();
 
@@ -45,9 +45,14 @@ public class CraftUIOptionsApp extends CraftApp {
         ImGui.end();
     }
 
-    private static final boolean checkbox(String translationKey, ImBoolean active) {
-        return ImGui.checkbox(TextUtils.getString(Text.translatable(translationKey)), active);
+    private boolean checkbox(String translationKey, ImBoolean active) {
+        if (ImGui.checkbox(TextUtils.getString(Text.translatable(translationKey)), active)) {
+            onUpdate();
+            return true;
+        };
+        return false;
     }
+    
 
     private void onUpdate() {
         saveConfirmation.setUnsaved(true);
@@ -55,6 +60,7 @@ public class CraftUIOptionsApp extends CraftApp {
     
     private void save() {
         CraftUI.getConfig().setPreferNativeFileDialog(preferNativeFileDialog.get());
+        CraftUI.getConfig().setEnableViewports(enableViewports.get());
         CraftUI.applyConfig(true);
 
         saveConfirmation.setUnsaved(false);

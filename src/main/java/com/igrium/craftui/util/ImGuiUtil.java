@@ -3,6 +3,7 @@ package com.igrium.craftui.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.event.ImGuiEvents;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -47,7 +48,8 @@ public class ImGuiUtil {
         ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NavEnableKeyboard);
         ImGui.getIO().addConfigFlags(ImGuiConfigFlags.DockingEnable);
         ImGui.getIO().setConfigMacOSXBehaviors(MinecraftClient.IS_SYSTEM_MAC);
-        ImGui.getIO().addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
+        if (CraftUI.getConfig().enableViewports())
+            ImGui.getIO().addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
         ImGui.getIO().setIniFilename(null);
         
         ImGuiEvents.INIT_IO.invoker().initIO(ImGui.getIO());

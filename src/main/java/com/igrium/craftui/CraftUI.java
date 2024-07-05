@@ -9,11 +9,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.config.CraftUIConfig;
+import com.igrium.craftui.dev.commands.CraftUICommand;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.font.ImFontManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resource.ResourceType;
@@ -82,6 +84,10 @@ public class CraftUI implements ClientModInitializer {
     public void onInitializeClient() {
         reloadConfigAsync();
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(ImFontManager.getInstance());
+        // Only load the demo command if we're in a dev environment
+        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            ClientCommandRegistrationCallback.EVENT.register(CraftUICommand::register);
+        }
     }
     
 }

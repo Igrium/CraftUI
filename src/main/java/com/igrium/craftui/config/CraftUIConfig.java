@@ -23,8 +23,19 @@ public final class CraftUIConfig {
         this.preferNativeFileDialog = preferNativeFiloeDialog;
     }
 
+    private boolean enableViewports = false;
+
+    public boolean enableViewports() {
+        return enableViewports;
+    }
+
+    public void setEnableViewports(boolean enableViewports) {
+        this.enableViewports = enableViewports;
+    }
+
     public void copyFrom(CraftUIConfig other) {
         this.preferNativeFileDialog = other.preferNativeFileDialog;
+        this.enableViewports = other.enableViewports;
     }
 
     public String toJsonString() {

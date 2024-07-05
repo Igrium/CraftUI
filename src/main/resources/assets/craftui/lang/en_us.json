@@ -1,3 +1,4 @@
 {
-    "options.craftui.preferNativeFileDialog": "Prefer Native File Dialog"
+    "options.craftui.preferNativeFileDialog": "Prefer Native File Dialog",
+    "options.craftui.enableViewports": "Enable External Viewports (requires restart)"
 }
