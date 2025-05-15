@@ -1,4 +1,10 @@
 {
     "options.craftui.preferNativeFileDialog": "Prefer Native File Dialog",
-    "options.craftui.enableViewports": "Enable External Viewports (requires restart)"
+    "options.craftui.preferNativeFileDialog.tooltip": "Prefer the native system file dialog over the ImGUI one. Hangs the main window on MacOS.",
+
+    "options.craftui.enableViewports": "Enable External Viewports (requires restart)",
+    "options.craftui.enableViewports.tooltip": "If set, widget windows may be moved outside the primary game window. Can cause unexpected behavior.",
+
+    "options.craftui.enableDebugCommands": "Enable Debug Commands (requires restart)",
+    "options.craftui.enableDebugCommands.tooltip": "Enable the craftui client command, exposing a variety of debug features."
 }

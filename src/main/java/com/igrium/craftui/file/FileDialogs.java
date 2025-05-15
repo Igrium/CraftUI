@@ -17,7 +17,7 @@ public class FileDialogs {
 
 
     private static boolean isPreferNative() {
-        return CraftUI.getConfig().preferNativeFileDialog();
+        return CraftUI.getConfig().isPreferNativeFileDialog();
     }
 
 

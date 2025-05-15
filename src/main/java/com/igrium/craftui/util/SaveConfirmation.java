@@ -4,6 +4,8 @@ import imgui.ImGui;
 import imgui.ImVec2;
 import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiWindowFlags;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * A widget that shows a confirmation screen when you try to close an app.
@@ -19,41 +21,20 @@ public class SaveConfirmation {
         this.closeRunnable = closeRunnable;
     }
 
+    @Setter
+    @Getter
     private boolean unsaved;
 
-    public boolean isUnsaved() {
-        return unsaved;
-    }
-
-    public void setUnsaved(boolean unsaved) {
-        this.unsaved = unsaved;
-    }
-
+    @Getter
+    @Setter
     private String title = "Unsaved Changes";
-    
-    public String getTitle() {
-        return title;
-    }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
+    @Getter
+    @Setter
     private String text = "Do you want to save your changes?";
 
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
+    @Getter
     private boolean confirmPopupShowing;
-
-    public boolean isConfirmPopupShowing() {
-        return confirmPopupShowing;
-    }
 
     /**
      * Call when the user wants to close the editor.

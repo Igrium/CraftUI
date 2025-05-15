@@ -5,10 +5,13 @@ import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.font.Fonts;
 
 import imgui.ImGui;
+import imgui.type.ImString;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
 public class TestApp extends DockSpaceApp {
+
+    private final ImString imText = new ImString();
 
     @Override
     protected void renderApp(MinecraftClient client, int dockSpaceId) {
@@ -31,8 +34,10 @@ public class TestApp extends DockSpaceApp {
                     }
                 }, client);
             }
+            ImGui.inputText("Type some text.", imText);
         }
         ImGui.end();
+
         ImGui.popFont();
     }
 

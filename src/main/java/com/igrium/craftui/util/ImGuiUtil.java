@@ -48,7 +48,7 @@ public class ImGuiUtil {
         ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NavEnableKeyboard);
         ImGui.getIO().addConfigFlags(ImGuiConfigFlags.DockingEnable);
         ImGui.getIO().setConfigMacOSXBehaviors(MinecraftClient.IS_SYSTEM_MAC);
-        if (CraftUI.getConfig().enableViewports())
+        if (CraftUI.getConfig().isEnableViewports())
             ImGui.getIO().addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
         ImGui.getIO().setIniFilename(null);
         
