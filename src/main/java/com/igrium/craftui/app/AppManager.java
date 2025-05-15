@@ -11,6 +11,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
+import net.minecraft.util.crash.CrashException;
+import net.minecraft.util.crash.CrashReport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +42,7 @@ public final class AppManager {
      * Get a list of all the apps that are open.
      * @return An unmodifiable view of all open apps.
      */
-    public static final Collection<CraftApp> getApps() {
+    public static Collection<CraftApp> getApps() {
         return Collections.unmodifiableSet(apps);
     }
     
@@ -137,6 +139,10 @@ public final class AppManager {
         return currentViewportBounds;
     }
 
+    /**
+     * Draw all open apps to the screen.
+     * @param client Minecraft client instance.
+     */
     public static void render(MinecraftClient client) {
         RenderSystem.assertOnRenderThread();
 
@@ -147,7 +153,14 @@ public final class AppManager {
     
         ImGui.pushFont(Fonts.inter());
         for (CraftApp app : apps) {
-            app.render(client);
+            ImGui.pushID(app.getId());
+            try {
+                app.render(client);
+            } catch (Exception e) {
+                CrashReport crashReport = new CrashReport("Error rendering CraftUI app " + app, e);
+                throw new CrashException(crashReport);
+            }
+            ImGui.popID();
         }
         ImGui.popFont();
 

@@ -13,6 +13,15 @@ public class TestApp extends DockSpaceApp {
 
     private final ImString imText = new ImString();
 
+    /**
+     * create a new craftapp.
+     *
+     * @param id A unique ID for this app. ex: "craftui:demo"
+     */
+    public TestApp(String id) {
+        super(id);
+    }
+
     @Override
     protected void renderApp(MinecraftClient client, int dockSpaceId) {
         ImGui.pushFont(Fonts.inter());

@@ -1,7 +1,9 @@
 package com.igrium.craftui.app;
 
+import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.event.UIEvent;
 
+import lombok.Getter;
 import net.minecraft.client.MinecraftClient;
 
 /**
@@ -9,7 +11,7 @@ import net.minecraft.client.MinecraftClient;
  */
 public abstract class CraftApp {
 
-    public static record ViewportBounds(int x, int y, int width, int height) {}
+    public record ViewportBounds(int x, int y, int width, int height) {}
 
     private final UIEvent<Runnable> openEvent = UIEvent.ofRunnable();
 
@@ -32,6 +34,20 @@ public abstract class CraftApp {
     protected void onOpen() {
         isOpen = true;
         openEvent.invoker().run();
+    }
+
+    /**
+     * A unique ID for this app. ex: "craftui:demo"
+     */
+    @Getter
+    private final String id;
+
+    /**
+     * create a new craftapp.
+     * @param id A unique ID for this app. ex: "craftui:demo"
+     */
+    public CraftApp(String id) {
+        this.id = id;
     }
 
     /**

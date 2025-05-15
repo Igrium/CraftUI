@@ -8,8 +8,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * An event designed for UI usage. Unlike Fabric events, these are designed to
- * be non-persistent and to use weak references.
+ * An event designed for UI usage.
  */
 public interface UIEvent<T> {
     public T invoker();

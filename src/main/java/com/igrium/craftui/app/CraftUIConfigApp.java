@@ -20,6 +20,8 @@ import org.jetbrains.annotations.Nullable;
 
 public class CraftUIConfigApp extends CraftApp {
 
+    public static final String ID = "craftui:config";
+
     private final SaveConfirmation saveConfirmation = new SaveConfirmation(this::save, this::close);
 
     private final CraftUIConfig config = CraftUI.getConfig();
@@ -27,6 +29,10 @@ public class CraftUIConfigApp extends CraftApp {
     private final ImBoolean preferNativeFileDialog = new ImBoolean(config.isPreferNativeFileDialog());
     private final ImBoolean enableViewports = new ImBoolean(config.isEnableViewports());
     private final ImBoolean enableDebugCommand = new ImBoolean(config.isEnableDebugCommands());
+
+    public CraftUIConfigApp(String id) {
+        super(id);
+    }
 
     @Override
     protected void render(MinecraftClient client) {
@@ -85,7 +91,7 @@ public class CraftUIConfigApp extends CraftApp {
     }
 
     public static CraftAppScreen<CraftUIConfigApp> createScreen() {
-        CraftAppScreen<CraftUIConfigApp> screen = new CraftAppScreen<>(new CraftUIConfigApp());
+        CraftAppScreen<CraftUIConfigApp> screen = new CraftAppScreen<>(new CraftUIConfigApp(ID));
         screen.setCloseOnEsc(false);
         return screen;
     }
