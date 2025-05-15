@@ -15,10 +15,10 @@ public interface FileDialogInterface {
 
     
 
-    public CompletableFuture<Optional<String>> saveDialog(@Nullable String defaultPath,
-            @Nullable String defaultName, FileFilter... filters);
+    public CompletableFuture<Optional<String>> showSaveDialog(@Nullable String defaultPath,
+                                                              @Nullable String defaultName, FileFilter... filters);
 
-    public CompletableFuture<Optional<String>> openDialog(@Nullable String defaultPath, FileFilter... filters);
+    public CompletableFuture<Optional<String>> showOpenDialog(@Nullable String defaultPath, FileFilter... filters);
 
-    public CompletableFuture<Optional<String>> pickFolder(@Nullable String defaultPath);
+    public CompletableFuture<Optional<String>> showOpenFolderDialog(@Nullable String defaultPath);
 }

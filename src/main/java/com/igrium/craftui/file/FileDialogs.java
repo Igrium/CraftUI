@@ -9,8 +9,17 @@ import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.CraftUI;
 
+/**
+ * Allows apps to open system file dialogs for loading & saving.
+ */
 public class FileDialogs {
-    public static record FileFilter(String name, String... extensions) {
+    /**
+     * A type of file that may be accepted by a file dialog.
+     * @param name The name of the file type. ex: "JPEG File".
+     * @param extensions The file extensions this filter supports. ex: ["jpg", "jpeg"]
+     * @see javax.swing.filechooser.FileNameExtensionFilter
+     */
+    public record FileFilter(String name, String... extensions) {
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileDialogs.class);
@@ -20,7 +29,6 @@ public class FileDialogs {
         return CraftUI.getConfig().isPreferNativeFileDialog();
     }
 
-
     private static NFDFileDialog nfdImpl;
     private static ImFileDialog imImpl;
 
@@ -29,7 +37,7 @@ public class FileDialogs {
     private static synchronized void init() {
         if (impl == null) {
             if (!(isPreferNative() && initNfd())) {
-                initInternal();
+                initImgui();
             }
         }
     }
@@ -49,7 +57,7 @@ public class FileDialogs {
         return true;
     }
 
-    private static void initInternal() {
+    private static void initImgui() {
         if (imImpl == null) {
             imImpl = new ImFileDialog();
             imImpl.init();
@@ -57,24 +65,48 @@ public class FileDialogs {
         impl = imImpl;
     }
 
+    /**
+     * Next time we attempt to open a file dialog, re-query the options to see which we should use.
+     */
     public static void clearImpl() {
         impl = null;
     }
 
-    public static CompletableFuture<Optional<String>> saveDialog(@Nullable String defaultPath,
-            @Nullable String defaultName, FileFilter... filters) {
+    /**
+     * Show the save file dialog.
+     *
+     * @param defaultPath Default folder to open to. If <code>null</code>, left to the discretion of the dialog implementation.
+     * @param defaultName Default filename to save with. If <code>null</code>, left to the discretion of the dialog implementation.
+     * @param filters     A list of file filters to use. If empty, all files are accepted.
+     * @return A future that completes once the dialog has closed.
+     */
+    public static CompletableFuture<Optional<String>> showSaveDialog(@Nullable String defaultPath,
+                                                                     @Nullable String defaultName, FileFilter... filters) {
         init();
-        return impl.saveDialog(defaultPath, defaultName, filters).exceptionally(FileDialogs::handle);
+        return impl.showSaveDialog(defaultPath, defaultName, filters).exceptionally(FileDialogs::handle);
     }
 
-    public static CompletableFuture<Optional<String>> openDialog(@Nullable String defaultPath, FileFilter... filters) {
+    /**
+     * Show the open file dialog.
+     *
+     * @param defaultPath Default folder to open to. If <code>null</code>, left to the discretion of the dialog implementation.
+     * @param filters     A list of file filters to use. If empty, all files are accepted.
+     * @return A future that completes once the dialog has closed.
+     */
+    public static CompletableFuture<Optional<String>> showOpenDialog(@Nullable String defaultPath, FileFilter... filters) {
         init();
-        return impl.openDialog(defaultPath, filters).exceptionally(FileDialogs::handle);
+        return impl.showOpenDialog(defaultPath, filters).exceptionally(FileDialogs::handle);
     }
 
-    public static CompletableFuture<Optional<String>> pickFolder(@Nullable String defaultPath) {
+    /**
+     * Show the open folder dialog.
+     *
+     * @param defaultPath Default folder to open to. If <code>null</code>, left to the discretion of the dialog implementation.
+     * @return a future that completes once the dialog has closed.
+     */
+    public static CompletableFuture<Optional<String>> showOpenFolderDialog(@Nullable String defaultPath) {
         init();
-        return impl.pickFolder(defaultPath).exceptionally(FileDialogs::handle);
+        return impl.showOpenFolderDialog(defaultPath).exceptionally(FileDialogs::handle);
     }
 
     private static Optional<String> handle(Throwable e) {

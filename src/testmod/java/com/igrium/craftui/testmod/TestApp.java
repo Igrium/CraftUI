@@ -26,13 +26,16 @@ public class TestApp extends DockSpaceApp {
         if (ImGui.begin("Upper Window")) {
             boolean clicked = ImGui.button("This is the upper window!");
             if (clicked) {
-                FileDialogs.pickFolder(client.runDirectory.getAbsolutePath()).thenAcceptAsync(opt -> {
-                    if (opt.isPresent()) {
-                        client.player.sendMessage(Text.literal("You chose " + opt.get()));
-                    } else {
-                        client.player.sendMessage(Text.literal("You didn't select a file."));
-                    }
-                }, client);
+                FileDialogs.showOpenDialog(client.runDirectory.getAbsolutePath(),
+                                new FileDialogs.FileFilter("Jpeg Files", ".jpg", ".jpeg"),
+                                new FileDialogs.FileFilter("PNG Files", ".png"))
+                        .thenAcceptAsync(opt -> {
+                            if (opt.isPresent()) {
+                                client.player.sendMessage(Text.literal("You chose " + opt.get()));
+                            } else {
+                                client.player.sendMessage(Text.literal("You didn't select a file."));
+                            }
+                        }, client);
             }
             ImGui.inputText("Type some text.", imText);
         }

@@ -1,9 +1,6 @@
 package com.igrium.craftui.file;
 
-import java.awt.FileDialog;
-import java.awt.Frame;
-import java.awt.GraphicsEnvironment;
-import java.awt.HeadlessException;
+import java.awt.*;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -27,8 +24,8 @@ public class AWTFileDialog implements FileDialogInterface {
     }
 
     @Override
-    public CompletableFuture<Optional<String>> saveDialog(@Nullable String defaultPath,
-            @Nullable String defaultName, FileFilter... filters) {
+    public CompletableFuture<Optional<String>> showSaveDialog(@Nullable String defaultPath,
+                                                              @Nullable String defaultName, FileFilter... filters) {
         return CompletableFuture.supplyAsync(() -> saveDialogSync(defaultPath, defaultName, filters), dialogExecutor);
     }
 
@@ -38,7 +35,7 @@ public class AWTFileDialog implements FileDialogInterface {
         fd.setMode(FileDialog.SAVE);
         fd.setDirectory(defaultPath);
         fd.setFile(defaultName);
-        fd.setModal(true);
+        fd.setModalityType(Dialog.ModalityType.TOOLKIT_MODAL);
 
         fd.setVisible(true);
         
@@ -46,13 +43,13 @@ public class AWTFileDialog implements FileDialogInterface {
     }
 
     @Override
-    public CompletableFuture<Optional<String>> openDialog(@Nullable String defaultPath, FileFilter... filters) {
+    public CompletableFuture<Optional<String>> showOpenDialog(@Nullable String defaultPath, FileFilter... filters) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'openDialog'");
     }
 
     @Override
-    public CompletableFuture<Optional<String>> pickFolder(@Nullable String defaultPath) {
+    public CompletableFuture<Optional<String>> showOpenFolderDialog(@Nullable String defaultPath) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'pickFolder'");
     }

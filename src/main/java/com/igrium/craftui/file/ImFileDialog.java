@@ -19,8 +19,8 @@ public class ImFileDialog implements FileDialogInterface {
     }
 
     @Override
-    public CompletableFuture<Optional<String>> saveDialog(@Nullable String defaultPath, @Nullable String defaultName,
-            FileFilter... filters) {
+    public CompletableFuture<Optional<String>> showSaveDialog(@Nullable String defaultPath, @Nullable String defaultName,
+                                                              FileFilter... filters) {
         ImFileDialogApp app = new ImFileDialogApp();
 
         if (defaultPath != null)
@@ -32,7 +32,7 @@ public class ImFileDialog implements FileDialogInterface {
             app.setFilters(compileFilters(filters));
         } else if (defaultName != null) {
             String ext = FilenameUtils.getExtension(defaultName);
-            if (ext !=  null && !ext.isBlank()) {
+            if (ext != null && !ext.isBlank()) {
                 app.setFilters("." + ext);
             }
         }
@@ -47,7 +47,7 @@ public class ImFileDialog implements FileDialogInterface {
     }
 
     @Override
-    public CompletableFuture<Optional<String>> openDialog(@Nullable String defaultPath, FileFilter... filters) {
+    public CompletableFuture<Optional<String>> showOpenDialog(@Nullable String defaultPath, FileFilter... filters) {
         ImFileDialogApp app = new ImFileDialogApp();
 
         if (defaultPath != null)
@@ -64,7 +64,7 @@ public class ImFileDialog implements FileDialogInterface {
     }
 
     @Override
-    public CompletableFuture<Optional<String>> pickFolder(@Nullable String defaultPath) {
+    public CompletableFuture<Optional<String>> showOpenFolderDialog(@Nullable String defaultPath) {
         ImFileDialogApp app = new ImFileDialogApp();
         if (defaultPath != null)
             app.setDefaultPath(defaultPath);
