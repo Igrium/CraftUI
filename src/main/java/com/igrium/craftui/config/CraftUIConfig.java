@@ -35,5 +35,7 @@ public final class CraftUIConfig {
 
     public void copyFrom(CraftUIConfig other) {
         this.preferNativeFileDialog = other.preferNativeFileDialog;
+        this.enableViewports = other.enableViewports;
+        this.enableDebugCommands = other.enableDebugCommands;
     }
 }
