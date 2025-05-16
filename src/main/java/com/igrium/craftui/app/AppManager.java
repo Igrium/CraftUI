@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
+import imgui.ImGuiIO;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
 import org.slf4j.Logger;
@@ -174,5 +175,21 @@ public final class AppManager {
             ImGui.renderPlatformWindowsDefault();
             glfwMakeContextCurrent(backupWindowPtr);
         }
+    }
+
+    /**
+     * If set, mouse inputs will be consumed by the application GUI and should not be processed by Minecraft.
+     * @see ImGuiIO#getWantCaptureMouse()
+     */
+    public static boolean wantCaptureMouse() {
+        return ImGui.getIO().getWantCaptureMouse();
+    }
+
+    /**
+     * If set, keyboard inputs will be consumed by the application GUI and should not be processed by Minecraft.
+     * @see ImGuiIO#getWantCaptureKeyboard()
+     */
+    public static boolean wantCaptureKeyboard() {
+        return ImGui.getIO().getWantCaptureKeyboard();
     }
 }

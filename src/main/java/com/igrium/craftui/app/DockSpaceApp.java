@@ -2,6 +2,7 @@ package com.igrium.craftui.app;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
+import imgui.flag.ImGuiDockNodeFlags;
 import imgui.flag.ImGuiWindowFlags;
 import net.minecraft.client.MinecraftClient;
 
@@ -28,6 +29,15 @@ public abstract class DockSpaceApp extends CraftApp {
         if (!ImGui.begin(name, imGuiWindowFlags | ImGuiWindowFlags.NoBackground)) {
             return false;
         }
+
+        if (ImGui.isWindowHovered() && ImGui.isMouseClicked(0)) {
+            ImGui.setWindowFocus();
+//            ImGui.setKeyboardFocusHere(-1);
+        }
+//        // Re-focus the viewport if we don't have inputs in this window.
+//        if ((imGuiWindowFlags & ImGuiWindowFlags.NoInputs) != 0 && ImGui.isWindowHovered()) {
+//            ImGui.setKeyboardFocusHere(-1);
+//        }
 
         float minX = ImGui.getWindowContentRegionMinX();
         float maxX = ImGui.getWindowContentRegionMaxX();

@@ -3,6 +3,7 @@ package com.igrium.craftui.testmod;
 import com.igrium.craftui.CraftAppScreen;
 import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.app.CraftApp;
+import com.igrium.craftui.dev.commands.ImGuiDemoApp;
 import com.mojang.brigadier.CommandDispatcher;
 
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;

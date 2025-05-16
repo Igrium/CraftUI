@@ -5,6 +5,7 @@ import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.font.Fonts;
 
 import imgui.ImGui;
+import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImString;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;

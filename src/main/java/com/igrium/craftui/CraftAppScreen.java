@@ -3,6 +3,7 @@ package com.igrium.craftui;
 import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.app.CraftApp;
 
+import imgui.ImGui;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
@@ -46,6 +47,7 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
     private void onAppClosed() {
         // For some reason, close() doesn't check if the screen's actually open
         if (client.currentScreen == this) {
+            ImGui.setWindowFocus(null);
             this.close();
         }
     }

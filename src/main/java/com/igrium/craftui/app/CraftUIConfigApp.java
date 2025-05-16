@@ -86,7 +86,7 @@ public class CraftUIConfigApp extends CraftApp {
 
     public static CraftAppScreen<CraftUIConfigApp> createScreen() {
         CraftAppScreen<CraftUIConfigApp> screen = new CraftAppScreen<>(new CraftUIConfigApp());
-        screen.setCloseOnEsc(false);
+//        screen.setCloseOnEsc(false);
         return screen;
     }
 }
