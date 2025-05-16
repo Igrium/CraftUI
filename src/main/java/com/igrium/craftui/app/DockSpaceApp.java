@@ -30,14 +30,10 @@ public abstract class DockSpaceApp extends CraftApp {
             return false;
         }
 
-        if (ImGui.isWindowHovered() && ImGui.isMouseClicked(0)) {
-            ImGui.setWindowFocus();
-//            ImGui.setKeyboardFocusHere(-1);
+        if (ImGui.isWindowFocused()) {
+            ImGui.setWindowFocus(null);
         }
-//        // Re-focus the viewport if we don't have inputs in this window.
-//        if ((imGuiWindowFlags & ImGuiWindowFlags.NoInputs) != 0 && ImGui.isWindowHovered()) {
-//            ImGui.setKeyboardFocusHere(-1);
-//        }
+
 
         float minX = ImGui.getWindowContentRegionMinX();
         float maxX = ImGui.getWindowContentRegionMaxX();
