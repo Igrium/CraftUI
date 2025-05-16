@@ -14,15 +14,6 @@ public abstract class DockSpaceApp extends CraftApp {
 
     private ViewportBounds viewportBounds = new ViewportBounds(0, 0, 1, 1);
 
-    /**
-     * create a new craftapp.
-     *
-     * @param id A unique ID for this app. ex: "craftui:demo"
-     */
-    public DockSpaceApp(String id) {
-        super(id);
-    }
-
     @Override
     protected void render(MinecraftClient client) {
         ImGui.setNextWindowBgAlpha(0f);

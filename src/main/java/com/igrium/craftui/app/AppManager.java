@@ -36,7 +36,6 @@ public final class AppManager {
     private static final Queue<CraftApp> removeQueue = new ArrayDeque<>();
 
     private static ViewportBounds currentViewportBounds;
-    private static ViewportBounds prevViewportBounds;
 
     /**
      * Get a list of all the apps that are open.
@@ -97,8 +96,8 @@ public final class AppManager {
             apps.add(app);
             app.onOpen();
         }
-        
-        prevViewportBounds = currentViewportBounds;
+
+        ViewportBounds prevViewportBounds = currentViewportBounds;
         currentViewportBounds = null;
 
         for (CraftApp app : apps) {
@@ -152,15 +151,17 @@ public final class AppManager {
         ImGui.newFrame();
     
         ImGui.pushFont(Fonts.inter());
+        int i = 0;
         for (CraftApp app : apps) {
-            ImGui.pushID(app.getId());
+            ImGui.pushID(i);
             try {
                 app.render(client);
             } catch (Exception e) {
-                CrashReport crashReport = new CrashReport("Error rendering CraftUI app " + app, e);
+                CrashReport crashReport = new CrashReport("Error rendering CraftUI app " + app.getClass().getSimpleName(), e);
                 throw new CrashException(crashReport);
             }
             ImGui.popID();
+            i++;
         }
         ImGui.popFont();
 

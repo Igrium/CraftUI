@@ -37,20 +37,6 @@ public abstract class CraftApp {
     }
 
     /**
-     * A unique ID for this app. ex: "craftui:demo"
-     */
-    @Getter
-    private final String id;
-
-    /**
-     * create a new craftapp.
-     * @param id A unique ID for this app. ex: "craftui:demo"
-     */
-    public CraftApp(String id) {
-        this.id = id;
-    }
-
-    /**
      * Called after the main Minecraft frame has blit to the primary frame buffer.
      * Primary ImGui calls should be implemented here.
      * 

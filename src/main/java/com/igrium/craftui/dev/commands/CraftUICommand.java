@@ -27,7 +27,7 @@ public class CraftUICommand {
             return 0;
         }
 
-        demoApp = new CraftAppScreen<ImGuiDemoApp>(new ImGuiDemoApp("craftui:demo"));
+        demoApp = new CraftAppScreen<ImGuiDemoApp>(new ImGuiDemoApp());
         MinecraftClient client = MinecraftClient.getInstance();
         // Let the chat screen close before we try to open this
         client.send(() -> {

@@ -14,8 +14,6 @@ import net.minecraft.client.MinecraftClient;
 
 public class ImFileDialogApp extends CraftApp {
 
-    public static final String ID = "craftui:filedialog";
-
     @Getter
     private final CompletableFuture<Optional<String>> future = new CompletableFuture<>();
     private boolean isOpen;
@@ -44,7 +42,6 @@ public class ImFileDialogApp extends CraftApp {
     private boolean warnOnOverride;
 
     public ImFileDialogApp() {
-        super(ID);
     }
 
     @Override

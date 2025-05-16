@@ -27,7 +27,7 @@ public class AppTestCommand {
                     if (app != null && app.isOpen())
                         return 0;
 
-                    app = new TestApp("craftui:apptest");
+                    app = new TestApp();
                     AppManager.openApp(app);
                     return 1;
                 })
