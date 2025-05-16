@@ -1,14 +1,12 @@
-package com.igrium.craftui.app;
+package com.igrium.craftui.config;
 
 import com.igrium.craftui.CraftAppScreen;
 import com.igrium.craftui.CraftUI;
-import com.igrium.craftui.config.CraftUIConfig;
-import com.igrium.craftui.config.CraftUIConfigHandler;
+import com.igrium.craftui.app.CraftApp;
 import com.igrium.craftui.util.SaveConfirmation;
 import com.igrium.craftui.util.TextUtils;
 
 import imgui.ImGui;
-import imgui.ImVec2;
 import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiHoveredFlags;
 import imgui.flag.ImGuiKey;

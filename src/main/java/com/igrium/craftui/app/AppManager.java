@@ -139,22 +139,26 @@ public final class AppManager {
         return currentViewportBounds;
     }
 
+    private static boolean needsCleanupFrame;
+
     /**
      * Draw all open apps to the screen.
      * @param client Minecraft client instance.
      */
     public static void render(MinecraftClient client) {
         RenderSystem.assertOnRenderThread();
+        boolean isCleanupFrame = apps.isEmpty();
 
-        if (apps.isEmpty()) return;
+        if (isCleanupFrame && !needsCleanupFrame)
+            return;
 
         ImGuiUtil.IM_GLFW.newFrame();
         ImGui.newFrame();
     
         ImGui.pushFont(Fonts.inter());
-        int i = 0;
+
         for (CraftApp app : apps) {
-            ImGui.pushID(i);
+            ImGui.pushID(app.getClass().getCanonicalName().hashCode());
             try {
                 app.render(client);
             } catch (Exception e) {
@@ -162,9 +166,15 @@ public final class AppManager {
                 throw new CrashException(crashReport);
             }
             ImGui.popID();
-            i++;
         }
+
         ImGui.popFont();
+
+        if (isCleanupFrame) {
+            ImGui.setWindowFocus(null);
+            ImGui.getIO().setWantCaptureKeyboard(false);
+            ImGui.getIO().setWantCaptureMouse(false);
+        }
 
         ImGui.render();
         ImGuiUtil.IM_GL3.renderDrawData(ImGui.getDrawData());
@@ -175,6 +185,8 @@ public final class AppManager {
             ImGui.renderPlatformWindowsDefault();
             glfwMakeContextCurrent(backupWindowPtr);
         }
+
+        needsCleanupFrame = !isCleanupFrame;
     }
 
     /**

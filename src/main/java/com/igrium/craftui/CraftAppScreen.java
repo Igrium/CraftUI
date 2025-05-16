@@ -47,7 +47,6 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
     private void onAppClosed() {
         // For some reason, close() doesn't check if the screen's actually open
         if (client.currentScreen == this) {
-            ImGui.setWindowFocus(null);
             this.close();
         }
     }
