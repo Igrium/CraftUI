@@ -3,7 +3,11 @@ package com.igrium.craftui.app;
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.flag.ImGuiDockNodeFlags;
+import imgui.flag.ImGuiHoveredFlags;
 import imgui.flag.ImGuiWindowFlags;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
 
 /**
@@ -11,6 +15,28 @@ import net.minecraft.client.MinecraftClient;
  */
 public abstract class DockSpaceApp extends CraftApp {
 
+    /**
+     * Specifies the ui's behavior when the vanilla viewport is interacted with.
+     */
+    public enum ViewportInputMode {
+        /**
+         * No interaction with the vanilla game permitted.
+         */
+        NONE,
+        /**
+         * The viewport can be focused like a widget, at which point inputs are sent to the game.
+         */
+        FOCUS
+    }
+
+    /**
+     * Specifies the ui's behavior when the vanilla viewport is interacted with.
+     */
+    @Getter
+    @Setter(AccessLevel.PROTECTED)
+    private ViewportInputMode viewportInputMode = ViewportInputMode.FOCUS;
+
+    @Getter
     private int dockSpaceId;
 
     private ViewportBounds viewportBounds = new ViewportBounds(0, 0, 1, 1);
@@ -30,7 +56,7 @@ public abstract class DockSpaceApp extends CraftApp {
             return false;
         }
 
-        if (ImGui.isWindowFocused()) {
+        if (viewportInputMode == ViewportInputMode.FOCUS && ImGui.isWindowFocused()) {
             ImGui.setWindowFocus(null);
         }
 
@@ -59,14 +85,18 @@ public abstract class DockSpaceApp extends CraftApp {
 
         viewportBounds = new ViewportBounds((int) xPos, (int) yPos, (int) width, (int) height);
 
-        // int viewportX = (int) ImGui.getWindowPosX();
-        // int viewportY = (int) ImGui.getWindowPosY();
-        // int viewportWidth = (int) ImGui.getWindowWidth();
-        // int viewportHeight = (int) ImGui.getWindowHeight();
-
-        // viewportBounds = new ViewportBounds(viewportX, viewportY, viewportWidth, viewportHeight);
-
         return true;
+    }
+
+    /**
+     * If the mouse was pressed on the most-recently rendered window, forward input to the game next frame.
+     * Most likely used on the viewport.
+     * @param mouseButton Mouse button to query.
+     */
+    protected static void queryViewportInput(int mouseButton) {
+        if (ImGui.isWindowFocused() && ImGui.isMouseDown(mouseButton)) {
+            AppManager.forwardInputNextFrame();
+        }
     }
 
     @Override

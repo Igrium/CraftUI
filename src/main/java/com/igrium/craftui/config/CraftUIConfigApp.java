@@ -77,6 +77,7 @@ public class CraftUIConfigApp extends CraftApp {
     private void save() {
         config.setPreferNativeFileDialog(preferNativeFileDialog.get());
         config.setEnableViewports(enableViewports.get());
+        config.setEnableDebugCommands(enableDebugCommand.get());
         CraftUIConfigHandler.saveConfig();
 
         saveConfirmation.setUnsaved(false);

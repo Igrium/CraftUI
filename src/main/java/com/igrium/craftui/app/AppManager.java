@@ -12,6 +12,7 @@ import java.util.Queue;
 import java.util.Set;
 
 import imgui.ImGuiIO;
+import lombok.Getter;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
 import org.slf4j.Logger;
@@ -139,6 +140,16 @@ public final class AppManager {
         return currentViewportBounds;
     }
 
+    private static boolean forwardInputNextFrame;
+
+    /**
+     * Forward keyboard input to the game next frame, even if we have a widget focused.
+     * Useful for viewport controls.
+     */
+    public static void forwardInputNextFrame() {
+        forwardInputNextFrame = true;
+    }
+
     private static boolean needsCleanupFrame;
 
     /**
@@ -148,6 +159,7 @@ public final class AppManager {
     public static void render(MinecraftClient client) {
         RenderSystem.assertOnRenderThread();
         boolean isCleanupFrame = apps.isEmpty();
+        forwardInputNextFrame = false;
 
         if (isCleanupFrame && !needsCleanupFrame)
             return;
@@ -194,7 +206,7 @@ public final class AppManager {
      * @see ImGuiIO#getWantCaptureMouse()
      */
     public static boolean wantCaptureMouse() {
-        return ImGui.getIO().getWantCaptureMouse();
+        return !forwardInputNextFrame && ImGui.getIO().getWantCaptureMouse();
     }
 
     /**
@@ -202,6 +214,6 @@ public final class AppManager {
      * @see ImGuiIO#getWantCaptureKeyboard()
      */
     public static boolean wantCaptureKeyboard() {
-        return ImGui.getIO().getWantCaptureKeyboard();
+        return !forwardInputNextFrame && ImGui.getIO().getWantCaptureKeyboard();
     }
 }
