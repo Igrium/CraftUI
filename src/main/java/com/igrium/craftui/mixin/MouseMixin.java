@@ -1,5 +1,7 @@
 package com.igrium.craftui.mixin;
 
+import com.igrium.craftui.util.CursorLockManager;
+import net.minecraft.client.option.KeyBinding;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -54,12 +56,22 @@ public class MouseMixin {
         // }
     }
 
+    @Inject(method = "updateMouse", at = @At("HEAD"), cancellable = true)
+    void craftui$onUpdateMouse(CallbackInfo ci) {
+        if (AppManager.wantCaptureMouse())
+            ci.cancel();
+    }
+
     @Inject(method = "unlockCursor", at = @At("HEAD"), cancellable = true)
     void craftui$unlockCursor(CallbackInfo ci) {
         // Do the if check again because it's easier to mix into the head.
         if (!cursorLocked) {
             return;
         }
+
+        // Fix an issue where keys could get stuck when switching between ui and MC
+        // Honestly this should be called in vanilla code. No idea why it's not.
+        KeyBinding.unpressAll();
 
         ViewportBounds viewport = AppManager.getCustomViewportBounds();
         if (viewport != null) {
@@ -74,5 +86,23 @@ public class MouseMixin {
             GLFW.glfwSetCursorPos(client.getWindow().getHandle(), x, y); 
             ci.cancel();
         }
+    }
+
+    @Inject(method = "lockCursor", at = @At("HEAD"), cancellable = true)
+    void craftui$onLockCursor(CallbackInfo ci) {
+        if (CursorLockManager.isForceUnlock())
+            ci.cancel();
+    }
+
+    @Inject(method = "onMouseButton", at = @At("HEAD"), cancellable = true)
+    void craftui$onMouseButton(long window, int button, int action, int mods, CallbackInfo ci) {
+        if (AppManager.wantCaptureMouse())
+            ci.cancel();
+    }
+
+    @Inject(method = "onMouseScroll", at = @At("HEAD"), cancellable = true)
+    void craftui$onMouseScroll(long window, double horizontal, double vertical, CallbackInfo ci) {
+        if (AppManager.wantCaptureMouse())
+            ci.cancel();
     }
 }

@@ -1,5 +1,6 @@
-package com.igrium.craftui.util;
+package com.igrium.craftui.render;
 
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +24,7 @@ public class ImGuiUtil {
 
     public static final Logger LOGGER = LoggerFactory.getLogger("ImGui Integration");
 
+    @Getter
     private static boolean initialized;
 
     public static void ensureInitialized() {
@@ -61,7 +63,4 @@ public class ImGuiUtil {
         initialized = true;
     }
 
-    public static boolean isInitialized() {
-        return initialized;
-    }
 }

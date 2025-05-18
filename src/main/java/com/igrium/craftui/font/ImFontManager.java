@@ -23,7 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.igrium.craftui.event.FontReloadCallback;
 import com.igrium.craftui.util.IdentifierJsonAdapter;
-import com.igrium.craftui.util.ImGuiUtil;
+import com.igrium.craftui.render.ImGuiUtil;
 import com.igrium.craftui.util.Vector2fJsonAdapter;
 import com.mojang.blaze3d.systems.RenderSystem;
 

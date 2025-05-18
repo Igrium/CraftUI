@@ -2,44 +2,40 @@ package com.igrium.craftui.app;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
-import imgui.flag.ImGuiDockNodeFlags;
-import imgui.flag.ImGuiHoveredFlags;
+import imgui.flag.ImGuiFocusedFlags;
 import imgui.flag.ImGuiWindowFlags;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
 
 /**
  * A CraftApp that creates an ImGui dockspace with a game viewport in the center.
+ * Only one of these should be active at a time.
  */
 public abstract class DockSpaceApp extends CraftApp {
 
     /**
      * Specifies the ui's behavior when the vanilla viewport is interacted with.
      */
-    public enum ViewportInputMode {
+    public static enum ViewportInputMode {
         /**
-         * No interaction with the vanilla game permitted.
+         * Never forward input to Minecraft and keep the mouse unlocked.
          */
         NONE,
         /**
-         * The viewport can be focused like a widget, at which point inputs are sent to the game.
+         * Forward input to Minecraft if the viewport window is focused.
          */
-        FOCUS
+        FOCUS,
+        /**
+         * Always forward input to Minecraft, even if imgui consumes it. Use with caution.
+         */
+        ALWAYS
     }
-
-    /**
-     * Specifies the ui's behavior when the vanilla viewport is interacted with.
-     */
-    @Getter
-    @Setter(AccessLevel.PROTECTED)
-    private ViewportInputMode viewportInputMode = ViewportInputMode.FOCUS;
 
     @Getter
     private int dockSpaceId;
 
     private ViewportBounds viewportBounds = new ViewportBounds(0, 0, 1, 1);
+
 
     @Override
     protected void render(MinecraftClient client) {
@@ -51,15 +47,40 @@ public abstract class DockSpaceApp extends CraftApp {
     protected abstract void renderApp(MinecraftClient client, int dockSpaceId);
 
     protected final boolean beginViewport(String name, int imGuiWindowFlags) {
+        return beginViewport(name, imGuiWindowFlags, ViewportInputMode.FOCUS);
+    }
+
+    protected final boolean beginViewport(String name, int imGuiWindowFlags, ViewportInputMode viewportInputMode) {
         ImGui.setNextWindowDockID(dockSpaceId);
         if (!ImGui.begin(name, imGuiWindowFlags | ImGuiWindowFlags.NoBackground)) {
             return false;
         }
 
+
+        // Focus game when viewport is clicked.
         if (viewportInputMode == ViewportInputMode.FOCUS && ImGui.isWindowFocused()) {
             ImGui.setWindowFocus(null);
         }
 
+        // Handle mouse locking. Technically this doesn't have to do with the viewport, but this place is convenient.
+        switch(viewportInputMode) {
+            case NONE -> {
+                AppManager.forceMouseUnlock();
+            }
+            case FOCUS -> {
+                if (ImGui.isWindowFocused(ImGuiFocusedFlags.AnyWindow) && !ImGui.isWindowFocused()) {
+                    AppManager.forceMouseUnlock();
+                }
+            }
+//            case ALWAYS -> {
+//                AppManager.forwardInputNextFrame();
+//            }
+        }
+
+        // Force mouse inputs to be forwarded to screen if there is any.
+        if (ImGui.isWindowHovered() && MinecraftClient.getInstance().currentScreen != null) {
+            AppManager.forwardMouseInputNextFrame();
+        }
 
         float minX = ImGui.getWindowContentRegionMinX();
         float maxX = ImGui.getWindowContentRegionMaxX();

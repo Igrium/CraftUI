@@ -11,8 +11,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
+import com.igrium.craftui.util.CursorLockManager;
 import imgui.ImGuiIO;
-import lombok.Getter;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
 import org.slf4j.Logger;
@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.app.CraftApp.ViewportBounds;
 import com.igrium.craftui.font.Fonts;
-import com.igrium.craftui.util.ImGuiUtil;
+import com.igrium.craftui.render.ImGuiUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImGui;
@@ -87,6 +87,8 @@ public final class AppManager {
             ImGuiUtil.init();
         }
 
+        CursorLockManager.onBeginFrame();
+
         while (!removeQueue.isEmpty()) {
             CraftApp app = removeQueue.poll();
             app.onClose();
@@ -150,6 +152,25 @@ public final class AppManager {
         forwardInputNextFrame = true;
     }
 
+    private static boolean forwardMouseInputNextFrame;
+
+    /**
+     * Forward mouse input to the game next frame, even if we have a widget focused.
+     * Useful for viewport controls.
+     */
+    public static void forwardMouseInputNextFrame() {
+        forwardMouseInputNextFrame = true;
+    }
+
+    private static boolean forceMouseUnlock;
+
+    /**
+     * Force the mouse to be unlocked this frame, regardless of what Minecraft thinks.
+     */
+    public static void forceMouseUnlock() {
+        forceMouseUnlock = true;
+    }
+
     private static boolean needsCleanupFrame;
 
     /**
@@ -160,6 +181,8 @@ public final class AppManager {
         RenderSystem.assertOnRenderThread();
         boolean isCleanupFrame = apps.isEmpty();
         forwardInputNextFrame = false;
+        forwardMouseInputNextFrame = false;
+        forceMouseUnlock = false;
 
         if (isCleanupFrame && !needsCleanupFrame)
             return;
@@ -199,6 +222,7 @@ public final class AppManager {
         }
 
         needsCleanupFrame = !isCleanupFrame;
+        CursorLockManager.setForceUnlock(forceMouseUnlock);
     }
 
     /**
@@ -206,7 +230,7 @@ public final class AppManager {
      * @see ImGuiIO#getWantCaptureMouse()
      */
     public static boolean wantCaptureMouse() {
-        return !forwardInputNextFrame && ImGui.getIO().getWantCaptureMouse();
+        return !forwardMouseInputNextFrame && ImGui.getIO().getWantCaptureKeyboard();
     }
 
     /**
