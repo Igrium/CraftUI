@@ -4,6 +4,7 @@ import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.font.Fonts;
 
+import com.igrium.craftui.input.ViewportController;
 import imgui.ImGui;
 import imgui.flag.ImGuiMouseButton;
 import imgui.type.ImInt;
@@ -17,6 +18,12 @@ public class TestApp extends DockSpaceApp {
     private final ImInt inputMode = new ImInt(1);
 
     private static final String[] INPUT_MODE_OPTIONS = new String[]{"None", "Focus", "Always"};
+
+    public TestApp() {
+        var viewportController = new ViewportController(this);
+        viewportController.setAutoEnableButton(2);
+        setViewportController(viewportController);
+    }
 
     protected void render(MinecraftClient client) {
         super.render(client);

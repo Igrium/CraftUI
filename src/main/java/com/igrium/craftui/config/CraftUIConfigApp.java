@@ -1,6 +1,6 @@
 package com.igrium.craftui.config;
 
-import com.igrium.craftui.CraftAppScreen;
+import com.igrium.craftui.screen.CraftAppScreen;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.app.CraftApp;
 import com.igrium.craftui.util.SaveConfirmation;

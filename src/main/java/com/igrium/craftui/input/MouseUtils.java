@@ -1,4 +1,4 @@
-package com.igrium.craftui.util;
+package com.igrium.craftui.input;
 
 import com.igrium.craftui.app.CraftApp.ViewportBounds;
 

@@ -1,9 +1,6 @@
 package com.igrium.craftui.mixin;
 
-import com.igrium.craftui.util.CursorLockManager;
 import net.minecraft.client.Mouse;
-import net.minecraft.client.gui.screen.Screen;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;

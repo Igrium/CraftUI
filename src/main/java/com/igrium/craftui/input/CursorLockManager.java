@@ -1,4 +1,4 @@
-package com.igrium.craftui.util;
+package com.igrium.craftui.input;
 
 import lombok.Getter;
 import lombok.Setter;

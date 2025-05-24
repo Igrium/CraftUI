@@ -1,6 +1,7 @@
 package com.igrium.craftui.app;
 
-import com.igrium.craftui.util.CursorLockManager;
+import com.igrium.craftui.input.CursorLockManager;
+import com.igrium.craftui.input.ViewportController;
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.flag.ImGuiFocusedFlags;
@@ -8,6 +9,7 @@ import imgui.flag.ImGuiWindowFlags;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A CraftApp that creates an ImGui dockspace with a game viewport in the center.
@@ -47,6 +49,17 @@ public abstract class DockSpaceApp extends CraftApp {
     @Setter
     private ViewportInputMode viewportInputMode = ViewportInputMode.FOCUS;
 
+    @Nullable
+    @Getter
+    private ViewportController viewportController;
+
+    public void setViewportController(@Nullable ViewportController viewportController) {
+        if (viewportController != null && viewportController.getApp() != this) {
+            throw new IllegalArgumentException("Viewport controller belongs to the wrong app!");
+        }
+        this.viewportController = viewportController;
+    }
+
     @Override
     protected void render(MinecraftClient client) {
         ImGui.setNextWindowBgAlpha(0f);
@@ -69,6 +82,10 @@ public abstract class DockSpaceApp extends CraftApp {
             return false;
         }
 
+        if (viewportController != null) {
+            viewportController.onRenderViewport();
+        }
+
         // Focus game when viewport is clicked.
         if (viewportInputMode != ViewportInputMode.NONE && ImGui.isWindowFocused()) {
             ImGui.setWindowFocus(null);
@@ -86,7 +103,6 @@ public abstract class DockSpaceApp extends CraftApp {
                 // TODO: Is there a way we can avoid checking this every frame?
                 if (CursorLockManager.clientWantsLockCursor()) {
                     ImGui.setWindowFocus(null);
-//                    CursorLockManager.setForceUnlock(false);
                     MinecraftClient.getInstance().mouse.lockCursor();
                 }
             }

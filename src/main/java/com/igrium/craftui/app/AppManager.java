@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
-import com.igrium.craftui.util.CursorLockManager;
+import com.igrium.craftui.input.CursorLockManager;
 import imgui.ImGuiIO;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;

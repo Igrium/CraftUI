@@ -1,6 +1,6 @@
 package com.igrium.craftui.dev.commands;
 
-import com.igrium.craftui.CraftAppScreen;
+import com.igrium.craftui.screen.CraftAppScreen;
 import com.igrium.craftui.app.AppManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
