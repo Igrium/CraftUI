@@ -180,6 +180,13 @@ public final class AppManager {
     public static void render(MinecraftClient client) {
         RenderSystem.assertOnRenderThread();
         boolean isCleanupFrame = apps.isEmpty();
+
+        if (client.mouse.isCursorLocked()) {
+            ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NoMouse);
+        } else {
+            ImGui.getIO().removeConfigFlags(ImGuiConfigFlags.NoMouse);
+        }
+
         forwardInputNextFrame = false;
         forwardMouseInputNextFrame = false;
         forceMouseUnlock = false;
@@ -187,11 +194,6 @@ public final class AppManager {
         if (isCleanupFrame && !needsCleanupFrame)
             return;
 
-        if (CursorLockManager.clientWantsLockCursor()) {
-            ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NoMouse);
-        } else {
-            ImGui.getIO().removeConfigFlags(ImGuiConfigFlags.NoMouse);
-        }
 
         ImGuiUtil.IM_GLFW.newFrame();
         ImGui.newFrame();
