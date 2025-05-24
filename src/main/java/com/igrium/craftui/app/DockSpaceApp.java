@@ -1,10 +1,12 @@
 package com.igrium.craftui.app;
 
+import com.igrium.craftui.util.CursorLockManager;
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.flag.ImGuiFocusedFlags;
 import imgui.flag.ImGuiWindowFlags;
 import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
 
 /**
@@ -16,7 +18,7 @@ public abstract class DockSpaceApp extends CraftApp {
     /**
      * Specifies the ui's behavior when the vanilla viewport is interacted with.
      */
-    public static enum ViewportInputMode {
+    public enum ViewportInputMode {
         /**
          * Never forward input to Minecraft and keep the mouse unlocked.
          */
@@ -26,7 +28,7 @@ public abstract class DockSpaceApp extends CraftApp {
          */
         FOCUS,
         /**
-         * Always forward input to Minecraft, even if imgui consumes it. Use with caution.
+         * If the vanilla client wants to lock the cursor, always do it.
          */
         ALWAYS
     }
@@ -36,45 +38,58 @@ public abstract class DockSpaceApp extends CraftApp {
 
     private ViewportBounds viewportBounds = new ViewportBounds(0, 0, 1, 1);
 
+    private boolean didBeginViewport;
+
+    /**
+     * The viewport input mode to use on this frame. Default: <code>ViewportInputMode.FOCUS</code>
+     */
+    @Getter
+    @Setter
+    private ViewportInputMode viewportInputMode = ViewportInputMode.FOCUS;
 
     @Override
     protected void render(MinecraftClient client) {
         ImGui.setNextWindowBgAlpha(0f);
         dockSpaceId = ImGui.dockSpaceOverViewport(ImGui.getMainViewport());
-        renderApp(client, dockSpaceId);
+        didBeginViewport = false;
+//        renderApp(client, dockSpaceId);
     }
     
-    protected abstract void renderApp(MinecraftClient client, int dockSpaceId);
+//    protected abstract void renderApp(MinecraftClient client, int dockSpaceId);
+
 
     protected final boolean beginViewport(String name, int imGuiWindowFlags) {
-        return beginViewport(name, imGuiWindowFlags, ViewportInputMode.FOCUS);
-    }
+        if (didBeginViewport) {
+            throw new IllegalStateException("beginViewport only may be called once per frame! Also, make sure you're calling super.render() at the beginning of render.");
+        }
+        didBeginViewport = true;
 
-    protected final boolean beginViewport(String name, int imGuiWindowFlags, ViewportInputMode viewportInputMode) {
         ImGui.setNextWindowDockID(dockSpaceId);
         if (!ImGui.begin(name, imGuiWindowFlags | ImGuiWindowFlags.NoBackground)) {
             return false;
         }
 
-
         // Focus game when viewport is clicked.
-        if (viewportInputMode == ViewportInputMode.FOCUS && ImGui.isWindowFocused()) {
+        if (viewportInputMode != ViewportInputMode.NONE && ImGui.isWindowFocused()) {
             ImGui.setWindowFocus(null);
         }
 
         // Handle mouse locking. Technically this doesn't have to do with the viewport, but this place is convenient.
-        switch(viewportInputMode) {
-            case NONE -> {
+        if (viewportInputMode == ViewportInputMode.NONE) {
+            AppManager.forceMouseUnlock();
+        }
+        else {
+            if (ImGui.isWindowFocused(ImGuiFocusedFlags.AnyWindow) && !ImGui.isWindowFocused()) {
                 AppManager.forceMouseUnlock();
             }
-            case FOCUS -> {
-                if (ImGui.isWindowFocused(ImGuiFocusedFlags.AnyWindow) && !ImGui.isWindowFocused()) {
-                    AppManager.forceMouseUnlock();
+            if (viewportInputMode == ViewportInputMode.ALWAYS) {
+                // TODO: Is there a way we can avoid checking this every frame?
+                if (CursorLockManager.clientWantsLockCursor()) {
+                    ImGui.setWindowFocus(null);
+//                    CursorLockManager.setForceUnlock(false);
+                    MinecraftClient.getInstance().mouse.lockCursor();
                 }
             }
-//            case ALWAYS -> {
-//                AppManager.forwardInputNextFrame();
-//            }
         }
 
         // Force mouse inputs to be forwarded to screen if there is any.
@@ -107,17 +122,6 @@ public abstract class DockSpaceApp extends CraftApp {
         viewportBounds = new ViewportBounds((int) xPos, (int) yPos, (int) width, (int) height);
 
         return true;
-    }
-
-    /**
-     * If the mouse was pressed on the most-recently rendered window, forward input to the game next frame.
-     * Most likely used on the viewport.
-     * @param mouseButton Mouse button to query.
-     */
-    protected static void queryViewportInput(int mouseButton) {
-        if (ImGui.isWindowFocused() && ImGui.isMouseDown(mouseButton)) {
-            AppManager.forwardInputNextFrame();
-        }
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.igrium.craftui.font.Fonts;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiMouseButton;
+import imgui.type.ImInt;
 import imgui.type.ImString;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
@@ -13,17 +14,13 @@ import net.minecraft.text.Text;
 public class TestApp extends DockSpaceApp {
 
     private final ImString imText = new ImString();
+    private final ImInt inputMode = new ImInt(1);
 
-    @Override
-    protected void renderApp(MinecraftClient client, int dockSpaceId) {
+    private static final String[] INPUT_MODE_OPTIONS = new String[]{"None", "Focus", "Always"};
+
+    protected void render(MinecraftClient client) {
+        super.render(client);
         ImGui.pushFont(Fonts.inter());
-        if (beginViewport("Viewport", 0, ViewportInputMode.FOCUS)) {
-            queryViewportInput(ImGuiMouseButton.Right);
-            ImGui.button("This is a button in the viewport!");
-            ImGui.text("This is the viewport!");
-        }
-        ImGui.end();
-
 
         if (ImGui.begin("Upper Window")) {
             boolean clicked = ImGui.button("This is the upper window!");
@@ -49,6 +46,15 @@ public class TestApp extends DockSpaceApp {
             if (ImGui.button("Close Chat Window")) {
                 MinecraftClient.getInstance().setScreen(null);
             }
+
+            ImGui.combo("Viewport Input Mode", inputMode, INPUT_MODE_OPTIONS);
+            setViewportInputMode(ViewportInputMode.values()[inputMode.get()]);
+        }
+        ImGui.end();
+
+        if (beginViewport("Viewport", 0)) {
+            ImGui.button("This is a button in the viewport!");
+            ImGui.text("This is the viewport!");
         }
         ImGui.end();
 
