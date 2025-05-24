@@ -187,6 +187,12 @@ public final class AppManager {
         if (isCleanupFrame && !needsCleanupFrame)
             return;
 
+        if (CursorLockManager.clientWantsLockCursor()) {
+            ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NoMouse);
+        } else {
+            ImGui.getIO().removeConfigFlags(ImGuiConfigFlags.NoMouse);
+        }
+
         ImGuiUtil.IM_GLFW.newFrame();
         ImGui.newFrame();
     

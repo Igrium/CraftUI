@@ -2,8 +2,6 @@
   "required": true,
   "package": "com.igrium.craftui.mixin",
   "compatibilityLevel": "JAVA_17",
-  "mixins": [
-  ],
   "client": [
     "FramebufferMixin",
     "KeyboardMixin",

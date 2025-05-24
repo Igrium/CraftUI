@@ -36,7 +36,7 @@ public class CursorLockManager {
             mouse.unlockCursor();
     }
 
-    private static boolean clientWantsLockCursor() {
+    public static boolean clientWantsLockCursor() {
         return MinecraftClient.getInstance().currentScreen == null;
     }
 }
