@@ -12,9 +12,13 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.igrium.craftui.input.CursorLockManager;
+import com.igrium.craftui.input.ViewportController;
 import imgui.ImGuiIO;
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +50,7 @@ public final class AppManager {
     public static Collection<CraftApp> getApps() {
         return Collections.unmodifiableSet(apps);
     }
-    
+
     /**
      * Queue an app for opening. App will be opened at the beginning of the next render cycle.
      * @param app The app to open. May not be <code>null</code>.
@@ -87,7 +91,6 @@ public final class AppManager {
             ImGuiUtil.init();
         }
 
-        CursorLockManager.onBeginFrame();
 
         while (!removeQueue.isEmpty()) {
             CraftApp app = removeQueue.poll();
@@ -100,6 +103,10 @@ public final class AppManager {
             apps.add(app);
             app.onOpen();
         }
+
+        CursorLockManager.setForceUnlock(forceMouseUnlock);
+        CursorLockManager.onBeginFrame();
+
 
         ViewportBounds prevViewportBounds = currentViewportBounds;
         currentViewportBounds = null;
@@ -230,7 +237,6 @@ public final class AppManager {
         }
 
         needsCleanupFrame = !isCleanupFrame;
-        CursorLockManager.setForceUnlock(forceMouseUnlock);
     }
 
     /**

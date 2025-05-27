@@ -1,9 +1,11 @@
 package com.igrium.craftui.testmod;
 
+import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.font.Fonts;
 
+import com.igrium.craftui.input.MouseUtils;
 import com.igrium.craftui.input.ViewportController;
 import imgui.ImGui;
 import imgui.flag.ImGuiMouseButton;
@@ -19,11 +21,12 @@ public class TestApp extends DockSpaceApp {
 
     private static final String[] INPUT_MODE_OPTIONS = new String[]{"None", "Focus", "Always"};
 
-    public TestApp() {
-        var viewportController = new ViewportController(this);
-        viewportController.setAutoEnableButton(2);
-        setViewportController(viewportController);
+    @Override
+    protected void onOpen() {
+        super.onOpen();
+        setViewportInputMode(ViewportInputMode.NONE);
     }
+
 
     protected void render(MinecraftClient client) {
         super.render(client);
@@ -55,13 +58,16 @@ public class TestApp extends DockSpaceApp {
             }
 
             ImGui.combo("Viewport Input Mode", inputMode, INPUT_MODE_OPTIONS);
-            setViewportInputMode(ViewportInputMode.values()[inputMode.get()]);
+//            setViewportInputMode(ViewportInputMode.values()[inputMode.get()]);
         }
         ImGui.end();
 
         if (beginViewport("Viewport", 0)) {
             ImGui.button("This is a button in the viewport!");
             ImGui.text("This is the viewport!");
+            boolean mousePressed = mousePressedOverViewport(0);
+            ImGui.text("Mouse down: " + mousePressed);
+            setViewportInputMode(mousePressed ? ViewportInputMode.ALWAYS : ViewportInputMode.NONE);
         }
         ImGui.end();
 

@@ -25,16 +25,16 @@ public class MouseMixin {
 
     @Shadow
     @Final
-    MinecraftClient client;
+    private MinecraftClient client;
 
     @Shadow
-    boolean cursorLocked;
+    private boolean cursorLocked;
 
     @Shadow
-    double x;
+    private double x;
 
     @Shadow
-    double y;
+    private double y;
 
     @Inject(method = "onCursorPos", at = @At("HEAD"))
     void craftui$onCursorPos(long window, double mouseX, double mouseY, CallbackInfo ci,
@@ -96,8 +96,12 @@ public class MouseMixin {
 
     @Inject(method = "onMouseButton", at = @At("HEAD"), cancellable = true)
     void craftui$onMouseButton(long window, int button, int action, int mods, CallbackInfo ci) {
-        if (AppManager.wantCaptureMouse())
+        if (AppManager.wantCaptureMouse()) {
             ci.cancel();
+            return;
+        }
+
+        MouseUtils.setMousePressed(action == GLFW.GLFW_PRESS);
     }
 
     @Inject(method = "onMouseScroll", at = @At("HEAD"), cancellable = true)

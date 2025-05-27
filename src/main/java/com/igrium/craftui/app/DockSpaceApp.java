@@ -5,11 +5,13 @@ import com.igrium.craftui.input.ViewportController;
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.flag.ImGuiFocusedFlags;
+import imgui.flag.ImGuiHoveredFlags;
 import imgui.flag.ImGuiWindowFlags;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 
 /**
  * A CraftApp that creates an ImGui dockspace with a game viewport in the center.
@@ -49,17 +51,6 @@ public abstract class DockSpaceApp extends CraftApp {
     @Setter
     private ViewportInputMode viewportInputMode = ViewportInputMode.FOCUS;
 
-    @Nullable
-    @Getter
-    private ViewportController viewportController;
-
-    public void setViewportController(@Nullable ViewportController viewportController) {
-        if (viewportController != null && viewportController.getApp() != this) {
-            throw new IllegalArgumentException("Viewport controller belongs to the wrong app!");
-        }
-        this.viewportController = viewportController;
-    }
-
     @Override
     protected void render(MinecraftClient client) {
         ImGui.setNextWindowBgAlpha(0f);
@@ -70,6 +61,14 @@ public abstract class DockSpaceApp extends CraftApp {
     
 //    protected abstract void renderApp(MinecraftClient client, int dockSpaceId);
 
+    /**
+     * Check if the mouse is currently pressed over the game viewport.
+     * @param mouseButton ImGui mouse button to check. (0=left, 1=middle, 2=right)
+     */
+    // TODO: Find a better place to put this
+    protected static boolean mousePressedOverViewport(int mouseButton) {
+        return (ImGui.isWindowHovered() || MinecraftClient.getInstance().mouse.isCursorLocked()) && ImGui.isMouseDown(mouseButton);
+    }
 
     protected final boolean beginViewport(String name, int imGuiWindowFlags) {
         if (didBeginViewport) {
@@ -80,10 +79,6 @@ public abstract class DockSpaceApp extends CraftApp {
         ImGui.setNextWindowDockID(dockSpaceId);
         if (!ImGui.begin(name, imGuiWindowFlags | ImGuiWindowFlags.NoBackground)) {
             return false;
-        }
-
-        if (viewportController != null) {
-            viewportController.onRenderViewport();
         }
 
         // Focus game when viewport is clicked.
