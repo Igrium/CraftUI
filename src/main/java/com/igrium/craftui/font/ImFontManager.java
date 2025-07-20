@@ -73,8 +73,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
     private final Set<Identifier> complainedIds = new HashSet<>();
 
     @Override
-    public CompletableFuture<Void> reload(Synchronizer synchronizer, ResourceManager manager, Profiler prepareProfiler, Profiler applyProfiler,
-            Executor prepareExecutor, Executor applyExecutor) {
+    public CompletableFuture<Void> reload(Synchronizer synchronizer, ResourceManager manager, Executor prepareExecutor, Executor applyExecutor) {
         
         fontFiles.clear();
         
@@ -85,7 +84,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
             String fontPath = fileName.getPath().substring("fonts/".length());
             fontPath = FilenameUtils.removeExtension(fontPath);
-            final Identifier fontID = new Identifier(fileName.getNamespace(), fontPath);
+            final Identifier fontID = Identifier.of(fileName.getNamespace(), fontPath);
             
             final LoadedFontFile file = new LoadedFontFile();
             fontFiles.put(fontID, file);
@@ -94,7 +93,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             futures.add(CompletableFuture.runAsync(() -> {
 
                 /* Find and load config */
-                Identifier configId = new Identifier(fontID.getNamespace(), "fonts/" + fontID.getPath() + ".json");
+                Identifier configId = Identifier.of(fontID.getNamespace(), "fonts/" + fontID.getPath() + ".json");
                 Optional<Resource> configFile = manager.getResource(configId);
                 FontConfig config = new FontConfig();
 
@@ -238,9 +237,9 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
     @Override
     public Identifier getFabricId() {
-        return new Identifier("craftui:fonts");
+        return Identifier.of("craftui:fonts");
     }
-    
+
     public static class FontConfig {
         /**
          * Base sizse of the font in pixels

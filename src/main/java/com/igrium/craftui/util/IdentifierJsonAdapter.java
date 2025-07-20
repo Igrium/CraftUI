@@ -17,7 +17,7 @@ public class IdentifierJsonAdapter extends TypeAdapter<Identifier> {
 
     @Override
     public Identifier read(JsonReader in) throws IOException {
-        return new Identifier(in.nextString());
+        return Identifier.of(in.nextString());
     }
     
 }

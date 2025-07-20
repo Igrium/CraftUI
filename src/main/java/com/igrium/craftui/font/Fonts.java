@@ -9,12 +9,12 @@ import net.minecraft.util.Identifier;
 public final class Fonts {
     private Fonts() {}
 
-    public static final Identifier INTER = new Identifier("craftui:inter");
+    public static final Identifier INTER = Identifier.of("craftui:inter");
     public static ImFont inter() {
         return ImFontManager.getFont(INTER);
     }
 
-    public static final Identifier INTER_MEDIUM = new Identifier("craftui:inter-medium");
+    public static final Identifier INTER_MEDIUM = Identifier.of("craftui:inter-medium");
     public static ImFont interMedium() {
         return ImFontManager.getFont(INTER_MEDIUM);
     }

@@ -40,9 +40,9 @@ public class TestApp extends DockSpaceApp {
                                 new FileDialogs.FileFilter("PNG Files", ".png"))
                         .thenAcceptAsync(opt -> {
                             if (opt.isPresent()) {
-                                client.player.sendMessage(Text.literal("You chose " + opt.get()));
+                                client.player.sendMessage(Text.literal("You chose " + opt.get()), false);
                             } else {
-                                client.player.sendMessage(Text.literal("You didn't select a file."));
+                                client.player.sendMessage(Text.literal("You didn't select a file."), false);
                             }
                         }, client);
             }
