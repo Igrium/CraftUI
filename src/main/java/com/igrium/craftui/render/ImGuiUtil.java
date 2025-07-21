@@ -1,5 +1,6 @@
 package com.igrium.craftui.render;
 
+import imgui.extension.implot.ImPlot;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,7 @@ public class ImGuiUtil {
         }
 
         ImGui.createContext();
+        ImPlot.createContext();
         ImGuiEvents.PRE_INIT.invoker().preInit();
 
         ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NavEnableKeyboard | ImGuiConfigFlags.DockingEnable);
