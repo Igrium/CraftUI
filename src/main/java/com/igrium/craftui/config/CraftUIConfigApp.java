@@ -1,5 +1,6 @@
 package com.igrium.craftui.config;
 
+import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.screen.CraftAppScreen;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.app.CraftApp;
@@ -24,6 +25,7 @@ public class CraftUIConfigApp extends CraftApp {
 
     private final ImBoolean preferNativeFileDialog = new ImBoolean(config.isPreferNativeFileDialog());
     private final ImBoolean enableViewports = new ImBoolean(config.isEnableViewports());
+    private final ImBoolean layoutPersistent = new ImBoolean(config.isLayoutPersistent());
     private final ImBoolean enableDebugCommand = new ImBoolean(config.isEnableDebugCommands());
 
     @Override
@@ -33,10 +35,17 @@ public class CraftUIConfigApp extends CraftApp {
 
         ImGui.setNextWindowPos(viewport.getCenterX(), viewport.getCenterY(), ImGuiCond.Always, .5f, .5f);
         if (ImGui.begin(
-                "CraftUI Options", ImGuiWindowFlags.NoCollapse
+                TextUtils.getString(Text.translatable("options.craftui.header")), ImGuiWindowFlags.NoCollapse
                 | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove)) {
+
             checkbox("options.craftui.preferNativeFileDialog", preferNativeFileDialog, "options.craftui.preferNativeFileDialog.tooltip");
             checkbox("options.craftui.enableViewports", enableViewports, "options.craftui.enableViewports.tooltip");
+            checkbox("layoutPersistent", layoutPersistent, "layoutPersistent.tooltip");
+
+            if (button(Text.translatable("options.craftui.resetLayout"), Text.translatable("options.craftui.resetLayout.tooltip"))) {
+                AppManager.resetUiLayouts();
+            }
+
             checkbox("options.craftui.enableDebugCommands", enableDebugCommand, "options.craftui.enableDebugCommands.tooltip");
 
             ImGui.separator();
@@ -68,7 +77,14 @@ public class CraftUIConfigApp extends CraftApp {
         }
         return updated;
     }
-    
+
+    private boolean button(Text name, @Nullable Text toolTip) {
+        boolean pressed = ImGui.button(TextUtils.getString(name));
+        if (toolTip != null && ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+            ImGui.setTooltip(TextUtils.getString(toolTip));
+        }
+        return pressed;
+    }
 
     private void onUpdate() {
         saveConfirmation.setUnsaved(true);
@@ -77,6 +93,7 @@ public class CraftUIConfigApp extends CraftApp {
     private void save() {
         config.setPreferNativeFileDialog(preferNativeFileDialog.get());
         config.setEnableViewports(enableViewports.get());
+        config.setLayoutPersistent(layoutPersistent.get());
         config.setEnableDebugCommands(enableDebugCommand.get());
         CraftUIConfigHandler.saveConfig();
 
@@ -84,8 +101,6 @@ public class CraftUIConfigApp extends CraftApp {
     }
 
     public static CraftAppScreen<CraftUIConfigApp> createScreen() {
-        CraftAppScreen<CraftUIConfigApp> screen = new CraftAppScreen<>(new CraftUIConfigApp());
-//        screen.setCloseOnEsc(false);
-        return screen;
+        return new CraftAppScreen<>(new CraftUIConfigApp());
     }
 }

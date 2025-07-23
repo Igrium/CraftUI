@@ -11,6 +11,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
+import com.igrium.craftui.CraftUI;
+import com.igrium.craftui.config.IniSettingsManager;
 import com.igrium.craftui.input.CursorLockManager;
 import com.igrium.craftui.input.ViewportController;
 import imgui.ImGuiIO;
@@ -201,7 +203,6 @@ public final class AppManager {
         if (isCleanupFrame && !needsCleanupFrame)
             return;
 
-
         ImGuiUtil.IM_GLFW.newFrame();
         ImGui.newFrame();
     
@@ -236,7 +237,20 @@ public final class AppManager {
             glfwMakeContextCurrent(backupWindowPtr);
         }
 
+        if (ImGui.getIO().getWantSaveIniSettings() && CraftUI.getConfig().isLayoutPersistent()) {
+            IniSettingsManager.setImGuiSettings(ImGui.saveIniSettingsToMemory());
+            IniSettingsManager.saveToDisk();
+            ImGui.getIO().setWantSaveIniSettings(false);
+        }
+
         needsCleanupFrame = !isCleanupFrame;
+    }
+
+    public static void resetUiLayouts() {
+        IniSettingsManager.setImGuiSettings("");
+        ImGui.loadIniSettingsFromMemory("");
+        ImGui.getStateStorage().clear();
+        IniSettingsManager.saveToDisk();
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.igrium.craftui.render;
 
+import com.igrium.craftui.config.IniSettingsManager;
 import imgui.extension.implot.ImPlot;
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -54,8 +55,10 @@ public class ImGuiUtil {
         ImGui.getIO().setConfigMacOSXBehaviors(MinecraftClient.IS_SYSTEM_MAC);
         if (CraftUI.getConfig().isEnableViewports())
             ImGui.getIO().addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
+
         ImGui.getIO().setIniFilename(null);
-        
+        ImGui.loadIniSettingsFromMemory(IniSettingsManager.getImGuiSettings());
+
         ImGuiEvents.INIT_IO.invoker().initIO(ImGui.getIO());
         
         IM_GLFW.init(client.getWindow().getHandle(), true);

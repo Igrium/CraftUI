@@ -38,6 +38,11 @@ public class CraftUIConfigHandler {
         try(var writer = Files.newBufferedWriter(CONFIG_FILE)) {
             GSON.toJson(config, writer);
             FileDialogs.clearImpl();
+
+            if (!config.isLayoutPersistent()) {
+                IniSettingsManager.clearIniFile();
+            }
+
         } catch (IOException e) {
             CraftUI.LOGGER.error("Error saving CraftUI config:", e);
         }
