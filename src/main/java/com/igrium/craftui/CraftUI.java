@@ -2,6 +2,7 @@ package com.igrium.craftui;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.igrium.craftui.impl.CraftUIConfigCallback;
 import com.igrium.craftui.impl.config.IniSettingsManager;
 import lombok.Getter;
 import net.fabricmc.loader.api.FabricLoader;
@@ -58,6 +59,7 @@ public class CraftUI implements ClientModInitializer {
         LOGGER.info("Loading CraftUI config from {}", CONFIG_FILE);
         try (var reader = Files.newBufferedReader(CONFIG_FILE)) {
             config.loadConfig(reader);
+            CraftUIConfigCallback.EVENT.invoker().onUpdateConfig(config);
             return true;
         } catch (Exception e) {
             LOGGER.error("Error loading CraftUI config", e);
@@ -70,6 +72,7 @@ public class CraftUI implements ClientModInitializer {
      * @return If the config saved successfully.
      */
     public static boolean saveConfig() {
+        CraftUIConfigCallback.EVENT.invoker().onUpdateConfig(config);
         LOGGER.info("Saving CraftUI config to {}", CONFIG_FILE);
         try (var writer = Files.newBufferedWriter(CONFIG_FILE)) {
             config.saveConfig(writer);

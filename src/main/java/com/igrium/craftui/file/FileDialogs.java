@@ -3,6 +3,7 @@ package com.igrium.craftui.file;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import com.igrium.craftui.impl.CraftUIConfigCallback;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,6 @@ public class FileDialogs {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileDialogs.class);
 
-
     private static boolean isPreferNative() {
         return CraftUI.getConfig().isPreferNativeFileDialog();
     }
@@ -34,10 +34,19 @@ public class FileDialogs {
 
     private static FileDialogInterface impl;
 
+    private static boolean isFirstInit = true;
+
     private static synchronized void init() {
         if (impl == null) {
             if (!(isPreferNative() && initNfd())) {
                 initImgui();
+            }
+
+            if (isFirstInit) {
+                CraftUIConfigCallback.EVENT.register(config -> {
+                    impl = null;
+                });
+                isFirstInit = true;
             }
         }
     }

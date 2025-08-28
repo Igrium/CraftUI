@@ -32,7 +32,7 @@ class ImFileDialog implements FileDialogInterface {
             app.setFilters(compileFilters(filters));
         } else if (defaultName != null) {
             String ext = FilenameUtils.getExtension(defaultName);
-            if (ext != null && !ext.isBlank()) {
+            if (!ext.isBlank()) {
                 app.setFilters("." + ext);
             }
         }
@@ -79,7 +79,9 @@ class ImFileDialog implements FileDialogInterface {
     }
     
     private static String compileFilters(FileFilter... filters) {
-        List<String> strings = Arrays.stream(filters).flatMap(f -> Arrays.stream(f.extensions())).toList();
+        List<String> strings = Arrays.stream(filters)
+                .flatMap(f -> Arrays.stream(f.extensions()))
+                .map(f -> f.startsWith(".") ? f : "." + f).toList();
         return String.join(",", strings);
     }
 }
