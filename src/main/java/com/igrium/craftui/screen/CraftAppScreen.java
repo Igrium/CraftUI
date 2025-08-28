@@ -3,6 +3,8 @@ package com.igrium.craftui.screen;
 import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.app.CraftApp;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
@@ -13,8 +15,10 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
 
     private final T app;
 
+    @Setter
     private boolean closeOnEsc = true;
 
+    @Getter
     private Screen parent;
 
     public CraftAppScreen(T app) {
@@ -50,17 +54,9 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
         }
     }
 
-    public void setCloseOnEsc(boolean closeOnEscape) {
-        this.closeOnEsc = closeOnEscape;
-    }
-    
     @Override
     public boolean shouldCloseOnEsc() {
         return closeOnEsc;
-    }
-
-    public Screen getParent() {
-        return parent;
     }
 
     public CraftAppScreen<T> setParent(Screen parent) {

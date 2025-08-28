@@ -156,14 +156,14 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                 ImFont font = renderFont(atlas, file);
                 fonts.put(entry.getKey(), font);
             } catch (Exception e) {
-                LOGGER.error("Error rendering font {}. The ttf file was likely invalid.", e, entry.getKey());
+                LOGGER.error("Error rendering font {}. The ttf file was likely invalid.",entry.getKey(), e);
             }
         }
         atlas.build();
         ImGuiUtil.IM_GL3.updateFontsTexture();
         atlas.clearTexData();
 
-        LOGGER.info("Created font atlas with " + fonts.size() + " font(s)");
+        LOGGER.info("Created font atlas with {} font(s)", fonts.size());
         FontReloadCallback.EVENT.invoker().onFontsReloaded(this);
     }
 
@@ -232,7 +232,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
     private static class FontConfig {
         /**
-         * Base sizse of the font in pixels
+         * Base size of the font in pixels
          */
         public float size = 1f;
 

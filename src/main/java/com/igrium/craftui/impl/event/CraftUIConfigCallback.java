@@ -1,4 +1,4 @@
-package com.igrium.craftui.impl;
+package com.igrium.craftui.impl.event;
 
 import com.igrium.craftui.config.CraftUIConfig;
 import net.fabricmc.fabric.api.event.Event;
