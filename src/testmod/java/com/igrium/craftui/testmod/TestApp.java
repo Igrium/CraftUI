@@ -1,12 +1,24 @@
 package com.igrium.craftui.testmod;
 
+import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
+import com.igrium.craftui.util.RaycastUtils;
 import imgui.ImGui;
 import imgui.type.ImInt;
 import imgui.type.ImString;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Mouse;
+import net.minecraft.particle.ParticleType;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.text.Text;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
+import org.joml.Vector2f;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 public class TestApp extends DockSpaceApp {
 
@@ -60,39 +72,34 @@ public class TestApp extends DockSpaceApp {
             ImGui.text("This is the viewport!");
             boolean mousePressed = mousePressedOverViewport(0);
             ImGui.text("Mouse down: " + mousePressed);
-            setViewportInputMode(mousePressed ? ViewportInputMode.ALWAYS : ViewportInputMode.NONE);
+
+
+            if (getViewportInputMode() == ViewportInputMode.HOLD || getViewportInputMode() == ViewportInputMode.NONE) {
+                if (ImGui.isWindowHovered() && ImGui.isMouseClicked(0)) {
+                    raycastExplosion();
+                }
+            }
         }
         ImGui.end();
 
     }
 
-    // @Override
-    // public void render(MinecraftClient client) {
-    //     // if (ImGui.begin("Main", 131502)) {
-    //     //     ImGui.button("I am a button!");
-    //     //     ImGui.end();
-    //     // }
-        
-    //     ImGui.setNextWindowBgAlpha(.2f);
-    //     int mainDock = ImGui.dockSpaceOverViewport(ImGui.getMainViewport(), ImGuiDockNodeFlags.NoCentralNode);
+    private void raycastExplosion() {
+        Mouse mouse = MinecraftClient.getInstance().mouse;
+//        float mouseX = ImGui.getMousePosX();
+//        float mouseY = ImGui.getMousePosY();
 
-    //     ImGui.setNextWindowBgAlpha(0f);
-    //     ImGui.setNextWindowDockID(mainDock);
-    //     if (ImGui.begin("Main Window", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoCollapse)) {
-    //         ImGui.button("I am a button!");
-    //         // ImGui.image(framebuffer.getColorAttachment(), framebuffer.textureWidth, framebuffer.textureHeight);
-    //         ImGui.end();
-    //     }
+        World world = MinecraftClient.getInstance().world;
+        if (world == null) {
+            return;
+        }
 
-    //     if (ImGui.begin("Upper Window")) {
-    //         ImGui.text("This is the upper window!");
-    //         ImGui.end();
-    //     }
-    // }
+        HitResult raycast = RaycastUtils.raycastViewport((float)mouse.getX(), (float)mouse.getY(), 1000, e -> false, false);
+        LoggerFactory.getLogger(getClass()).info("Position: {} {} {}", raycast.getPos().x, raycast.getPos().y, raycast.getPos().z);
 
-    // @Override
-    // protected ViewportBounds getCustomViewportBounds() {
-    //     return new ViewportBounds(256, 256, 768, 768);
-    // }
-    
+        if (raycast.getType() != HitResult.Type.MISS) {
+            Vec3d pos = raycast.getPos();
+//            world.addParticle(ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 0, 0, 0);
+        }
+    }
 }

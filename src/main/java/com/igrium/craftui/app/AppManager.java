@@ -14,9 +14,12 @@ import java.util.Set;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.impl.config.IniSettingsManager;
 import com.igrium.craftui.impl.input.CursorLockManager;
+import com.igrium.craftui.impl.input.MouseUtils;
 import imgui.ImGuiIO;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
+import org.jetbrains.annotations.Nullable;
+import org.joml.Vector2d;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +46,7 @@ public final class AppManager {
     private static final Queue<CraftApp> addQueue = new ArrayDeque<>();
     private static final Queue<CraftApp> removeQueue = new ArrayDeque<>();
 
+    @Nullable
     private static ViewportBounds currentViewportBounds;
 
     /**
@@ -147,8 +151,25 @@ public final class AppManager {
         client.mouse.onResolutionChanged();
     }
 
-    public static ViewportBounds getCustomViewportBounds() {
+    public static @Nullable ViewportBounds getCustomViewportBounds() {
         return currentViewportBounds;
+    }
+
+    /**
+     * Return the location on the Minecraft viewport that a given 2D mouse position resides,
+     * accounting for custom viewport bounds.
+     *
+     * @param globalX Mouse X position relative to the main window.
+     * @param globalY Mouse Y position relative to the main window.
+     * @return The equivalent position relative to the Minecraft viewport (appropriate to sending to ingame UI)
+     */
+    public static Vector2d getViewportMousePos(double globalX, double globalY) {
+        ViewportBounds viewportBounds = getCustomViewportBounds();
+        if (viewportBounds == null) {
+            return new Vector2d(globalX, globalY);
+        }
+
+        return MouseUtils.calculateViewportMouse(MinecraftClient.getInstance().getWindow(), viewportBounds, globalX, globalY);
     }
 
     private static boolean forwardInputNextFrame;

@@ -46,7 +46,7 @@ public class MouseMixin {
 
         ViewportBounds viewport = AppManager.getCustomViewportBounds();
         if (viewport != null) {
-            var newPos = MouseUtils.calculateViewportMouse(client, viewport, x.get(), y.get());
+            var newPos = MouseUtils.calculateViewportMouse(client.getWindow(), viewport, x.get(), y.get());
             x.set(newPos.x());
             y.set(newPos.y());
         }

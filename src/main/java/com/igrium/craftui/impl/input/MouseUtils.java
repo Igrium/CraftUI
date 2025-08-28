@@ -5,11 +5,10 @@ import com.igrium.craftui.app.CraftApp.ViewportBounds;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.util.Window;
+import org.joml.Vector2d;
 
 public class MouseUtils {
-    public static record MousePos(double x, double y) {
-
-    }
 
     /**
      * Whether the minecraft client thinks the mouse is pressed.
@@ -18,13 +17,13 @@ public class MouseUtils {
     @Getter @Setter
     private static boolean mousePressed;
 
-    public static MousePos calculateViewportMouse(MinecraftClient client, ViewportBounds viewport, double globalX, double globalY) {
+    public static Vector2d calculateViewportMouse(Window window, ViewportBounds viewport, double globalX, double globalY) {
         // Isn't OpenGL flipped y-axis fun??
-        double yOffset = client.getWindow().getHeight() - viewport.height() - viewport.y();
+        double yOffset = window.getHeight() - viewport.height() - viewport.y();
 
-        double xScale = client.getWindow().getWidth() / (double) viewport.width();
-        double yScale = client.getWindow().getHeight() / (double) viewport.height();
+        double xScale = window.getWidth() / (double) viewport.width();
+        double yScale = window.getHeight() / (double) viewport.height();
 
-        return new MousePos((globalX - viewport.x()) * xScale, (globalY - yOffset) * yScale);
+        return new Vector2d((globalX - viewport.x()) * xScale, (globalY - yOffset) * yScale);
     }
 }

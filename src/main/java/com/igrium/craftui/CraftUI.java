@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.igrium.craftui.impl.event.CraftUIConfigCallback;
 import com.igrium.craftui.impl.config.IniSettingsManager;
+import com.igrium.craftui.util.RaycastUtils;
 import lombok.Getter;
 import net.fabricmc.loader.api.FabricLoader;
 import org.jetbrains.annotations.NotNull;
@@ -35,6 +36,8 @@ public class CraftUI implements ClientModInitializer {
         }
 
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(ImFontManager.getInstance());
+
+        RaycastUtils.register();
 
         if (getConfig().isEnableDebugCommands()) {
             ClientCommandRegistrationCallback.EVENT.register(CraftUICommand::register);
