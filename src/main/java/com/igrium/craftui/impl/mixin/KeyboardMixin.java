@@ -1,4 +1,4 @@
-package com.igrium.craftui.mixin;
+package com.igrium.craftui.impl.mixin;
 
 import com.igrium.craftui.app.AppManager;
 import net.minecraft.client.Keyboard;

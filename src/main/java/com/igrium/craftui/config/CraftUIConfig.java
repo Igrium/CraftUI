@@ -2,12 +2,19 @@ package com.igrium.craftui.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.igrium.craftui.CraftUI;
 import lombok.Getter;
 import lombok.Setter;
 import net.fabricmc.loader.api.FabricLoader;
 
-@Setter
-@Getter
+import java.io.Reader;
+import java.io.Writer;
+
+/**
+ * Configuration settings for CraftUI
+ * @see CraftUI#getConfig()
+ */
+@Setter @Getter
 public final class CraftUIConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -36,5 +43,14 @@ public final class CraftUIConfig {
         this.preferNativeFileDialog = other.preferNativeFileDialog;
         this.enableViewports = other.enableViewports;
         this.enableDebugCommands = other.enableDebugCommands;
+    }
+
+    public void loadConfig(Reader reader) {
+        CraftUIConfig otherConfig = GSON.fromJson(reader, CraftUIConfig.class);
+        this.copyFrom(otherConfig);
+    }
+
+    public void saveConfig(Writer writer) {
+        GSON.toJson(this, writer);
     }
 }

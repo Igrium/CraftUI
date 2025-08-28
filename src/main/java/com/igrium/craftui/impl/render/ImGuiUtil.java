@@ -1,6 +1,6 @@
-package com.igrium.craftui.render;
+package com.igrium.craftui.impl.render;
 
-import com.igrium.craftui.config.IniSettingsManager;
+import com.igrium.craftui.impl.config.IniSettingsManager;
 import imgui.extension.implot.ImPlot;
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -32,11 +32,8 @@ public class ImGuiUtil {
     public static void ensureInitialized() {
         if (initialized)
             return;
-        if (!RenderSystem.isOnRenderThreadOrInit()) {
-            RenderSystem.recordRenderCall(ImGuiUtil::ensureInitialized);
-        } else {
-            init();
-        }
+        RenderSystem.assertOnRenderThreadOrInit();
+        init();
     }
 
     public static void init() {
@@ -51,7 +48,6 @@ public class ImGuiUtil {
         ImGuiEvents.PRE_INIT.invoker().preInit();
 
         ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NavEnableKeyboard | ImGuiConfigFlags.DockingEnable);
-//        ImGui.getIO().addConfigFlags(ImGuiConfigFlags.DockingEnable);
         ImGui.getIO().setConfigMacOSXBehaviors(MinecraftClient.IS_SYSTEM_MAC);
         if (CraftUI.getConfig().isEnableViewports())
             ImGui.getIO().addConfigFlags(ImGuiConfigFlags.ViewportsEnable);

@@ -20,7 +20,7 @@ import net.minecraft.client.MinecraftClient;
 class NFDFileDialog implements FileDialogInterface {
     private static final ThreadLocal<Boolean> initialized = ThreadLocal.withInitial(() -> false);
 
-    private static Executor dialogExecutor;
+    private static final Executor dialogExecutor;
 
     // The UI can only be opened on the main thread on Mac. However, this will cause
     // the rest of the game to hang, so only do that if we have to.

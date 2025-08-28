@@ -11,14 +11,12 @@ import com.igrium.craftui.file.FileDialogs.FileFilter;
  * An implementation of communicating to the OS to open a file dialog.
  */
 public interface FileDialogInterface {
-    public void init() throws Exception;
+    void init() throws Exception;
 
-    
+    CompletableFuture<Optional<String>> showSaveDialog(@Nullable String defaultPath,
+                                                       @Nullable String defaultName, FileFilter... filters);
 
-    public CompletableFuture<Optional<String>> showSaveDialog(@Nullable String defaultPath,
-                                                              @Nullable String defaultName, FileFilter... filters);
+    CompletableFuture<Optional<String>> showOpenDialog(@Nullable String defaultPath, FileFilter... filters);
 
-    public CompletableFuture<Optional<String>> showOpenDialog(@Nullable String defaultPath, FileFilter... filters);
-
-    public CompletableFuture<Optional<String>> showOpenFolderDialog(@Nullable String defaultPath);
+    CompletableFuture<Optional<String>> showOpenFolderDialog(@Nullable String defaultPath);
 }

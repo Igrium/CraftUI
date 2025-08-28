@@ -1,4 +1,4 @@
-package com.igrium.craftui.mixin;
+package com.igrium.craftui.impl.mixin;
 
 import net.minecraft.client.Mouse;
 import org.spongepowered.asm.mixin.Mixin;

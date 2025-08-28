@@ -11,9 +11,9 @@ import java.util.function.Function;
  * An event designed for UI usage.
  */
 public interface UIEvent<T> {
-    public T invoker();
-    public void addListener(T listener);
-    public void removeListener(Object listener);
+    T invoker();
+    void addListener(T listener);
+    void removeListener(Object listener);
 
     /**
      * Create a new UI event backed by a collection and invoker factory.
@@ -22,7 +22,7 @@ public interface UIEvent<T> {
      * @param invokerFactory Invoker factory
      * @return The event
      */
-    public static <T> UIEvent<T> collectionBacked(Function<Collection<? extends T>, T> invokerFactory) {
+    static <T> UIEvent<T> collectionBacked(Function<Collection<? extends T>, T> invokerFactory) {
         return new CollectionBackedUIEvent<>(invokerFactory);
     }
 
@@ -32,7 +32,7 @@ public interface UIEvent<T> {
      * @param <T> Event argument type
      * @return The event
      */
-    public static <T> UIEvent<Consumer<T>> ofConsumer() {
+    static <T> UIEvent<Consumer<T>> ofConsumer() {
         return new CollectionBackedUIEvent<>(listeners -> val -> {
             for (var l : listeners) {
                 l.accept(val);
@@ -45,7 +45,7 @@ public interface UIEvent<T> {
      * 
      * @return The event
      */
-    public static UIEvent<Runnable> ofRunnable() {
+    static UIEvent<Runnable> ofRunnable() {
         return new CollectionBackedUIEvent<>(listeners -> () -> {
             for (var l : listeners) {
                 l.run();

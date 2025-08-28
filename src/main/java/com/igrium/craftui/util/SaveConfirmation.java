@@ -10,6 +10,7 @@ import lombok.Setter;
 /**
  * A widget that shows a confirmation screen when you try to close an app.
  */
+@Deprecated
 public class SaveConfirmation {
 
     protected final Runnable saveRunnable;

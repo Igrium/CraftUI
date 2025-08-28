@@ -1,11 +1,11 @@
-package com.igrium.craftui.config;
+package com.igrium.craftui.impl.config;
 
 import com.igrium.craftui.app.AppManager;
+import com.igrium.craftui.config.CraftUIConfig;
 import com.igrium.craftui.screen.CraftAppScreen;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.app.CraftApp;
 import com.igrium.craftui.util.SaveConfirmation;
-import com.igrium.craftui.util.TextUtils;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiCond;
@@ -35,7 +35,7 @@ public class CraftUIConfigApp extends CraftApp {
 
         ImGui.setNextWindowPos(viewport.getCenterX(), viewport.getCenterY(), ImGuiCond.Always, .5f, .5f);
         if (ImGui.begin(
-                TextUtils.getString(Text.translatable("options.craftui.header")), ImGuiWindowFlags.NoCollapse
+                Text.translatable("options.craftui.header").getString(), ImGuiWindowFlags.NoCollapse
                 | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove)) {
 
             checkbox("options.craftui.preferNativeFileDialog", preferNativeFileDialog, "options.craftui.preferNativeFileDialog.tooltip");
@@ -68,9 +68,9 @@ public class CraftUIConfigApp extends CraftApp {
     }
 
     private boolean checkbox(Text name, ImBoolean active, @Nullable Text helpText) {
-        boolean updated = ImGui.checkbox(TextUtils.getString(name), active);
+        boolean updated = ImGui.checkbox(name.getString(), active);
         if (helpText != null && ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-            ImGui.setTooltip(TextUtils.getString(helpText));
+            ImGui.setTooltip(helpText.getString());
         }
         if (updated) {
             onUpdate();
@@ -79,9 +79,9 @@ public class CraftUIConfigApp extends CraftApp {
     }
 
     private boolean button(Text name, @Nullable Text toolTip) {
-        boolean pressed = ImGui.button(TextUtils.getString(name));
+        boolean pressed = ImGui.button(name.getString());
         if (toolTip != null && ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-            ImGui.setTooltip(TextUtils.getString(toolTip));
+            ImGui.setTooltip(toolTip.getString());
         }
         return pressed;
     }
@@ -95,7 +95,7 @@ public class CraftUIConfigApp extends CraftApp {
         config.setEnableViewports(enableViewports.get());
         config.setLayoutPersistent(layoutPersistent.get());
         config.setEnableDebugCommands(enableDebugCommand.get());
-        CraftUIConfigHandler.saveConfig();
+        CraftUI.saveConfig();
 
         saveConfirmation.setUnsaved(false);
     }

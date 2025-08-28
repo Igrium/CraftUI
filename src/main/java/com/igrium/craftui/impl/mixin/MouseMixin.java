@@ -1,6 +1,6 @@
-package com.igrium.craftui.mixin;
+package com.igrium.craftui.impl.mixin;
 
-import com.igrium.craftui.input.CursorLockManager;
+import com.igrium.craftui.impl.input.CursorLockManager;
 import net.minecraft.client.option.KeyBinding;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.app.CraftApp.ViewportBounds;
-import com.igrium.craftui.input.MouseUtils;
+import com.igrium.craftui.impl.input.MouseUtils;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalDoubleRef;
 

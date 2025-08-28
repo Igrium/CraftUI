@@ -1,4 +1,4 @@
-package com.igrium.craftui.dev.commands;
+package com.igrium.craftui.impl.commands;
 
 import com.igrium.craftui.screen.CraftAppScreen;
 import com.igrium.craftui.app.AppManager;

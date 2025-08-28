@@ -10,9 +10,10 @@ import org.jetbrains.annotations.Nullable;
 
 import com.igrium.craftui.file.FileDialogs.FileFilter;
 
-public class AWTFileDialog implements FileDialogInterface {
+@Deprecated
+class AWTFileDialog implements FileDialogInterface {
 
-    private static Executor dialogExecutor = Executors
+    private static final Executor dialogExecutor = Executors
             .newSingleThreadExecutor(r -> new Thread(r, "File Dialog Thread"));
 
     @Override

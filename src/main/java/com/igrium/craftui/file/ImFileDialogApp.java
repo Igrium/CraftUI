@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
 
-public class ImFileDialogApp extends CraftApp {
+class ImFileDialogApp extends CraftApp {
 
     @Getter
     private final CompletableFuture<Optional<String>> future = new CompletableFuture<>();

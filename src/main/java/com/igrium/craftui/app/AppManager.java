@@ -12,21 +12,17 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.igrium.craftui.CraftUI;
-import com.igrium.craftui.config.IniSettingsManager;
-import com.igrium.craftui.input.CursorLockManager;
-import com.igrium.craftui.input.ViewportController;
+import com.igrium.craftui.impl.config.IniSettingsManager;
+import com.igrium.craftui.impl.input.CursorLockManager;
 import imgui.ImGuiIO;
-import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.app.CraftApp.ViewportBounds;
 import com.igrium.craftui.font.Fonts;
-import com.igrium.craftui.render.ImGuiUtil;
+import com.igrium.craftui.impl.render.ImGuiUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImGui;
@@ -34,6 +30,10 @@ import imgui.flag.ImGuiConfigFlags;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.Window;
 
+/**
+ * Manages global app state, keeping track of active apps, and rendering.
+ * Also houses various global functions such as mouse lock overriding.
+ */
 public final class AppManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(AppManager.class);
 

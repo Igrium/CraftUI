@@ -1,4 +1,4 @@
-package com.igrium.craftui.mixin;
+package com.igrium.craftui.impl.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;

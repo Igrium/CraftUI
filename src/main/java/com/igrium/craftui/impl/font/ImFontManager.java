@@ -1,4 +1,4 @@
-package com.igrium.craftui.font;
+package com.igrium.craftui.impl.font;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -22,9 +22,9 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.igrium.craftui.event.FontReloadCallback;
-import com.igrium.craftui.util.IdentifierJsonAdapter;
-import com.igrium.craftui.render.ImGuiUtil;
-import com.igrium.craftui.util.Vector2fJsonAdapter;
+import com.igrium.craftui.impl.util.IdentifierJsonAdapter;
+import com.igrium.craftui.impl.render.ImGuiUtil;
+import com.igrium.craftui.impl.util.Vector2fJsonAdapter;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImFont;
@@ -36,7 +36,6 @@ import net.minecraft.client.util.math.Vector2f;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.profiler.Profiler;
 
 public class ImFontManager implements IdentifiableResourceReloadListener {
 
@@ -226,21 +225,12 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         return font;
     }
 
-    /**
-     * Get a font by its ID. Shortcut for <code>getInstance().get(id)</code>.
-     * @param id ID to use.
-     * @return The font, or a default font if it does not exist.
-     */
-    public static ImFont getFont(Identifier id) {
-        return getInstance().get(id);
-    }
-
     @Override
     public Identifier getFabricId() {
         return Identifier.of("craftui:fonts");
     }
 
-    public static class FontConfig {
+    private static class FontConfig {
         /**
          * Base sizse of the font in pixels
          */

@@ -1,4 +1,4 @@
-package com.igrium.craftui.util;
+package com.igrium.craftui.impl.util;
 
 import java.io.IOException;
 

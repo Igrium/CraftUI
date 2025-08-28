@@ -1,6 +1,6 @@
 package com.igrium.craftui.app;
 
-import com.igrium.craftui.input.CursorLockManager;
+import com.igrium.craftui.impl.input.CursorLockManager;
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.flag.ImGuiFocusedFlags;
@@ -9,7 +9,6 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.LoggerFactory;
 
 /**
  * A CraftApp that creates an ImGui dockspace with a game viewport in the center.

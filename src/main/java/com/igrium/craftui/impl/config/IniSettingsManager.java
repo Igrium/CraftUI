@@ -1,4 +1,4 @@
-package com.igrium.craftui.config;
+package com.igrium.craftui.impl.config;
 
 import com.igrium.craftui.CraftUI;
 import lombok.Getter;

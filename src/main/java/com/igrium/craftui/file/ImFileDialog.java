@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.file.FileDialogs.FileFilter;
 
-public class ImFileDialog implements FileDialogInterface {
+class ImFileDialog implements FileDialogInterface {
 
     @Override
     public void init() {
