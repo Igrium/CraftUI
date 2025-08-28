@@ -5,12 +5,10 @@ import com.igrium.craftui.config.CraftUIConfig;
 import com.igrium.craftui.screen.CraftAppScreen;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.app.CraftApp;
-import com.igrium.craftui.util.SaveConfirmation;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiHoveredFlags;
-import imgui.flag.ImGuiKey;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import net.minecraft.client.MinecraftClient;
@@ -19,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class CraftUIConfigApp extends CraftApp {
 
-    private final SaveConfirmation saveConfirmation = new SaveConfirmation(this::save, this::close);
+//    private final SaveConfirmation saveConfirmation = new SaveConfirmation(this::save, this::close);
 
     private final CraftUIConfig config = CraftUI.getConfig();
 
@@ -27,6 +25,8 @@ public class CraftUIConfigApp extends CraftApp {
     private final ImBoolean enableViewports = new ImBoolean(config.isEnableViewports());
     private final ImBoolean layoutPersistent = new ImBoolean(config.isLayoutPersistent());
     private final ImBoolean enableDebugCommand = new ImBoolean(config.isEnableDebugCommands());
+
+    private boolean isUnsaved;
 
     @Override
     protected void render(MinecraftClient client) {
@@ -50,15 +50,13 @@ public class CraftUIConfigApp extends CraftApp {
 
             ImGui.separator();
 
-            if (ImGui.button(saveConfirmation.isUnsaved() ? "Apply" : "Close")) {
-                save();
-                saveConfirmation.tryClose();
+            if (ImGui.button(isUnsaved ? "Apply" : "Close")) {
+                if (isUnsaved) {
+                    save();
+                }
+                close();
             };
 
-            if (ImGui.isKeyPressed(ImGuiKey.Space)) {
-                saveConfirmation.tryClose();
-            }
-            saveConfirmation.render();
         }
         ImGui.end();
     }
@@ -87,7 +85,7 @@ public class CraftUIConfigApp extends CraftApp {
     }
 
     private void onUpdate() {
-        saveConfirmation.setUnsaved(true);
+        isUnsaved = true;
     }
     
     private void save() {
@@ -97,7 +95,7 @@ public class CraftUIConfigApp extends CraftApp {
         config.setEnableDebugCommands(enableDebugCommand.get());
         CraftUI.saveConfig();
 
-        saveConfirmation.setUnsaved(false);
+        isUnsaved = false;
     }
 
     public static CraftAppScreen<CraftUIConfigApp> createScreen() {
