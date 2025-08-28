@@ -58,7 +58,7 @@ public class TestApp extends DockSpaceApp {
             }
 
             ImGui.combo("Viewport Input Mode", inputMode, INPUT_MODE_OPTIONS);
-//            setViewportInputMode(ViewportInputMode.values()[inputMode.get()]);
+            setViewportInputMode(ViewportInputMode.values()[inputMode.get()]);
         }
         ImGui.end();
 
