@@ -15,10 +15,10 @@ import net.minecraft.client.util.Window;
 public class WindowMixin {
 
     @Shadow
-    int framebufferWidth;
+    private int framebufferWidth;
 
     @Shadow
-    int framebufferHeight;
+    private int framebufferHeight;
 
     @Inject(method = "onFramebufferSizeChanged", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/Window;getFramebufferWidth()I", ordinal = 1))
     void craftui$onFramebufferSizeChanged(long window, int width, int height, CallbackInfo ci) {

@@ -1,17 +1,13 @@
 package com.igrium.craftui.app;
 
 import com.igrium.craftui.input.CursorLockManager;
-import com.igrium.craftui.input.ViewportController;
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
 import imgui.flag.ImGuiFocusedFlags;
-import imgui.flag.ImGuiHoveredFlags;
 import imgui.flag.ImGuiWindowFlags;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.LoggerFactory;
 
 /**
  * A CraftApp that creates an ImGui dockspace with a game viewport in the center.
@@ -56,10 +52,7 @@ public abstract class DockSpaceApp extends CraftApp {
         ImGui.setNextWindowBgAlpha(0f);
         dockSpaceId = ImGui.dockSpaceOverViewport(ImGui.getMainViewport());
         didBeginViewport = false;
-//        renderApp(client, dockSpaceId);
     }
-    
-//    protected abstract void renderApp(MinecraftClient client, int dockSpaceId);
 
     /**
      * Check if the mouse is currently pressed over the game viewport.
