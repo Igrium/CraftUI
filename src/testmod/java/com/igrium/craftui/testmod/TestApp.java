@@ -1,14 +1,8 @@
 package com.igrium.craftui.testmod;
 
-import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
-import com.igrium.craftui.font.Fonts;
-
-import com.igrium.craftui.input.MouseUtils;
-import com.igrium.craftui.input.ViewportController;
 import imgui.ImGui;
-import imgui.flag.ImGuiMouseButton;
 import imgui.type.ImInt;
 import imgui.type.ImString;
 import net.minecraft.client.MinecraftClient;
@@ -19,7 +13,7 @@ public class TestApp extends DockSpaceApp {
     private final ImString imText = new ImString();
     private final ImInt inputMode = new ImInt(1);
 
-    private static final String[] INPUT_MODE_OPTIONS = new String[]{"None", "Focus", "Always"};
+    private static final String[] INPUT_MODE_OPTIONS = new String[]{"None", "Hold", "Focus", "Always"};
 
     @Override
     protected void onOpen() {
@@ -30,7 +24,6 @@ public class TestApp extends DockSpaceApp {
 
     protected void render(MinecraftClient client) {
         super.render(client);
-        ImGui.pushFont(Fonts.inter());
 
         if (ImGui.begin("Upper Window")) {
             boolean clicked = ImGui.button("This is the upper window!");
@@ -71,7 +64,6 @@ public class TestApp extends DockSpaceApp {
         }
         ImGui.end();
 
-        ImGui.popFont();
     }
 
     // @Override

@@ -8,6 +8,8 @@ import imgui.flag.ImGuiWindowFlags;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 
 /**
  * A CraftApp that creates an ImGui dockspace with a game viewport in the center.
@@ -23,6 +25,11 @@ public abstract class DockSpaceApp extends CraftApp {
          * Never forward input to Minecraft and keep the mouse unlocked.
          */
         NONE,
+        /**
+         * Forward input to Minecraft whenever the mouse is pressed over the viewport
+         * @see #viewportInputButtons
+         */
+        HOLD,
         /**
          * Forward input to Minecraft if the viewport window is focused.
          */
@@ -43,9 +50,16 @@ public abstract class DockSpaceApp extends CraftApp {
     /**
      * The viewport input mode to use on this frame. Default: <code>ViewportInputMode.FOCUS</code>
      */
-    @Getter
-    @Setter
+    @Getter @Setter
     private ViewportInputMode viewportInputMode = ViewportInputMode.FOCUS;
+
+    /**
+     * If the input mode is set to <code>ViewportInputMode.HOLD</code>,
+     * forward viewport input whenever one of these buttons is pressed.
+     * @implNote Currently does not work with left mouse button
+     */
+    @Getter @Setter
+    private int @Nullable [] viewportInputButtons = new int[] { 1 };
 
     @Override
     protected void render(MinecraftClient client) {
@@ -63,6 +77,31 @@ public abstract class DockSpaceApp extends CraftApp {
         return (ImGui.isWindowHovered() || MinecraftClient.getInstance().mouse.isCursorLocked()) && ImGui.isMouseDown(mouseButton);
     }
 
+    /**
+     * If any window is focused, unlock the mouse
+     */
+    private static void unlockIfWindowFocused() {
+        if (ImGui.isWindowFocused(ImGuiFocusedFlags.AnyWindow)) {
+            AppManager.forceMouseUnlock();
+        }
+    }
+
+    /**
+     * Whether the viewport was focused before switching focus to game for hold input
+     */
+    private boolean wasViewportFocused;
+
+    private boolean isViewportButtonDown() {
+        if (viewportInputButtons == null)
+            return false;
+
+        for (var button : viewportInputButtons) {
+            if (mousePressedOverViewport(button))
+                return true;
+        }
+        return false;
+    }
+
     protected final boolean beginViewport(String name, int imGuiWindowFlags) {
         if (didBeginViewport) {
             throw new IllegalStateException("beginViewport only may be called once per frame! Also, make sure you're calling super.render() at the beginning of render.");
@@ -74,21 +113,29 @@ public abstract class DockSpaceApp extends CraftApp {
             return false;
         }
 
-        // Focus game when viewport is clicked.
-        if (viewportInputMode != ViewportInputMode.NONE && ImGui.isWindowFocused()) {
-            ImGui.setWindowFocus(null);
-        }
-
         // Handle mouse locking. Technically this doesn't have to do with the viewport, but this place is convenient.
-        if (viewportInputMode == ViewportInputMode.NONE) {
-            AppManager.forceMouseUnlock();
-        }
-        else {
-            if (ImGui.isWindowFocused(ImGuiFocusedFlags.AnyWindow) && !ImGui.isWindowFocused()) {
+        switch (viewportInputMode) {
+            case NONE -> {
                 AppManager.forceMouseUnlock();
             }
-            if (viewportInputMode == ViewportInputMode.ALWAYS) {
-                // TODO: Is there a way we can avoid checking this every frame?
+            case HOLD -> {
+                if (isViewportButtonDown()) {
+                    ImGui.setWindowFocus(null);
+                    wasViewportFocused = true;
+                } else if (wasViewportFocused) {
+                    ImGui.setWindowFocus();
+                    wasViewportFocused = false;
+                }
+
+                unlockIfWindowFocused();
+            }
+            case FOCUS -> {
+                if (ImGui.isWindowFocused()) {
+                    ImGui.setWindowFocus(null);
+                }
+                unlockIfWindowFocused();
+            }
+            case ALWAYS -> {
                 if (CursorLockManager.clientWantsLockCursor()) {
                     ImGui.setWindowFocus(null);
                     MinecraftClient.getInstance().mouse.lockCursor();
