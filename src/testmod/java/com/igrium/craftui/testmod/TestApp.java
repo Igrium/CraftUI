@@ -9,8 +9,10 @@ import imgui.type.ImInt;
 import imgui.type.ImString;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
+import net.minecraft.entity.TntEntity;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
@@ -89,16 +91,18 @@ public class TestApp extends DockSpaceApp {
 //        float mouseX = ImGui.getMousePosX();
 //        float mouseY = ImGui.getMousePosY();
 
-        World world = MinecraftClient.getInstance().world;
-        if (world == null) {
-            return;
-        }
+        IntegratedServer server = MinecraftClient.getInstance().getServer();
+        if (server == null) return;
 
         HitResult raycast = RaycastUtils.raycastViewport((float)mouse.getX(), (float)mouse.getY(), 1000, e -> false, false);
         LoggerFactory.getLogger(getClass()).info("Position: {} {} {}", raycast.getPos().x, raycast.getPos().y, raycast.getPos().z);
 
         if (raycast.getType() != HitResult.Type.MISS) {
             Vec3d pos = raycast.getPos();
+            server.execute(() -> {
+                TntEntity entity = new TntEntity(server.getOverworld(), pos.x, pos.y, pos.z, null);
+                server.getOverworld().spawnEntity(entity);
+            });
 //            world.addParticle(ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 0, 0, 0);
         }
     }

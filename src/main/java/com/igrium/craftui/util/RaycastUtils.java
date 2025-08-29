@@ -120,6 +120,9 @@ public final class RaycastUtils {
 
         Vector4f screenspace = new Vector4f(2 * x / width - 1, 2 * y / height - 1, -1, 1);
 
+        // WHY does OpenGL flip Y...
+        screenspace.y = -screenspace.y;
+
         Matrix4f cameraProjection = new Matrix4f(lastProjectionMatrix);
         cameraProjection.invert();
 
