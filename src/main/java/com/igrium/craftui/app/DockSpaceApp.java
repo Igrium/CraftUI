@@ -57,8 +57,12 @@ public abstract class DockSpaceApp extends CraftApp {
      * forward viewport input whenever one of these buttons is pressed.
      * @implNote Currently does not work with left mouse button
      */
-    @Getter @Setter
+    @Getter
     private int @Nullable [] viewportInputButtons = new int[] { 1 };
+
+    public void setViewportInputButtons(int... buttons) {
+        this.viewportInputButtons = buttons;
+    }
 
     @Override
     protected void render(MinecraftClient client) {

@@ -28,6 +28,7 @@ public class TestApp extends DockSpaceApp {
     protected void onOpen() {
         super.onOpen();
         setViewportInputMode(ViewportInputMode.NONE);
+        setViewportInputButtons(1, 2);
     }
 
     protected void render(MinecraftClient client) {
