@@ -22,6 +22,11 @@ public final class Fonts {
         return ImFontManager.getInstance().get(INTER_MEDIUM);
     }
 
+    public static final Identifier NBT_ICONS = Identifier.of("craftui:nbt-icons");
+    public static ImFont nbtIcons() {
+        return ImFontManager.getInstance().get(NBT_ICONS);
+    }
+
     /**
      * Get a map of all loaded fonts with their identifier.
      * @return An unmodifiable map of all fonts. Does not include ImGui's default font.

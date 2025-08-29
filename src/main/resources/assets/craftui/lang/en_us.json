@@ -14,5 +14,18 @@
     "options.craftui.resetLayout.tooltip": "Reset the layout of all CraftUI apps.",
 
     "options.craftui.enableDebugCommands": "Enable Debug Commands (requires restart)",
-    "options.craftui.enableDebugCommands.tooltip": "Enable the craftui client command, exposing a variety of debug features."
+    "options.craftui.enableDebugCommands.tooltip": "Enable the craftui client command, exposing a variety of debug features.",
+
+    "tooltip.craftui.nbtByte": "Byte Tag",
+    "tooltip.craftui.nbtShort": "Short Tag",
+    "tooltip.craftui.nbtInt": "Integer Tag",
+    "tooltip.craftui.nbtLong": "Long Tag",
+    "tooltip.craftui.nbtFloat": "Float Tag",
+    "tooltip.craftui.nbtDouble": "Double Tag",
+    "tooltip.craftui.nbtByteArray": "Byte Array Tag",
+    "tooltip.craftui.nbtString": "String Tag",
+    "tooltip.craftui.nbtList": "List Tag",
+    "tooltip.craftui.nbtCompound": "Compound Tag",
+    "tooltip.craftui.nbtIntArray": "Int Array Tag",
+    "tooltip.craftui.nbtLongArray": "Long Array Tag"
 }

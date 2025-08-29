@@ -189,10 +189,25 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                         config.glyphExtraSpacing.getX(),
                         config.glyphExtraSpacing.getY());
 
-            if (config.glyphOffset != null)
-                imConfig.setGlyphOffset(
-                        config.glyphOffset.getX(),
-                        config.glyphOffset.getY());
+            if (config.glyphOffset != null || config.scaledGlyphOffset != null) {
+                // TODO: make this the actual scale
+                float scale = 1;
+
+                float offsetX = 0;
+                float offsetY = 0;
+
+                if (config.glyphOffset != null) {
+                    offsetX += config.glyphOffset.getX();
+                    offsetY += config.glyphOffset.getY();
+                }
+                if (config.scaledGlyphOffset != null) {
+                    offsetX += config.scaledGlyphOffset.getX() * scale;
+                    offsetY += config.scaledGlyphOffset.getY() * scale;
+                }
+
+                imConfig.setGlyphOffset(offsetX, offsetY);
+            }
+
             
             return atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig);
         } finally {
@@ -256,6 +271,9 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
         @Nullable
         public Vector2f glyphOffset;
+
+        @Nullable
+        public Vector2f scaledGlyphOffset;
     }
 
     private static class LoadedFontFile {

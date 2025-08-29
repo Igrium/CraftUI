@@ -2,6 +2,7 @@ package com.igrium.craftui.testmod;
 
 import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
+import com.igrium.craftui.icon.NBTIcons;
 import com.igrium.craftui.util.RaycastUtils;
 import imgui.ImGui;
 import imgui.type.ImBoolean;
@@ -10,6 +11,7 @@ import imgui.type.ImString;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
 import net.minecraft.entity.TntEntity;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.HitResult;
@@ -60,6 +62,11 @@ public class TestApp extends DockSpaceApp {
             }
 
             ImGui.checkbox("Do Click Explosion", doClickExplosion);
+
+            ImGui.alignTextToFramePadding();
+            ImGui.text("Here is an NBT icon:");
+            ImGui.sameLine();
+            NBTIcons.drawIcon(NbtElement.LIST_TYPE);
 
             ImGui.combo("Viewport Input Mode", inputMode, INPUT_MODE_OPTIONS);
             setViewportInputMode(ViewportInputMode.values()[inputMode.get()]);
