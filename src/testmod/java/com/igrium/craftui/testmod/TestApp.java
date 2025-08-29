@@ -2,7 +2,8 @@ package com.igrium.craftui.testmod;
 
 import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
-import com.igrium.craftui.icon.NBTIcons;
+import com.igrium.craftui.icon.NbtIcons;
+import com.igrium.craftui.util.NbtEditor;
 import com.igrium.craftui.util.RaycastUtils;
 import imgui.ImGui;
 import imgui.type.ImBoolean;
@@ -11,7 +12,10 @@ import imgui.type.ImString;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
 import net.minecraft.entity.TntEntity;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtInt;
+import net.minecraft.nbt.NbtString;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.HitResult;
@@ -26,11 +30,21 @@ public class TestApp extends DockSpaceApp {
 
     private static final String[] INPUT_MODE_OPTIONS = new String[]{"None", "Hold", "Focus", "Always"};
 
+    private final NbtCompound editingNbt = new NbtCompound();
+
+
+    public TestApp() {
+        setViewportInputMode(ViewportInputMode.NONE);
+        setViewportInputButtons(1, 2);
+
+        editingNbt.put("Value1", NbtString.of("Hello"));
+        editingNbt.put("Value2", NbtInt.of(69));
+        editingNbt.put("Compound", new NbtCompound());
+    }
+
     @Override
     protected void onOpen() {
         super.onOpen();
-        setViewportInputMode(ViewportInputMode.NONE);
-        setViewportInputButtons(1, 2);
     }
 
     protected void render(MinecraftClient client) {
@@ -66,7 +80,7 @@ public class TestApp extends DockSpaceApp {
             ImGui.alignTextToFramePadding();
             ImGui.text("Here is an NBT icon:");
             ImGui.sameLine();
-            NBTIcons.drawIcon(NbtElement.LIST_TYPE);
+            NbtIcons.drawIcon(NbtElement.LIST_TYPE);
 
             ImGui.combo("Viewport Input Mode", inputMode, INPUT_MODE_OPTIONS);
             setViewportInputMode(ViewportInputMode.values()[inputMode.get()]);
@@ -88,6 +102,11 @@ public class TestApp extends DockSpaceApp {
         }
         ImGui.end();
 
+        // NBT EDITOR
+        if (ImGui.begin("NBT Editor")) {
+            NbtEditor.drawNbtEditor("NBT Editor##test", editingNbt, 0);
+        }
+        ImGui.end();
     }
 
     private void raycastExplosion() {

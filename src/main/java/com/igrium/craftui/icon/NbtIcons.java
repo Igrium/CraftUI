@@ -7,7 +7,7 @@ import net.minecraft.nbt.NbtElement;
 import net.minecraft.text.Text;
 
 @UtilityClass
-public final class NBTIcons {
+public final class NbtIcons {
     private static final char OFFSET = 'A';
 
     /**
