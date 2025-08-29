@@ -1,31 +1,26 @@
 package com.igrium.craftui.testmod;
 
-import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.util.RaycastUtils;
 import imgui.ImGui;
+import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import imgui.type.ImString;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
 import net.minecraft.entity.TntEntity;
-import net.minecraft.particle.ParticleType;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-import org.joml.Vector2f;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class TestApp extends DockSpaceApp {
 
     private final ImString imText = new ImString();
     private final ImInt inputMode = new ImInt(1);
+    private final ImBoolean doClickExplosion = new ImBoolean();
 
     private static final String[] INPUT_MODE_OPTIONS = new String[]{"None", "Hold", "Focus", "Always"};
 
@@ -34,7 +29,6 @@ public class TestApp extends DockSpaceApp {
         super.onOpen();
         setViewportInputMode(ViewportInputMode.NONE);
     }
-
 
     protected void render(MinecraftClient client) {
         super.render(client);
@@ -64,6 +58,8 @@ public class TestApp extends DockSpaceApp {
                 MinecraftClient.getInstance().setScreen(null);
             }
 
+            ImGui.checkbox("Do Click Explosion", doClickExplosion);
+
             ImGui.combo("Viewport Input Mode", inputMode, INPUT_MODE_OPTIONS);
             setViewportInputMode(ViewportInputMode.values()[inputMode.get()]);
         }
@@ -76,7 +72,7 @@ public class TestApp extends DockSpaceApp {
             ImGui.text("Mouse down: " + mousePressed);
 
 
-            if (getViewportInputMode() == ViewportInputMode.HOLD || getViewportInputMode() == ViewportInputMode.NONE) {
+            if (doClickExplosion.get()) {
                 if (ImGui.isWindowHovered() && ImGui.isMouseClicked(0)) {
                     raycastExplosion();
                 }
