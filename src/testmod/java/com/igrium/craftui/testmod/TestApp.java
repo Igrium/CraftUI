@@ -12,10 +12,7 @@ import imgui.type.ImString;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
 import net.minecraft.entity.TntEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtInt;
-import net.minecraft.nbt.NbtString;
+import net.minecraft.nbt.*;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.HitResult;
@@ -25,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class TestApp extends DockSpaceApp {
 
     private final ImString imText = new ImString();
-    private final ImInt inputMode = new ImInt(1);
+    private final ImInt inputMode = new ImInt(2);
     private final ImBoolean doClickExplosion = new ImBoolean();
 
     private static final String[] INPUT_MODE_OPTIONS = new String[]{"None", "Hold", "Focus", "Always"};
@@ -39,7 +36,20 @@ public class TestApp extends DockSpaceApp {
 
         editingNbt.put("Value1", NbtString.of("Hello"));
         editingNbt.put("Value2", NbtInt.of(69));
-        editingNbt.put("Compound", new NbtCompound());
+
+
+        editingNbt.put("byteValue", NbtByte.of((byte)2));
+        editingNbt.put("shortValue", NbtShort.of((short)5));
+        editingNbt.put("intValue", NbtInt.of(69));
+        editingNbt.put("longValue", NbtLong.of(69420));
+        editingNbt.put("floatValue", NbtFloat.of(2.54f));
+        editingNbt.put("doubleValue", NbtDouble.of(2124.2));
+
+        editingNbt.put("longArray", new NbtLongArray(new long[] {}));
+
+        NbtCompound compound = new NbtCompound();
+        compound.put("NestedStr", NbtString.of("Hello World!"));
+        editingNbt.put("Compound", compound);
     }
 
     @Override
