@@ -16,6 +16,9 @@
     "options.craftui.enableDebugCommands": "Enable Debug Commands (requires restart)",
     "options.craftui.enableDebugCommands.tooltip": "Enable the craftui client command, exposing a variety of debug features.",
 
+    "options.craftui.testFileDialog": "Test File Browser",
+    "options.craftui.testFileDialog.tooltip": "Open the file browser dialog for testing.",
+
     "tooltip.craftui.nbtByte": "Byte",
     "tooltip.craftui.nbtShort": "Short",
     "tooltip.craftui.nbtInt": "Integer",

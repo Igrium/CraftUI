@@ -2,6 +2,7 @@ package com.igrium.craftui.impl.config;
 
 import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.config.CraftUIConfig;
+import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.screen.CraftAppScreen;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.app.CraftApp;
@@ -14,10 +15,14 @@ import imgui.type.ImBoolean;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CraftUIConfigApp extends CraftApp {
 
 //    private final SaveConfirmation saveConfirmation = new SaveConfirmation(this::save, this::close);
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CraftUIConfigApp.class);
 
     private final CraftUIConfig config = CraftUI.getConfig();
 
@@ -42,11 +47,27 @@ public class CraftUIConfigApp extends CraftApp {
             checkbox("options.craftui.enableViewports", enableViewports, "options.craftui.enableViewports.tooltip");
             checkbox("layoutPersistent", layoutPersistent, "layoutPersistent.tooltip");
 
-            if (button(Text.translatable("options.craftui.resetLayout"), Text.translatable("options.craftui.resetLayout.tooltip"))) {
+            checkbox("options.craftui.enableDebugCommands", enableDebugCommand, "options.craftui.enableDebugCommands.tooltip");
+
+            ImGui.separator();
+
+            if (button("options.craftui.resetLayout", "options.craftui.resetLayout.tooltip")) {
                 AppManager.resetUiLayouts();
             }
 
-            checkbox("options.craftui.enableDebugCommands", enableDebugCommand, "options.craftui.enableDebugCommands.tooltip");
+            if (button("options.craftui.testFileDialog", "options.craftui.testFileDialog.tooltip")) {
+                FileDialogs.showOpenDialog(null).whenComplete((v, e) -> {
+                    if (e != null) {
+                        LOGGER.error("Error opening file dialog: ", e);
+                    } else {
+                        v.ifPresentOrElse(file -> {
+                            LOGGER.info("You opened {}", file);
+                        }, () -> {
+                            LOGGER.info("You didn't choose a file.");
+                        });
+                    }
+                });
+            }
 
             ImGui.separator();
 
@@ -74,6 +95,10 @@ public class CraftUIConfigApp extends CraftApp {
             onUpdate();
         }
         return updated;
+    }
+
+    private boolean button(String translationKey, String toolTipKey) {
+        return button(Text.translatable(translationKey), toolTipKey != null ? Text.translatable(toolTipKey) : null);
     }
 
     private boolean button(Text name, @Nullable Text toolTip) {
