@@ -39,9 +39,7 @@ public class CraftUI implements ClientModInitializer {
 
         RaycastUtils.register();
 
-        if (getConfig().isEnableDebugCommands()) {
-            ClientCommandRegistrationCallback.EVENT.register(CraftUICommand::register);
-        }
+        ClientCommandRegistrationCallback.EVENT.register(CraftUICommand::register);
     }
 
     // CONFIG
