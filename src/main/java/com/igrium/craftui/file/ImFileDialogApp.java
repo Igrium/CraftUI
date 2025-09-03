@@ -52,7 +52,7 @@ class ImFileDialogApp extends CraftApp {
             isOpen = true;
         }
 
-        if (ImGuiFileDialog.display(BROWSE_KEY, ImGuiWindowFlags.None, 200, 400, 800, 600)) {
+        if (ImGuiFileDialog.display(BROWSE_KEY, ImGuiWindowFlags.NoSavedSettings, 200, 400, 800, 600)) {
             ImGuiFileDialog.close();
             if (ImGuiFileDialog.isOk()) {
                 future.complete(Optional.of(ImGuiFileDialog.getFilePathName()));

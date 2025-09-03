@@ -1,5 +1,6 @@
 package com.igrium.craftui.impl.commands;
 
+import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.screen.CraftAppScreen;
 import com.igrium.craftui.app.AppManager;
 import com.mojang.brigadier.CommandDispatcher;
@@ -19,13 +20,15 @@ public class CraftUICommand {
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher,
             CommandRegistryAccess registryAccess) {
 
-        dispatcher.register(literal("craftui").then(
-                literal("demo").executes(CraftUICommand::openDemoScreen).then(
-                        literal("open").executes(CraftUICommand::openDemo)
-                ).then(
-                        literal("close").executes(CraftUICommand::closeDemo)
-                )
-        ));
+        if (CraftUI.getConfig().isEnableDebugCommands()) {
+            dispatcher.register(literal("craftui").then(
+                    literal("demo").executes(CraftUICommand::openDemoScreen).then(
+                            literal("open").executes(CraftUICommand::openDemo)
+                    ).then(
+                            literal("close").executes(CraftUICommand::closeDemo)
+                    )
+            ));
+        }
     }
 
     private static int openDemoScreen(CommandContext<FabricClientCommandSource> context) {
@@ -33,7 +36,7 @@ public class CraftUICommand {
             return 0;
         }
 
-        demoApp = new CraftAppScreen<ImGuiDemoApp>(new ImGuiDemoApp());
+        demoApp = new CraftAppScreen<>(new ImGuiDemoApp());
         MinecraftClient client = MinecraftClient.getInstance();
         // Let the chat screen close before we try to open this
         client.send(() -> {

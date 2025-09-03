@@ -41,11 +41,11 @@ public class CraftUIConfigApp extends CraftApp {
         ImGui.setNextWindowPos(viewport.getCenterX(), viewport.getCenterY(), ImGuiCond.Always, .5f, .5f);
         if (ImGui.begin(
                 Text.translatable("options.craftui.header").getString(), ImGuiWindowFlags.NoCollapse
-                | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove)) {
+                | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings)) {
 
             checkbox("options.craftui.preferNativeFileDialog", preferNativeFileDialog, "options.craftui.preferNativeFileDialog.tooltip");
             checkbox("options.craftui.enableViewports", enableViewports, "options.craftui.enableViewports.tooltip");
-            checkbox("layoutPersistent", layoutPersistent, "layoutPersistent.tooltip");
+            checkbox("options.craftui.layoutPersistent", layoutPersistent, "options.craftui.layoutPersistent.tooltip");
 
             checkbox("options.craftui.enableDebugCommands", enableDebugCommand, "options.craftui.enableDebugCommands.tooltip");
 
