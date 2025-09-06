@@ -2,6 +2,7 @@ package com.igrium.craftui.font;
 
 import com.igrium.craftui.impl.font.ImFontManager;
 import imgui.ImFont;
+import lombok.experimental.UtilityClass;
 import net.minecraft.util.Identifier;
 
 import java.util.Map;
@@ -9,9 +10,8 @@ import java.util.Map;
 /**
  * Interface to access standard CraftUI fonts.
  */
+@UtilityClass
 public final class Fonts {
-    private Fonts() {}
-
     public static final Identifier INTER = Identifier.of("craftui:inter");
     public static ImFont inter() {
         return ImFontManager.getInstance().get(INTER);
@@ -31,7 +31,7 @@ public final class Fonts {
      * Get a map of all loaded fonts with their identifier.
      * @return An unmodifiable map of all fonts. Does not include ImGui's default font.
      */
-    public Map<Identifier, ImFont> getFonts() {
+    public static Map<Identifier, ImFont> getFonts() {
         return ImFontManager.getInstance().getFonts();
     }
 
@@ -40,7 +40,7 @@ public final class Fonts {
      * @param id ID to use.
      * @return The font, or a default font if it does not exist.
      */
-    public ImFont getFont(Identifier id) {
+    public static ImFont getFont(Identifier id) {
         return ImFontManager.getInstance().get(id);
     }
 }
