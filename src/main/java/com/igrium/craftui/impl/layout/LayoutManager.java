@@ -1,14 +1,18 @@
 package com.igrium.craftui.impl.layout;
 
 import com.igrium.craftui.CraftUI;
+import com.igrium.craftui.layout.CraftUILayouts;
 import lombok.Getter;
 import lombok.Setter;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.impl.util.ExceptionUtil;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.InvalidIdentifierException;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -18,11 +22,13 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class LayoutManager implements IdentifiableResourceReloadListener {
     private static LayoutManager instance;
@@ -35,7 +41,6 @@ public class LayoutManager implements IdentifiableResourceReloadListener {
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger("CraftUI LayoutManager");
-    public static final Identifier DEFAULT = Identifier.of("craftui:default");
 
     private LayoutManager() {};
 
@@ -43,17 +48,22 @@ public class LayoutManager implements IdentifiableResourceReloadListener {
     private final Map<Identifier, String> userLayouts = new ConcurrentHashMap<>();
 
     @Getter @NotNull
-    private Identifier activeLayout = DEFAULT;
+    private Identifier activeLayout = CraftUILayouts.DEFAULT;
 
     @Getter @Setter
     private boolean layoutUpdate = true;
 
     public void setActiveLayout(@Nullable Identifier layout) {
-        if (layout == null) layout = DEFAULT;
+        if (layout == null) layout = CraftUILayouts.DEFAULT;
         if (this.activeLayout.equals(layout)) return;
 
         this.activeLayout = layout;
         setLayoutUpdate(true);
+    }
+
+    public @NotNull String getActiveLayoutData() {
+        var data = getLayoutData(getActiveLayout());
+        return data != null ? data : "";
     }
 
     public @Nullable String getNativeLayoutData(Identifier id) {
@@ -67,11 +77,6 @@ public class LayoutManager implements IdentifiableResourceReloadListener {
     public @Nullable String getLayoutData(Identifier id) {
         var d = getUserLayoutData(id);
         return d != null ? d : getNativeLayoutData(id);
-    }
-
-    public @NotNull String getActiveLayoutData() {
-        var data = getLayoutData(getActiveLayout());
-        return data != null ? data : "";
     }
 
     public void setUserLayoutData(Identifier layoutId, String data, boolean save) {
@@ -92,7 +97,7 @@ public class LayoutManager implements IdentifiableResourceReloadListener {
         setUserLayoutData(getActiveLayout(), data, true);
     }
 
-    public void clearUserLayout(Identifier id) {
+    public void resetLayout(Identifier id) {
         userLayouts.remove(id);
         try {
             Files.deleteIfExists(getUserLayoutPath(id));
@@ -104,14 +109,22 @@ public class LayoutManager implements IdentifiableResourceReloadListener {
         }
     }
 
-    public void clearUserLayouts() {
+    public void resetLayouts() {
         userLayouts.clear();
-        try {
-            Files.deleteIfExists(FabricLoader.getInstance().getConfigDir().resolve("craftui/layouts"));
+        try(var paths = Files.walk(FabricLoader.getInstance().getConfigDir().resolve("craftui/layouts"))) {
+            paths.sorted(Comparator.reverseOrder()).forEach(LayoutManager::deleteSneaky);
         } catch (IOException e) {
             LOGGER.error("Error deleting user layouts: ", e);
         }
         setLayoutUpdate(true);
+    }
+
+    private static void deleteSneaky(Path file) {
+        try {
+            Files.deleteIfExists(file);
+        } catch (IOException e) {
+            throw ExceptionUtils.asRuntimeException(e);
+        }
     }
 
     private void loadUserLayouts() {

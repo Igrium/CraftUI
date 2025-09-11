@@ -3,7 +3,6 @@ package com.igrium.craftui;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.igrium.craftui.impl.event.CraftUIConfigCallback;
-import com.igrium.craftui.impl.layout.IniSettingsManager;
 import com.igrium.craftui.impl.layout.LayoutManager;
 import com.igrium.craftui.util.RaycastUtils;
 import lombok.Getter;
@@ -34,10 +33,6 @@ public class CraftUI implements ClientModInitializer {
 
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(ImFontManager.getInstance());
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(LayoutManager.getInstance());
-
-        if (getConfig().isLayoutPersistent()) {
-            IniSettingsManager.readFromDisk();
-        }
 
         RaycastUtils.register();
 

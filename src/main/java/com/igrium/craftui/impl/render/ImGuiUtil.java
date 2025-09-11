@@ -1,6 +1,5 @@
 package com.igrium.craftui.impl.render;
 
-import com.igrium.craftui.impl.layout.IniSettingsManager;
 import imgui.extension.implot.ImPlot;
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -53,7 +52,6 @@ public class ImGuiUtil {
             ImGui.getIO().addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
 
         ImGui.getIO().setIniFilename(null);
-//        ImGui.loadIniSettingsFromMemory(IniSettingsManager.getImGuiSettings());
 
         ImGuiEvents.INIT_IO.invoker().initIO(ImGui.getIO());
         

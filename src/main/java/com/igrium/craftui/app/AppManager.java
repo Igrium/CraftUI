@@ -14,9 +14,10 @@ import java.util.Set;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.impl.input.CursorLockManager;
 import com.igrium.craftui.impl.input.MouseUtils;
-import com.igrium.craftui.impl.layout.IniSettingsManager;
 import com.igrium.craftui.impl.layout.LayoutManager;
+import com.igrium.craftui.layout.CraftUILayouts;
 import imgui.ImGuiIO;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
 import org.jetbrains.annotations.Nullable;
@@ -225,6 +226,17 @@ public final class AppManager {
         if (isCleanupFrame && !needsCleanupFrame)
             return;
 
+        Identifier desiredLayout = null;
+        for (CraftApp app : apps) {
+            Identifier l = app.getLayoutPreset();
+            if (l != null) {
+                desiredLayout = l;
+            }
+        }
+        if (desiredLayout != null) {
+            CraftUILayouts.setActiveLayout(desiredLayout);
+        }
+
         LayoutManager layoutManager = LayoutManager.getInstance();
         if (layoutManager.isLayoutUpdate()) {
             ImGui.loadIniSettingsFromMemory(layoutManager.getActiveLayoutData());
@@ -235,6 +247,7 @@ public final class AppManager {
         ImGui.newFrame();
     
         ImGui.pushFont(Fonts.inter());
+
 
         for (CraftApp app : apps) {
             ImGui.pushID(app.getClass().getCanonicalName().hashCode());
@@ -267,19 +280,11 @@ public final class AppManager {
 
         if (ImGui.getIO().getWantSaveIniSettings() && CraftUI.getConfig().isLayoutPersistent()) {
             LayoutManager.getInstance().saveUserLayoutData(ImGui.saveIniSettingsToMemory());
-//            IniSettingsManager.setImGuiSettings(ImGui.saveIniSettingsToMemory());
-//            IniSettingsManager.saveToDisk();
+
             ImGui.getIO().setWantSaveIniSettings(false);
         }
 
         needsCleanupFrame = !isCleanupFrame;
-    }
-
-    public static void resetUiLayouts() {
-        IniSettingsManager.setImGuiSettings("");
-        ImGui.loadIniSettingsFromMemory("");
-        ImGui.getStateStorage().clear();
-        IniSettingsManager.saveToDisk();
     }
 
     /**

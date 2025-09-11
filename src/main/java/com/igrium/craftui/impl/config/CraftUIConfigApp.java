@@ -1,8 +1,8 @@
 package com.igrium.craftui.impl.config;
 
-import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.config.CraftUIConfig;
 import com.igrium.craftui.file.FileDialogs;
+import com.igrium.craftui.layout.CraftUILayouts;
 import com.igrium.craftui.screen.CraftAppScreen;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.app.CraftApp;
@@ -52,7 +52,7 @@ public class CraftUIConfigApp extends CraftApp {
             ImGui.separator();
 
             if (button("options.craftui.resetLayout", "options.craftui.resetLayout.tooltip")) {
-                AppManager.resetUiLayouts();
+                CraftUILayouts.resetLayouts();
             }
 
             if (button("options.craftui.testFileDialog", "options.craftui.testFileDialog.tooltip")) {

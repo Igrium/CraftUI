@@ -3,6 +3,7 @@ package com.igrium.craftui.testmod;
 import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.icon.NbtIcons;
+import com.igrium.craftui.layout.CraftUILayouts;
 import com.igrium.craftui.util.NbtEditor;
 import com.igrium.craftui.util.RaycastUtils;
 import imgui.ImGui;
@@ -15,8 +16,10 @@ import net.minecraft.entity.TntEntity;
 import net.minecraft.nbt.*;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
 public class TestApp extends DockSpaceApp {
@@ -26,6 +29,12 @@ public class TestApp extends DockSpaceApp {
     private final ImBoolean doClickExplosion = new ImBoolean();
 
     private static final String[] INPUT_MODE_OPTIONS = new String[]{"None", "Hold", "Focus", "Always"};
+
+    private final ImInt layout = new ImInt(0);
+    private static final String[] LAYOUT_OPTIONS = new String[]{"Default", "Layout 1", "Layout 2"};
+
+    private static final Identifier LAYOUT1 = Identifier.of("craftui-test", "layout1");
+    private static final Identifier LAYOUT2 = Identifier.of("craftui-test", "layout2");
 
     private final NbtCompound editingNbt = new NbtCompound();
 
@@ -94,6 +103,8 @@ public class TestApp extends DockSpaceApp {
 
             ImGui.combo("Viewport Input Mode", inputMode, INPUT_MODE_OPTIONS);
             setViewportInputMode(ViewportInputMode.values()[inputMode.get()]);
+
+            ImGui.combo("Layout", layout, LAYOUT_OPTIONS);
         }
         ImGui.end();
 
@@ -117,6 +128,16 @@ public class TestApp extends DockSpaceApp {
             NbtEditor.drawNbtEditor("NBT Editor##test", editingNbt, 0);
         }
         ImGui.end();
+    }
+
+    @Override
+    protected @Nullable Identifier getLayoutPreset() {
+        return switch (layout.get()) {
+            case 0 -> CraftUILayouts.DEFAULT;
+            case 1 -> LAYOUT1;
+            case 2 -> LAYOUT2;
+            default -> null;
+        };
     }
 
     private void raycastExplosion() {
