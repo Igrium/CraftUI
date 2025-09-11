@@ -1,4 +1,4 @@
-package com.igrium.craftui.impl.config;
+package com.igrium.craftui.impl.layout;
 
 import com.igrium.craftui.CraftUI;
 import lombok.Getter;
@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 
+@Deprecated
 public class IniSettingsManager {
     @Getter @Setter @NonNull
     private static String imGuiSettings = "";

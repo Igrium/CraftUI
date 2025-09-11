@@ -12,9 +12,10 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.igrium.craftui.CraftUI;
-import com.igrium.craftui.impl.config.IniSettingsManager;
 import com.igrium.craftui.impl.input.CursorLockManager;
 import com.igrium.craftui.impl.input.MouseUtils;
+import com.igrium.craftui.impl.layout.IniSettingsManager;
+import com.igrium.craftui.impl.layout.LayoutManager;
 import imgui.ImGuiIO;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
@@ -224,6 +225,12 @@ public final class AppManager {
         if (isCleanupFrame && !needsCleanupFrame)
             return;
 
+        LayoutManager layoutManager = LayoutManager.getInstance();
+        if (layoutManager.isLayoutUpdate()) {
+            ImGui.loadIniSettingsFromMemory(layoutManager.getActiveLayoutData());
+            layoutManager.setLayoutUpdate(false);
+        }
+
         ImGuiUtil.IM_GLFW.newFrame();
         ImGui.newFrame();
     
@@ -259,8 +266,9 @@ public final class AppManager {
         }
 
         if (ImGui.getIO().getWantSaveIniSettings() && CraftUI.getConfig().isLayoutPersistent()) {
-            IniSettingsManager.setImGuiSettings(ImGui.saveIniSettingsToMemory());
-            IniSettingsManager.saveToDisk();
+            LayoutManager.getInstance().saveUserLayoutData(ImGui.saveIniSettingsToMemory());
+//            IniSettingsManager.setImGuiSettings(ImGui.saveIniSettingsToMemory());
+//            IniSettingsManager.saveToDisk();
             ImGui.getIO().setWantSaveIniSettings(false);
         }
 
