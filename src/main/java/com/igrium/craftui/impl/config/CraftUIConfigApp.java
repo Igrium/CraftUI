@@ -2,7 +2,7 @@ package com.igrium.craftui.impl.config;
 
 import com.igrium.craftui.config.CraftUIConfig;
 import com.igrium.craftui.file.FileDialogs;
-import com.igrium.craftui.layout.CraftUILayouts;
+import com.igrium.craftui.CraftUILayouts;
 import com.igrium.craftui.screen.CraftAppScreen;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.app.CraftApp;

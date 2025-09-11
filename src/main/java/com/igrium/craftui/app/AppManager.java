@@ -15,7 +15,7 @@ import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.impl.input.CursorLockManager;
 import com.igrium.craftui.impl.input.MouseUtils;
 import com.igrium.craftui.impl.layout.LayoutManager;
-import com.igrium.craftui.layout.CraftUILayouts;
+import com.igrium.craftui.CraftUILayouts;
 import imgui.ImGuiIO;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.crash.CrashException;
@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.app.CraftApp.ViewportBounds;
-import com.igrium.craftui.font.Fonts;
+import com.igrium.craftui.CraftUIFonts;
 import com.igrium.craftui.impl.render.ImGuiUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -246,7 +246,7 @@ public final class AppManager {
         ImGuiUtil.IM_GLFW.newFrame();
         ImGui.newFrame();
     
-        ImGui.pushFont(Fonts.inter());
+        ImGui.pushFont(CraftUIFonts.inter());
 
 
         for (CraftApp app : apps) {

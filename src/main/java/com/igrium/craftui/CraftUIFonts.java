@@ -1,4 +1,4 @@
-package com.igrium.craftui.font;
+package com.igrium.craftui;
 
 import com.igrium.craftui.impl.font.ImFontManager;
 import imgui.ImFont;
@@ -11,7 +11,7 @@ import java.util.Map;
  * Interface to access standard CraftUI fonts.
  */
 @UtilityClass
-public final class Fonts {
+public final class CraftUIFonts {
     public static final Identifier INTER = Identifier.of("craftui:inter");
     public static ImFont inter() {
         return ImFontManager.getInstance().get(INTER);

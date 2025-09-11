@@ -1,16 +1,14 @@
 package com.igrium.craftui.impl.layout;
 
 import com.igrium.craftui.CraftUI;
-import com.igrium.craftui.layout.CraftUILayouts;
+import com.igrium.craftui.CraftUILayouts;
 import lombok.Getter;
 import lombok.Setter;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.impl.util.ExceptionUtil;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.InvalidIdentifierException;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +26,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class LayoutManager implements IdentifiableResourceReloadListener {
     private static LayoutManager instance;

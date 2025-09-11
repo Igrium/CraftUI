@@ -1,6 +1,6 @@
 package com.igrium.craftui.icon;
 
-import com.igrium.craftui.font.Fonts;
+import com.igrium.craftui.CraftUIFonts;
 import imgui.ImGui;
 import lombok.experimental.UtilityClass;
 import net.minecraft.nbt.NbtElement;
@@ -27,7 +27,7 @@ public final class NbtIcons {
      * on any line where an icon is used.
      */
     public static void drawIcon(byte elementType) {
-        ImGui.pushFont(Fonts.nbtIcons());
+        ImGui.pushFont(CraftUIFonts.nbtIcons());
         ImGui.text(String.valueOf(getIcon(elementType)));
         ImGui.popFont();
 

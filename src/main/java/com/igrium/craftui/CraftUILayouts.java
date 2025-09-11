@@ -1,4 +1,4 @@
-package com.igrium.craftui.layout;
+package com.igrium.craftui;
 
 import com.igrium.craftui.impl.layout.LayoutManager;
 import lombok.experimental.UtilityClass;
