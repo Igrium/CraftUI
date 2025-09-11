@@ -3,7 +3,7 @@ package com.igrium.craftui;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.igrium.craftui.impl.event.CraftUIConfigCallback;
-import com.igrium.craftui.impl.layout.LayoutManager;
+import com.igrium.craftui.impl.style.LayoutManager;
 import com.igrium.craftui.util.RaycastUtils;
 import lombok.Getter;
 import net.fabricmc.loader.api.FabricLoader;

@@ -1,4 +1,4 @@
-package com.igrium.craftui.impl.layout;
+package com.igrium.craftui.impl.style;
 
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.CraftUILayouts;

@@ -14,7 +14,7 @@ import java.util.Set;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.impl.input.CursorLockManager;
 import com.igrium.craftui.impl.input.MouseUtils;
-import com.igrium.craftui.impl.layout.LayoutManager;
+import com.igrium.craftui.impl.style.LayoutManager;
 import com.igrium.craftui.CraftUILayouts;
 import imgui.ImGuiIO;
 import net.minecraft.util.Identifier;

@@ -1,6 +1,6 @@
 package com.igrium.craftui;
 
-import com.igrium.craftui.impl.layout.LayoutManager;
+import com.igrium.craftui.impl.style.LayoutManager;
 import lombok.experimental.UtilityClass;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
