@@ -4,7 +4,7 @@ import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.icon.NbtIcons;
 import com.igrium.craftui.style.CraftUILayouts;
-import com.igrium.craftui.util.NbtEditor;
+import com.igrium.craftui.impl.util.NbtEditor;
 import com.igrium.craftui.util.RaycastUtils;
 import imgui.ImGui;
 import imgui.type.ImBoolean;

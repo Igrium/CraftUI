@@ -1,10 +1,9 @@
-package com.igrium.craftui.util;
+package com.igrium.craftui.impl.util;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.igrium.craftui.icon.NbtIcons;
 import imgui.ImGui;
-import imgui.ImVec2;
 import imgui.flag.ImGuiInputTextFlags;
 import imgui.flag.ImGuiSelectableFlags;
 import imgui.flag.ImGuiTreeNodeFlags;
@@ -18,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
