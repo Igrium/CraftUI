@@ -7,6 +7,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
+/**
+ * Various functions for controlling styles.
+ * For technical reasons, styles are global to all of CraftUI and cannot be configured per-app.
+ */
 public class CraftUIStyles {
     /**
      * The default, "dark" style

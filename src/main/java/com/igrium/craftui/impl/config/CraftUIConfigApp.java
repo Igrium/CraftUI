@@ -37,7 +37,7 @@ public class CraftUIConfigApp extends CraftApp {
     private final ImBoolean layoutPersistent = new ImBoolean(config.isLayoutPersistent());
     private final ImBoolean enableDebugCommand = new ImBoolean(config.isEnableDebugCommands());
 
-    private Identifier[] styles;
+    private final Identifier[] styles;
     private final String[] styleNames;
 
     private final ImInt selectedStyle = new ImInt();

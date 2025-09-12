@@ -21,6 +21,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Represents the color portion of a CraftUI style.
+ * Contains "advanced" methods to establish color definitions so you're not duplicating a bunch of colors.
+ */
 @Getter
 public class StyleColorMap {
 
