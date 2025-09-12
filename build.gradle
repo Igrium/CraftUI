@@ -62,6 +62,9 @@ dependencies {
     implementation include("org.lwjgl:lwjgl-nfd:3.3.2:natives-linux")
 
     testmodImplementation sourceSets.main.output
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
 
 processResources {
@@ -107,4 +110,9 @@ publishing {
         // The repositories here will be used for publishing your artifact, not for
         // retrieving dependencies.
     }
+}
+
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
 }

@@ -1,7 +1,7 @@
 package com.igrium.craftui.impl.style;
 
 import com.igrium.craftui.CraftUI;
-import com.igrium.craftui.CraftUILayouts;
+import com.igrium.craftui.style.CraftUILayouts;
 import lombok.Getter;
 import lombok.Setter;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;

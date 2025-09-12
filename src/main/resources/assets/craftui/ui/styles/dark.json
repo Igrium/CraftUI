@@ -1,0 +1,81 @@
+{
+    "colors": {
+        "defs": {
+            "bgColor": [0.10, 0.105, 0.11],
+            "lightBgColor": [0.15, 0.16, 0.17, 1],
+            "panelColor": [0.17, 0.18, 0.19, 1],
+            "panelHoverColor": [0.2, 0.22, 0.24, 1],
+            "panelActiveColor": [0.23, 0.26, 0.29, 1],
+            "textColor": [0.86, 0.87, 0.88, 1],
+            "textDisabledColor": [0.5, 0.5, 0.5, 1],
+            "borderColor": [0.14, 0.16, 0.18, 1]
+        },
+        "colors": {
+            "text": "textColor",
+            "textDisabled": "textDisabledColor",
+
+            "windowBg": "bgColor",
+            "childBg": "bgColor",
+            "popupBg": "bgColor",
+            "border": "borderColor",
+            "borderShadow": "borderColor",
+
+            "header": "panelColor",
+            "headerHovered": "panelHoverColor",
+            "headerActive": "panelActiveColor",
+
+            "button": "panelColor",
+            "buttonHovered": "panelHoverColor",
+            "buttonActive": "panelActiveColor",
+
+            "frameBg": "lightBgColor",
+            "frameBgHovered": "panelHoverColor",
+            "frameBgActive": "panelActiveColor",
+
+            "tab": "panelColor",
+            "tabHovered": "panelHoverColor",
+            "tabActive": "panelActiveColor",
+            "tabUnfocused": "panelColor",
+            "tabUnfocusedActive": "panelHoverColor",
+
+            "titleBg": "bgColor",
+            "titleBgActive": "bgColor",
+            "titleBgCollapsed": "bgColor",
+
+            "scrollbarBg": "bgColor",
+            "scrollbarGrab": "panelColor",
+            "scrollbarGrabHovered": "panelHoverColor",
+            "scrollbarGrabActive": "panelActiveColor",
+
+            "checkMark": [0.26, 0.59, 0.98, 1],
+
+            "sliderGrab": "panelHoverColor",
+            "sliderGrabActive": "panelActiveColor",
+
+            "resizeGrip": "panelColor",
+            "resizeGripHovered": "panelHoverColor",
+            "resizeGripActive": "panelActiveColor",
+
+            "separator": "borderColor",
+            "separatorHovered": "panelHoverColor",
+            "separatorActive": "panelActiveColor",
+
+            "plotLines": "textColor",
+            "plotLinesHovered": "panelActiveColor",
+            "plotHistogram": "textColor",
+            "plotHistogramHovered": "panelActiveColor",
+
+            "textSelectedBg": "panelActiveColor",
+
+            "modalWindowDimBg": [0.10, 0.105, 0.11, 0.5],
+
+            "tableHeaderBg": "panelColor",
+            "tableBorderStrong": "borderColor",
+            "tableBorderLight": "borderColor",
+            "tableRowBg": "bgColor",
+            "tableRowBgAlt": "lightBgColor"
+        }
+    },
+
+    "defaultFont": "craftui:inter"
+}

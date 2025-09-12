@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.igrium.craftui.impl.event.CraftUIConfigCallback;
 import com.igrium.craftui.impl.style.LayoutManager;
+import com.igrium.craftui.impl.style.StyleManager;
 import com.igrium.craftui.util.RaycastUtils;
 import lombok.Getter;
 import net.fabricmc.loader.api.FabricLoader;
@@ -13,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.config.CraftUIConfig;
 import com.igrium.craftui.impl.commands.CraftUICommand;
-import com.igrium.craftui.impl.font.ImFontManager;
+import com.igrium.craftui.impl.style.ImFontManager;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -33,6 +34,7 @@ public class CraftUI implements ClientModInitializer {
 
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(ImFontManager.getInstance());
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(LayoutManager.getInstance());
+        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(StyleManager.getInstance());
 
         RaycastUtils.register();
 

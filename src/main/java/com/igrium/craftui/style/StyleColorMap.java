@@ -1,5 +1,7 @@
-package com.igrium.craftui.impl.style;
+package com.igrium.craftui.style;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.gson.JsonParseException;
 import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.JsonAdapter;
@@ -9,11 +11,11 @@ import com.google.gson.stream.JsonWriter;
 import imgui.ImColor;
 
 import imgui.ImGuiStyle;
+import imgui.ImVec4;
 import imgui.flag.ImGuiCol;
-import it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -21,24 +23,6 @@ import java.util.Map;
 
 @Getter
 public class StyleColorMap {
-
-    private final Map<String, ColorRef> colorDefs = new HashMap<>();
-
-    private final Map<String, ColorRef> colors = new HashMap<>();
-
-    public void appendAll(StyleColorMap other) {
-        colorDefs.putAll(other.colorDefs);
-        colors.putAll(other.colors);
-    }
-
-    public void buildStyle(ImGuiStyle style) {
-        for (var entry : colors.entrySet()) {
-            int color = entry.getValue().get(colorDefs);
-            int colorId = colorNames.getInt(entry.getKey());
-
-            style.setColor(colorId, color);
-        }
-    }
 
     /**
      * An IMGUI color definition.
@@ -67,7 +51,8 @@ public class StyleColorMap {
             if (value.ref() != null) {
                 out.value(value.ref());
             } else {
-                out.value("#" + Integer.toHexString(value.color));
+                String str = Integer.toHexString(Integer.reverseBytes(value.color));
+                out.value("#" + str);
             }
         }
 
@@ -76,7 +61,11 @@ public class StyleColorMap {
             if (in.peek() == JsonToken.STRING) {
                 String str = in.nextString();
                 if (str.startsWith("#")) {
-                    return new ColorRef(Integer.parseInt(str.substring(1), 16), null);
+                    if (str.length() == 7) {
+                        str += "FF"; // hack to make full alpha if the user forgot.
+                    }
+                    int val = Integer.reverseBytes(Integer.parseUnsignedInt(str.substring(1), 16));
+                    return new ColorRef(val, null);
                 } else {
                     return new ColorRef(0, str);
                 }
@@ -85,6 +74,39 @@ public class StyleColorMap {
             }
         }
     }
+
+
+    private final Map<String, ColorRef> defs = new HashMap<>();
+
+    private final Map<String, ColorRef> colors = new HashMap<>();
+
+    public void appendAll(StyleColorMap other) {
+        defs.putAll(other.defs);
+        colors.putAll(other.colors);
+    }
+
+    public void buildStyle(ImGuiStyle style) {
+        for (var entry : colors.entrySet()) {
+            int color = entry.getValue().get(defs);
+            Integer colorId = colorNames.get(entry.getKey());
+            if (colorId == null) {
+                LoggerFactory.getLogger(getClass()).warn("Unknown IMGUI color: " + entry.getKey());
+            } else {
+                style.setColor(colorId, color);
+            }
+        }
+    }
+
+    public void fromStyle(ImGuiStyle style) {
+        ImVec4 col = new ImVec4();
+        colors.clear();
+        defs.clear();
+        for (var entry : colorNames.entrySet()) {
+            style.getColor(entry.getValue(), col);
+            colors.put(entry.getKey(), new ColorRef(ImColor.rgba(col), null));
+        }
+    }
+
 
     private static int readColor(JsonReader reader) throws IOException {
         switch(reader.peek()) {
@@ -110,7 +132,7 @@ public class StyleColorMap {
     }
 
 
-    private static final Object2IntMap<String> colorNames = new Object2IntAVLTreeMap<>();
+    private static final BiMap<String, Integer> colorNames = HashBiMap.create();
 
     static {
         colorNames.put("text", ImGuiCol.Text);

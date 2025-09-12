@@ -1,6 +1,6 @@
 package com.igrium.craftui;
 
-import com.igrium.craftui.impl.font.ImFontManager;
+import com.igrium.craftui.impl.style.ImFontManager;
 import imgui.ImFont;
 import lombok.experimental.UtilityClass;
 import net.minecraft.util.Identifier;

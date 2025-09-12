@@ -15,7 +15,10 @@ import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.impl.input.CursorLockManager;
 import com.igrium.craftui.impl.input.MouseUtils;
 import com.igrium.craftui.impl.style.LayoutManager;
-import com.igrium.craftui.CraftUILayouts;
+import com.igrium.craftui.impl.style.StyleManager;
+import com.igrium.craftui.style.CraftUILayouts;
+import com.igrium.craftui.style.CraftUIStyle;
+import imgui.ImFont;
 import imgui.ImGuiIO;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.crash.CrashException;
@@ -40,7 +43,7 @@ import net.minecraft.client.util.Window;
  * Also houses various global functions such as mouse lock overriding.
  */
 public final class AppManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AppManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger("CraftUI AppManager");
 
     private static final Set<CraftApp> apps = new HashSet<>();
 
@@ -226,6 +229,23 @@ public final class AppManager {
         if (isCleanupFrame && !needsCleanupFrame)
             return;
 
+        // STYLE
+        StyleManager styleManager = StyleManager.getInstance();
+        if (styleManager.isWantStyleUpdate()) {
+            CraftUIStyle activeStyle = styleManager.getActiveStyleData();
+            activeStyle.buildStyle(ImGui.getStyle());
+
+            Identifier font = activeStyle.getDefaultFont();
+            if (font != null) {
+                ImFont imFont = CraftUIFonts.getFont(font);
+                ImGui.getIO().setFontDefault(imFont);
+            }
+
+            styleManager.setWantStyleUpdate(false);
+        }
+
+
+        // LAYOUT
         Identifier desiredLayout = null;
         for (CraftApp app : apps) {
             Identifier l = app.getLayoutPreset();
@@ -243,11 +263,9 @@ public final class AppManager {
             layoutManager.setLayoutUpdate(false);
         }
 
+        // PRIMARY RENDER
         ImGuiUtil.IM_GLFW.newFrame();
         ImGui.newFrame();
-    
-        ImGui.pushFont(CraftUIFonts.inter());
-
 
         for (CraftApp app : apps) {
             ImGui.pushID(app.getClass().getCanonicalName().hashCode());
@@ -260,8 +278,6 @@ public final class AppManager {
             ImGui.popID();
         }
 
-        ImGui.popFont();
-
         if (isCleanupFrame) {
             ImGui.setWindowFocus(null);
             ImGui.getIO().setWantCaptureKeyboard(false);
@@ -271,6 +287,7 @@ public final class AppManager {
         ImGui.render();
         ImGuiUtil.IM_GL3.renderDrawData(ImGui.getDrawData());
 
+        // CLEANUP
         if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
             long backupWindowPtr = glfwGetCurrentContext();
             ImGui.updatePlatformWindows();

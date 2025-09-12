@@ -1,4 +1,4 @@
-package com.igrium.craftui.impl.font;
+package com.igrium.craftui.impl.style;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;

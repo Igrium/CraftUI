@@ -1,6 +1,6 @@
 package com.igrium.craftui.event;
 
-import com.igrium.craftui.impl.font.ImFontManager;
+import com.igrium.craftui.impl.style.ImFontManager;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
