@@ -1,29 +1,35 @@
 package com.igrium.craftui.impl.config;
 
-import com.igrium.craftui.config.CraftUIConfig;
-import com.igrium.craftui.file.FileDialogs;
-import com.igrium.craftui.style.CraftUILayouts;
-import com.igrium.craftui.screen.CraftAppScreen;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.app.CraftApp;
-
+import com.igrium.craftui.file.FileDialogs;
+import com.igrium.craftui.screen.CraftAppScreen;
+import com.igrium.craftui.style.CraftUILayouts;
+import com.igrium.craftui.style.CraftUIStyles;
 import imgui.ImGui;
 import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiHoveredFlags;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
+import imgui.type.ImInt;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.Language;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CraftUIConfigApp extends CraftApp {
+import java.util.Arrays;
 
-//    private final SaveConfirmation saveConfirmation = new SaveConfirmation(this::save, this::close);
+public class CraftUIConfigApp extends CraftApp {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CraftUIConfigApp.class);
 
+    /**
+     * Mutable config instance.
+     */
     private final CraftUIConfig config = CraftUI.getConfig();
 
     private final ImBoolean preferNativeFileDialog = new ImBoolean(config.isPreferNativeFileDialog());
@@ -31,29 +37,70 @@ public class CraftUIConfigApp extends CraftApp {
     private final ImBoolean layoutPersistent = new ImBoolean(config.isLayoutPersistent());
     private final ImBoolean enableDebugCommand = new ImBoolean(config.isEnableDebugCommands());
 
-    private boolean isUnsaved;
+    private Identifier[] styles;
+    private final String[] styleNames;
+
+    private final ImInt selectedStyle = new ImInt();
+
+    public CraftUIConfigApp() {
+        styles = CraftUIStyles.getStyles().keySet().toArray(new Identifier[0]);
+        styleNames = Arrays.stream(styles)
+                .map(i -> Language.getInstance().get(i.toTranslationKey("style")))
+                .toArray(String[]::new);
+
+        int styleIndex = find(CraftUIStyles.getActiveStyle(), styles);
+        if (styleIndex >= 0) {
+            selectedStyle.set(styleIndex);
+        }
+    }
+
+    private static <T> int find(T value, T[] array) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i].equals(value)) {
+                return i;
+            }
+        }
+        return -1;
+    }
 
     @Override
     protected void render(MinecraftClient client) {
-        
-        var viewport = ImGui.getMainViewport();
+        boolean wantsSave = false;
 
+        var viewport = ImGui.getMainViewport();
         ImGui.setNextWindowPos(viewport.getCenterX(), viewport.getCenterY(), ImGuiCond.Always, .5f, .5f);
+
+
         if (ImGui.begin(
                 Text.translatable("options.craftui.header").getString(), ImGuiWindowFlags.NoCollapse
-                | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings)) {
+                        | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings)) {
 
-            checkbox("options.craftui.preferNativeFileDialog", preferNativeFileDialog, "options.craftui.preferNativeFileDialog.tooltip");
-            checkbox("options.craftui.enableViewports", enableViewports, "options.craftui.enableViewports.tooltip");
-            checkbox("options.craftui.layoutPersistent", layoutPersistent, "options.craftui.layoutPersistent.tooltip");
+            if (ImGui.getIO().getKeysDown(GLFW.GLFW_KEY_ESCAPE) && ImGui.isWindowFocused()) {
+                close();
+            }
 
-            checkbox("options.craftui.enableDebugCommands", enableDebugCommand, "options.craftui.enableDebugCommands.tooltip");
+            if (combo("options.craftui.style", selectedStyle, styleNames, "options.craftui.style.tooltip"))
+                wantsSave = true;
+
+            if (checkbox("options.craftui.preferNativeFileDialog", preferNativeFileDialog, "options.craftui.preferNativeFileDialog.tooltip"))
+                wantsSave = true;
+
+            if (checkbox("options.craftui.enableViewports", enableViewports, "options.craftui.enableViewports.tooltip"))
+                wantsSave = true;
+
+            if (checkbox("options.craftui.layoutPersistent", layoutPersistent, "options.craftui.layoutPersistent.tooltip"))
+                wantsSave = true;
+
+            if (checkbox("options.craftui.enableDebugCommands", enableDebugCommand, "options.craftui.enableDebugCommands.tooltip"))
+                wantsSave = true;
 
             ImGui.separator();
 
             if (button("options.craftui.resetLayout", "options.craftui.resetLayout.tooltip")) {
                 CraftUILayouts.resetLayouts();
             }
+
+            ImGui.sameLine();
 
             if (button("options.craftui.testFileDialog", "options.craftui.testFileDialog.tooltip")) {
                 FileDialogs.showOpenDialog(null).whenComplete((v, e) -> {
@@ -71,56 +118,49 @@ public class CraftUIConfigApp extends CraftApp {
 
             ImGui.separator();
 
-            if (ImGui.button(isUnsaved ? "Apply" : "Close")) {
-                if (isUnsaved) {
-                    save();
-                }
+            if (button("gui.done", null)) {
                 close();
-            };
-
+            }
         }
         ImGui.end();
+
+        if (wantsSave) {
+            save();
+        }
     }
 
-    private boolean checkbox(String translationKey, ImBoolean active, @Nullable String helpTranslationKey) {
-        return checkbox(Text.translatable(translationKey), active, Text.translatable(helpTranslationKey));
-    }
-
-    private boolean checkbox(Text name, ImBoolean active, @Nullable Text helpText) {
-        boolean updated = ImGui.checkbox(name.getString(), active);
-        if (helpText != null && ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-            ImGui.setTooltip(helpText.getString());
-        }
-        if (updated) {
-            onUpdate();
-        }
+    private boolean checkbox(String name, ImBoolean active, @Nullable String tooltip) {
+        boolean updated = ImGui.checkbox(Language.getInstance().get(name), active);
+        setTooltip(tooltip);
         return updated;
     }
 
-    private boolean button(String translationKey, String toolTipKey) {
-        return button(Text.translatable(translationKey), toolTipKey != null ? Text.translatable(toolTipKey) : null);
+    private boolean combo(String name, ImInt currentItem, String[] items, @Nullable String tooltip) {
+        boolean updated = ImGui.combo(Language.getInstance().get(name), currentItem, items);
+        setTooltip(tooltip);
+        return updated;
     }
 
-    private boolean button(Text name, @Nullable Text toolTip) {
-        boolean pressed = ImGui.button(name.getString());
-        if (toolTip != null && ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-            ImGui.setTooltip(toolTip.getString());
-        }
+    private boolean button(String name, @Nullable String tooltip) {
+        boolean pressed = ImGui.button(Language.getInstance().get(name));
+        setTooltip(tooltip);
         return pressed;
     }
 
-    private void onUpdate() {
-        isUnsaved = true;
+
+    private void setTooltip(@Nullable String tooltip) {
+        if (tooltip != null && ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+            ImGui.setTooltip(Language.getInstance().get(tooltip));
+        }
     }
-    
+
     private void save() {
+        config.setStyle(styles[selectedStyle.get()]);
         config.setPreferNativeFileDialog(preferNativeFileDialog.get());
         config.setEnableViewports(enableViewports.get());
         config.setLayoutPersistent(layoutPersistent.get());
         config.setEnableDebugCommands(enableDebugCommand.get());
         CraftUI.saveConfig();
-
-        isUnsaved = false;
     }
 
     public static CraftAppScreen<CraftUIConfigApp> createScreen() {

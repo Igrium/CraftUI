@@ -63,6 +63,10 @@ public class StyleManager implements IdentifiableResourceReloadListener {
         return styles.get(id);
     }
 
+    public Map<Identifier, CraftUIStyle> getStyles() {
+        return Collections.unmodifiableMap(styles);
+    }
+
     @Getter @NonNull
     private Identifier activeStyle = CraftUIStyles.DARK;
 

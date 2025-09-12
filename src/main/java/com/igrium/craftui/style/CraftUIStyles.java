@@ -5,6 +5,8 @@ import lombok.NonNull;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+
 public class CraftUIStyles {
     /**
      * The default, "dark" style
@@ -21,10 +23,18 @@ public class CraftUIStyles {
     }
 
     /**
+     * Get a map of all the styles loaded from all resourcepacks.
+     * @return Unmodifiable style map
+     */
+    public static Map<Identifier, CraftUIStyle> getStyles() {
+        return StyleManager.getInstance().getStyles();
+    }
+
+    /**
      * Get the currently-loaded style.
      * @return Current style identifier.
      */
-    public @NonNull Identifier getActiveStyle() {
+    public static @NonNull Identifier getActiveStyle() {
         return StyleManager.getInstance().getActiveStyle();
     }
 
@@ -32,14 +42,14 @@ public class CraftUIStyles {
      * Switch the UI to a new style.
      * @param id Style ID to switch to.
      */
-    public void setActiveStyle(@NonNull Identifier id) {
+    public static void setActiveStyle(@NonNull Identifier id) {
         StyleManager.getInstance().setActiveStyle(id);
     }
 
     /**
      * Push a style update to the UI. Use after manually editing the active style.
      */
-    public void updateStyle() {
+    public static void updateStyle() {
         StyleManager.getInstance().setWantStyleUpdate(true);
     }
 }

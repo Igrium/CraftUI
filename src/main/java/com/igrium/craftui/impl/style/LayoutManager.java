@@ -108,7 +108,11 @@ public class LayoutManager implements IdentifiableResourceReloadListener {
 
     public void resetLayouts() {
         userLayouts.clear();
-        try(var paths = Files.walk(FabricLoader.getInstance().getConfigDir().resolve("craftui/layouts"))) {
+        Path layoutDir = FabricLoader.getInstance().getConfigDir().resolve("craftui/layouts");
+        if (!Files.isDirectory(layoutDir)) {
+            return;
+        }
+        try(var paths = Files.walk(layoutDir)) {
             paths.sorted(Comparator.reverseOrder()).forEach(LayoutManager::deleteSneaky);
         } catch (IOException e) {
             LOGGER.error("Error deleting user layouts: ", e);

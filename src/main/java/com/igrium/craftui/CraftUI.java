@@ -2,17 +2,19 @@ package com.igrium.craftui;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.igrium.craftui.impl.event.CraftUIConfigCallback;
+import com.igrium.craftui.impl.config.CraftUIConfigCallback;
 import com.igrium.craftui.impl.style.LayoutManager;
 import com.igrium.craftui.impl.style.StyleManager;
 import com.igrium.craftui.util.RaycastUtils;
 import lombok.Getter;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.util.Util;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.igrium.craftui.config.CraftUIConfig;
+import com.igrium.craftui.impl.config.CraftUIConfig;
 import com.igrium.craftui.impl.commands.CraftUICommand;
 import com.igrium.craftui.impl.style.ImFontManager;
 
@@ -21,8 +23,10 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.resource.ResourceType;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
 
 public class CraftUI implements ClientModInitializer {
 
@@ -69,20 +73,26 @@ public class CraftUI implements ClientModInitializer {
         }
     }
 
+    private static final Object configMutex = new Object();
+
     /**
      * Save the CraftUI config to file. Log an error if unable to save.
      * @return If the config saved successfully.
      */
-    public static boolean saveConfig() {
-        CraftUIConfigCallback.EVENT.invoker().onUpdateConfig(config);
-        LOGGER.info("Saving CraftUI config to {}", CONFIG_FILE);
-        try (var writer = Files.newBufferedWriter(CONFIG_FILE)) {
-            config.saveConfig(writer);
-            return true;
-        } catch (Exception e) {
-            LOGGER.error("Error saving CraftUI config", e);
-            return false;
-        }
+    public static CompletableFuture<Void> saveConfig() {
+        config.applyConfig();
+
+        return CompletableFuture.runAsync(() -> {
+            synchronized (configMutex) {
+                LOGGER.debug("Saving CraftUI config to {}", CONFIG_FILE);
+                try (var writer = Files.newBufferedWriter(CONFIG_FILE)) {
+                    config.saveConfig(writer);
+                } catch (IOException e) {
+                    LOGGER.error("Error saving CraftUI config", e);
+                    throw ExceptionUtils.asRuntimeException(e);
+                }
+            }
+        }, Util.getIoWorkerExecutor());
     }
 
     private static void initConfig() {

@@ -1,11 +1,13 @@
-package com.igrium.craftui.config;
+package com.igrium.craftui.impl.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.igrium.craftui.CraftUI;
+import com.igrium.craftui.style.CraftUIStyles;
 import lombok.Getter;
 import lombok.Setter;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.util.Identifier;
 
 import java.io.Reader;
 import java.io.Writer;
@@ -18,6 +20,8 @@ import java.io.Writer;
 public final class CraftUIConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
+    private Identifier style = CraftUIStyles.DARK;
 
     /**
      * Prefer the native system file dialog over the ImGui one.
@@ -52,5 +56,10 @@ public final class CraftUIConfig {
 
     public void saveConfig(Writer writer) {
         GSON.toJson(this, writer);
+    }
+
+    public void applyConfig() {
+        CraftUIConfigCallback.EVENT.invoker().onUpdateConfig(this);
+        CraftUIStyles.setActiveStyle(style);
     }
 }

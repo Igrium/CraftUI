@@ -3,7 +3,7 @@ package com.igrium.craftui.file;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import com.igrium.craftui.impl.event.CraftUIConfigCallback;
+import com.igrium.craftui.impl.config.CraftUIConfigCallback;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
