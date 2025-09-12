@@ -7,7 +7,7 @@ Over the past few years, I've noticed a growing use of ImGui in utility mods suc
 due to technical constraints, none of these mods can be compatible with each other (and if they are, they're extremely jank).
 
 CraftUI is a framework that attempts to fix this. Being a minecraft-specific wrapper for Dear ImGui, it handles mounting
-and rendering the ImGui native code, as well as providing a set of extra, Minecraft-specific utility systems.
+and rendering the ImGui native code, cross-mod compatibility, as well as providing a set of extra, Minecraft-specific utility systems.
 
 > Note: This framework is in active development, and public API functionality might change.
 > It also doesn't support all Minecraft versions right now.
@@ -31,7 +31,7 @@ On top of that, it also includes:
 ## Getting Started
 
 To preface, it's important to have a basic understanding of Dear ImGui, and specifically ImGui Java, before using this library.
-Any questions pertaining ImGui on its own will be directed to them.
+Any questions pertaining ImGui on its own will be redirected there.
 
 With that said, to install, add the following to the `repositories` section of your buildscript:
 
@@ -50,7 +50,7 @@ dependencies {
 }
 ```
 
-*Due to the size of the included native libraries, it is *not* recommended to bundle the framework with your mod.*
+And don't forget to add it as a dependency in `fabric.mod.json`!
 
 Once you have the framework installed and building, you can create a new UI application by extending `CraftApp`:
 
@@ -65,9 +65,12 @@ public class ExampleApp extends CraftApp {
 
 Now, to open the UI, call:
 ```java
-AppManager.openApp(exampleApp);
+AppManager.openApp(new ExampleApp());
 ```
 
-The app will now render atop the game until it is closed with `CraftApp.close()`. See `testmod` for a more in-depth example.
+The app will now render atop the game until it is closed with `exampleApp.close()`. See `testmod` for a more in-depth example.
 
-**Important:** The package `com.igrium.craftui.impl` is *not* considered part of the public API, and could change without warning!
+## Important Notes:
+
+* Due to the size of the included native libraries, it is *not* recommended to bundle the framework itself with your mod.
+* The package `com.igrium.craftui.impl` is *not* considered part of the public API, and could change without warning!
