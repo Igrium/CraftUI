@@ -2,7 +2,6 @@ package com.igrium.craftui;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.igrium.craftui.impl.config.CraftUIConfigCallback;
 import com.igrium.craftui.impl.style.LayoutManager;
 import com.igrium.craftui.impl.style.StyleManager;
 import com.igrium.craftui.util.RaycastUtils;
@@ -65,7 +64,7 @@ public class CraftUI implements ClientModInitializer {
         LOGGER.info("Loading CraftUI config from {}", CONFIG_FILE);
         try (var reader = Files.newBufferedReader(CONFIG_FILE)) {
             config.loadConfig(reader);
-            CraftUIConfigCallback.EVENT.invoker().onUpdateConfig(config);
+            config.applyConfig();
             return true;
         } catch (Exception e) {
             LOGGER.error("Error loading CraftUI config", e);
