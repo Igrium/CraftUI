@@ -108,6 +108,8 @@ public abstract class DockSpaceApp extends CraftApp {
 
         ImGui.setNextWindowDockID(dockSpaceId);
         if (!ImGui.begin(name, imGuiWindowFlags | ImGuiWindowFlags.NoBackground)) {
+            // Never lock the mouse if the viewport isn't visible
+            AppManager.forceMouseUnlock();
             return false;
         }
 
