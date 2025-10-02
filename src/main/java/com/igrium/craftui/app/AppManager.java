@@ -55,6 +55,11 @@ public final class AppManager {
     private static ViewportBounds currentViewportBounds;
 
     /**
+     * Disable ImGui from rendering if one of the apps crashed so that Minecraft can write the crash report cleanly
+     */
+    private static boolean crashed;
+
+    /**
      * Get a list of all the apps that are open.
      * @return An unmodifiable view of all open apps.
      */
@@ -214,6 +219,9 @@ public final class AppManager {
      */
     public static void render(MinecraftClient client) {
         RenderSystem.assertOnRenderThread();
+        if (crashed)
+            return;
+
         boolean isCleanupFrame = apps.isEmpty();
 
         if (client.mouse.isCursorLocked()) {
@@ -272,6 +280,7 @@ public final class AppManager {
             try {
                 app.render(client);
             } catch (Exception e) {
+                crashed = true;
                 CrashReport crashReport = new CrashReport("Error rendering CraftUI app " + app.getClass().getSimpleName(), e);
                 throw new CrashException(crashReport);
             }

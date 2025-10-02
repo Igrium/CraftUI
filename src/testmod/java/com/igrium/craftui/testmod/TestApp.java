@@ -105,6 +105,10 @@ public class TestApp extends DockSpaceApp {
             setViewportInputMode(ViewportInputMode.values()[inputMode.get()]);
 
             ImGui.combo("Layout", layout, LAYOUT_OPTIONS);
+
+            if (ImGui.button("Throw Exception")) {
+                throw new RuntimeException("Test Exception");
+            }
         }
         ImGui.end();
 
