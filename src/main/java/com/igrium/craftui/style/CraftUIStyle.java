@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
 
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Represents an ImGUI style in Java, allowing for json serialization
@@ -180,7 +182,7 @@ public class CraftUIStyle {
     float circleTessellationMaxError;
 
     @Getter @NonNull
-    final StyleColorMap colors = new StyleColorMap();
+    final Map<String, CraftUIColors.UIColor> colors = new HashMap<>();
 
     /**
      * Convert this style into a native ImGui style.
@@ -238,7 +240,7 @@ public class CraftUIStyle {
         style.setCurveTessellationTol(curveTessellationTol);
         style.setCircleTessellationMaxError(circleTessellationMaxError);
 
-        colors.buildStyle(style);
+        CraftUIColors.buildStyle(style, colors);
     }
 
     public void fromNativeStyle(ImGuiStyle style) {
@@ -283,6 +285,7 @@ public class CraftUIStyle {
         this.curveTessellationTol = style.getCurveTessellationTol();
         this.circleTessellationMaxError = style.getCircleTessellationMaxError();
 
-        colors.fromStyle(style);
+        colors.clear();
+        colors.putAll(CraftUIColors.fromStyle(style));
     }
 }
