@@ -2,6 +2,7 @@ package com.igrium.craftui.impl.mixin;
 
 import com.igrium.craftui.impl.input.CursorLockManager;
 import net.minecraft.client.option.KeyBinding;
+import org.joml.Vector2d;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -77,8 +78,9 @@ public class MouseMixin {
         if (viewport != null) {
 
             this.cursorLocked = false;
-            this.x = viewport.x() + viewport.width() / 2;
-            this.y = viewport.y() + viewport.height() / 2;
+
+            this.x = (double) viewport.width() / 2 + viewport.x();
+            this.y = client.getWindow().getHeight() - ((double) viewport.height() / 2 + viewport.y());
 
             InputUtil.setCursorParameters(client.getWindow().getHandle(), InputUtil.GLFW_CURSOR_NORMAL, x, y);
             
