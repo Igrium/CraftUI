@@ -11,7 +11,17 @@ import org.jetbrains.annotations.Nullable;
  */
 public abstract class CraftApp {
 
-    public record ViewportBounds(int x, int y, int width, int height) {}
+    public record ViewportBounds(int x, int y, int width, int height) {
+        /**
+         * For some reason, width and height equal to or less than 1 can cause crashes with
+         * Iris shader enabled. (Cause Framebuffer.Status 36054 - IncompleteAttachment)
+         *
+         * @return True if width and height are greater than 1, false otherwise.
+         */
+        public boolean isValid() {
+            return width > 1 && height > 1;
+        }
+    }
 
     private final UIEvent<Runnable> openEvent = UIEvent.ofRunnable();
 
