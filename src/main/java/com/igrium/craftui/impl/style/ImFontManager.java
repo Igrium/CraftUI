@@ -313,6 +313,8 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         private static short parseShort(String hex) {
             if (hex.startsWith("0x")) {
                 hex = hex.substring(2);
+            } else if (hex.startsWith("#")) {
+                hex = hex.substring(1);
             }
             return (short) Integer.parseInt(hex, 16);
         }

@@ -109,6 +109,12 @@ public class TestApp extends DockSpaceApp {
             if (ImGui.button("Throw Exception")) {
                 throw new RuntimeException("Test Exception");
             }
+
+            ImGui.text("Here are some test icons from ReplayLab: ");
+            ImGui.sameLine();
+            ImGui.pushFont(ReplayLabIcons.getFont());
+            ImGui.text(ReplayLabIcons.ICON_VIDEOCAM + " " + ReplayLabIcons.ICON_EYEDROPPER + " " + ReplayLabIcons.ICON_MAGNET);
+            ImGui.popFont();
         }
         ImGui.end();
 
