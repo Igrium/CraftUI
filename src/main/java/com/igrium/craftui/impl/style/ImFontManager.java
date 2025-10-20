@@ -2,18 +2,19 @@ package com.igrium.craftui.impl.style;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
+import it.unimi.dsi.fastutil.shorts.ShortArrayList;
+import it.unimi.dsi.fastutil.shorts.ShortList;
 import org.apache.commons.io.FilenameUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -156,12 +157,21 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                 ImFont font = renderFont(atlas, file);
                 fonts.put(entry.getKey(), font);
             } catch (Exception e) {
-                LOGGER.error("Error rendering font {}. The ttf file was likely invalid.",entry.getKey(), e);
+                LOGGER.error("Error rendering font {}. The ttf file was likely invalid.", entry.getKey(), e);
             }
         }
         atlas.build();
         ImGuiUtil.IM_GL3.updateFontsTexture();
         atlas.clearTexData();
+
+        var fontIterator = fonts.entrySet().iterator();
+        while (fontIterator.hasNext()) {
+            var entry = fontIterator.next();
+            if (!entry.getValue().isLoaded()) {
+                LOGGER.warn("Font {} was not loaded properly. Please ensure valid glyph ranges.", entry.getKey());
+                fontIterator.remove();
+            }
+        }
 
         LOGGER.info("Created font atlas with {} font(s)", fonts.size());
         FontReloadCallback.EVENT.invoker().onFontsReloaded(this);
@@ -208,8 +218,11 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                 imConfig.setGlyphOffset(offsetX, offsetY);
             }
 
-            
-            return atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig);
+            if (config.glyphRanges != null) {
+                return atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig, config.glyphRanges);
+            } else {
+                return atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig);
+            }
         } finally {
             imConfig.destroy();
         }
@@ -251,29 +264,58 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
          */
         public float size = 1f;
 
-        @Nullable
-        public Integer oversampleH;
+        public @Nullable Integer oversampleH;
 
-        @Nullable
-        public Integer oversampleV;
+        public @Nullable Integer oversampleV;
 
-        @Nullable
-        public Boolean pixelSnapH;
+        public  Boolean pixelSnapH;
 
-        @Nullable
-        public Float glyphMinAdvanceX;
+        public @Nullable Float glyphMinAdvanceX;
 
-        @Nullable
-        public Float glyphMaxAdvanceX;
+        public @Nullable Float glyphMaxAdvanceX;
 
-        @Nullable
-        public Vector2f glyphExtraSpacing;
+        public @Nullable Vector2f glyphExtraSpacing;
 
-        @Nullable
-        public Vector2f glyphOffset;
+        public @Nullable Vector2f glyphOffset;
 
-        @Nullable
-        public Vector2f scaledGlyphOffset;
+        public @Nullable Vector2f scaledGlyphOffset;
+
+        @JsonAdapter(GlyphRangeTypeAdapter.class)
+        public short @Nullable [] glyphRanges;
+    }
+
+    private static class GlyphRangeTypeAdapter extends TypeAdapter<short[]> {
+
+        @Override
+        public void write(JsonWriter out, short[] value) throws IOException {
+            out.beginArray();
+            for (short s : value) {
+                out.value(Integer.toHexString(s));
+            }
+            out.endArray();
+        }
+
+        @Override
+        public short[] read(JsonReader in) throws IOException {
+            ShortList list = new ShortArrayList();
+            in.beginArray();
+            while (in.peek() != JsonToken.END_ARRAY) {
+                if (in.peek() == JsonToken.STRING) {
+                    list.add(parseShort(in.nextString()));
+                } else {
+                    list.add((short) in.nextInt());
+                }
+            }
+            in.endArray();
+            return list.toShortArray();
+        }
+
+        private static short parseShort(String hex) {
+            if (hex.startsWith("0x")) {
+                hex = hex.substring(2);
+            }
+            return (short) Integer.parseInt(hex, 16);
+        }
     }
 
     private static class LoadedFontFile {
