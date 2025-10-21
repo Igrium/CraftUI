@@ -149,7 +149,7 @@ public final class AppManager {
 
     private static void updateViewportBounds(MinecraftClient client) {
         Window window = client.getWindow();
-        if (currentViewportBounds != null) {
+        if (currentViewportBounds != null && currentViewportBounds.isValid()) {
             window.setFramebufferWidth(currentViewportBounds.width());
             window.setFramebufferHeight(currentViewportBounds.height());
         } else {
