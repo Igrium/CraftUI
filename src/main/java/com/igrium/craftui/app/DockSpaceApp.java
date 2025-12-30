@@ -67,7 +67,7 @@ public abstract class DockSpaceApp extends CraftApp {
     @Override
     protected void render(MinecraftClient client) {
         ImGui.setNextWindowBgAlpha(0f);
-        dockSpaceId = ImGui.dockSpaceOverViewport(ImGui.getMainViewport());
+        dockSpaceId = ImGui.dockSpaceOverViewport(ImGui.getMainViewport().getID());
         didBeginViewport = false;
     }
 

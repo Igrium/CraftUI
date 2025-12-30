@@ -161,7 +161,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             }
         }
         atlas.build();
-        ImGuiUtil.IM_GL3.updateFontsTexture();
+        ImGuiUtil.IM_GL3.createFontsTexture();
         atlas.clearTexData();
 
         var fontIterator = fonts.entrySet().iterator();

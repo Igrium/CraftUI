@@ -4,10 +4,13 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import com.igrium.craftui.app.CraftApp;
-
-import imgui.extension.imguifiledialog.ImGuiFileDialog;
-import imgui.extension.imguifiledialog.flag.ImGuiFileDialogFlags;
+//
+//import imgui.extension.imguifiledialog.ImGuiFileDialog;
+//import imgui.extension.imguifiledialog.flag.ImGuiFileDialogFlags;
+import imgui.ImGui;
+import imgui.flag.ImGuiButtonFlags;
 import imgui.flag.ImGuiWindowFlags;
+import imgui.type.ImBoolean;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
@@ -16,7 +19,7 @@ class ImFileDialogApp extends CraftApp {
 
     @Getter
     private final CompletableFuture<Optional<String>> future = new CompletableFuture<>();
-    private boolean isOpen;
+//    private boolean isOpen;
     private boolean hasClosed;
 
     private static final String BROWSE_KEY = "craftui-file-dialog";
@@ -44,23 +47,33 @@ class ImFileDialogApp extends CraftApp {
     public ImFileDialogApp() {
     }
 
+    private ImBoolean isOpen = new ImBoolean(true);
+
     @Override
     protected void render(MinecraftClient client) {
-        if (!isOpen && !hasClosed) {
-            int flags = warnOnOverride ? ImGuiFileDialogFlags.ConfirmOverwrite : ImGuiFileDialogFlags.None;
-            ImGuiFileDialog.openModal(BROWSE_KEY, title, filters, defaultPath, defaultFilename, 1, 7, flags);
-            isOpen = true;
+        if (ImGui.begin("No file dialog", isOpen, ImGuiWindowFlags.Modal | ImGuiWindowFlags.NoSavedSettings)) {
+            ImGui.text("Internal file dialog not implemented");
         }
+        ImGui.end();
 
-        if (ImGuiFileDialog.display(BROWSE_KEY, ImGuiWindowFlags.NoSavedSettings, 200, 400, 800, 600)) {
-            ImGuiFileDialog.close();
-            if (ImGuiFileDialog.isOk()) {
-                future.complete(Optional.of(ImGuiFileDialog.getFilePathName()));
-            } else {
-                future.complete(Optional.empty());
-            }
-            
+        if (!isOpen.get()) {
+            future.complete(Optional.empty());
         }
+//        if (!isOpen && !hasClosed) {
+//            int flags = warnOnOverride ? ImGuiFileDialogFlags.ConfirmOverwrite : ImGuiFileDialogFlags.None;
+//            ImGuiFileDialog.openModal(BROWSE_KEY, title, filters, defaultPath, defaultFilename, 1, 7, flags);
+//            isOpen = true;
+//        }
+//
+//        if (ImGuiFileDialog.display(BROWSE_KEY, ImGuiWindowFlags.NoSavedSettings, 200, 400, 800, 600)) {
+//            ImGuiFileDialog.close();
+//            if (ImGuiFileDialog.isOk()) {
+//                future.complete(Optional.of(ImGuiFileDialog.getFilePathName()));
+//            } else {
+//                future.complete(Optional.empty());
+//            }
+//
+//        }
     }
 
 }

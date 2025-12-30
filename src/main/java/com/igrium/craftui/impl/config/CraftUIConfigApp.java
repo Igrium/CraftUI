@@ -75,7 +75,8 @@ public class CraftUIConfigApp extends CraftApp {
                 Text.translatable("options.craftui.header").getString(), ImGuiWindowFlags.NoCollapse
                         | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings)) {
 
-            if (ImGui.getIO().getKeysDown(GLFW.GLFW_KEY_ESCAPE) && ImGui.isWindowFocused()) {
+
+            if (ImGui.isKeyPressed(GLFW.GLFW_KEY_ESCAPE) && ImGui.isWindowFocused()) {
                 close();
             }
 
