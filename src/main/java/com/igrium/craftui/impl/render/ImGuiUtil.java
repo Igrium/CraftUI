@@ -11,8 +11,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
-import imgui.gl3.ImGuiImplGl3;
-import imgui.glfw.ImGuiImplGlfw;
 import net.minecraft.client.MinecraftClient;
 
 public class ImGuiUtil {
@@ -57,7 +55,7 @@ public class ImGuiUtil {
         
         IM_GLFW.init(client.getWindow().getHandle(), true);
         IM_GL3.init(GLSL_VERSION);
-
+        IM_GL3.newFrame(); // force new frame to init buffers before font loading
         ImGuiEvents.POST_INIT.invoker().postInit();
         initialized = true;
     }

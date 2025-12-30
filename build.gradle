@@ -54,7 +54,6 @@ dependencies {
     implementation include("io.github.spair:imgui-java-natives-windows:${project.imgui_version}")
     implementation include("io.github.spair:imgui-java-natives-linux:${project.imgui_version}")
     implementation include("io.github.spair:imgui-java-natives-macos:${project.imgui_version}")
-    api include("io.github.spair:imgui-java-lwjgl3:${project.imgui_version}")
 
     api include("org.lwjgl:lwjgl-nfd:3.3.2")
     implementation include("org.lwjgl:lwjgl-nfd:3.3.2:natives-windows")
