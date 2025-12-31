@@ -11,6 +11,7 @@ import imgui.ImGui;
 import imgui.flag.ImGuiButtonFlags;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
+import imgui.type.ImString;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
@@ -47,17 +48,36 @@ class ImFileDialogApp extends CraftApp {
     public ImFileDialogApp() {
     }
 
-    private ImBoolean isOpen = new ImBoolean(true);
+    private final ImBoolean isOpen = new ImBoolean(false);
+    private final ImString filepath = new ImString();
 
     @Override
     protected void render(MinecraftClient client) {
-        if (ImGui.begin("No file dialog", isOpen, ImGuiWindowFlags.Modal | ImGuiWindowFlags.NoSavedSettings)) {
-            ImGui.text("Internal file dialog not implemented");
+        if (!isOpen.get()) {
+            ImGui.openPopup("File Dialog");
+            filepath.set(defaultPath);
+            isOpen.set(true);
         }
-        ImGui.end();
+
+        if (ImGui.beginPopupModal("File Dialog", isOpen, ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.AlwaysAutoResize)) {
+            ImGui.text("Native file dialog failed to open. Please enter filepath.");
+            ImGui.inputText("##File", filepath);
+
+            if (ImGui.button("OK")) {
+                ImGui.closeCurrentPopup();
+                future.complete(Optional.of(filepath.get()));
+            }
+            ImGui.sameLine();
+            if (ImGui.button("Cancel")) {
+                ImGui.closeCurrentPopup();
+            }
+
+            ImGui.endPopup();
+        }
 
         if (!isOpen.get()) {
             future.complete(Optional.empty());
+//            close();
         }
 //        if (!isOpen && !hasClosed) {
 //            int flags = warnOnOverride ? ImGuiFileDialogFlags.ConfirmOverwrite : ImGuiFileDialogFlags.None;
