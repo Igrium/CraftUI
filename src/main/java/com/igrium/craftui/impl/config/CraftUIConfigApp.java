@@ -150,10 +150,11 @@ public class CraftUIConfigApp extends CraftApp {
 
 
     private void setTooltip(@Nullable String tooltip) {
-        if (tooltip != null && ImGui.isItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-            ImGui.setTooltip(Language.getInstance().get(tooltip));
+        if (tooltip != null) {
+            ImGui.setItemTooltip(Language.getInstance().get(tooltip));
         }
     }
+
 
     private void save() {
         config.setStyle(styles[selectedStyle.get()]);
