@@ -55,10 +55,10 @@ dependencies {
     implementation include("io.github.spair:imgui-java-natives-linux:${project.imgui_version}")
     implementation include("io.github.spair:imgui-java-natives-macos:${project.imgui_version}")
 
-    api include("org.lwjgl:lwjgl-nfd:3.3.2")
-    implementation include("org.lwjgl:lwjgl-nfd:3.3.2:natives-windows")
-    implementation include("org.lwjgl:lwjgl-nfd:3.3.2:natives-macos")
-    implementation include("org.lwjgl:lwjgl-nfd:3.3.2:natives-linux")
+    api include("org.lwjgl:lwjgl-nfd:3.3.3")
+    implementation include("org.lwjgl:lwjgl-nfd:3.3.3:natives-windows")
+    implementation include("org.lwjgl:lwjgl-nfd:3.3.3:natives-macos")
+    implementation include("org.lwjgl:lwjgl-nfd:3.3.3:natives-linux")
 
     testmodImplementation sourceSets.main.output
 
