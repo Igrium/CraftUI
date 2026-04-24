@@ -51,14 +51,15 @@ dependencies {
 
     // Dear ImGui
     api include("io.github.spair:imgui-java-binding:${project.imgui_version}")
-    implementation include("io.github.spair:imgui-java-natives-windows:${project.imgui_version}")
-    implementation include("io.github.spair:imgui-java-natives-linux:${project.imgui_version}")
-    implementation include("io.github.spair:imgui-java-natives-macos:${project.imgui_version}")
+    runtimeOnly include("io.github.spair:imgui-java-natives-windows:${project.imgui_version}")
+    runtimeOnly include("io.github.spair:imgui-java-natives-linux:${project.imgui_version}")
+    runtimeOnly include("io.github.spair:imgui-java-natives-macos:${project.imgui_version}")
 
     api include("org.lwjgl:lwjgl-nfd:3.3.3")
-    implementation include("org.lwjgl:lwjgl-nfd:3.3.3:natives-windows")
-    implementation include("org.lwjgl:lwjgl-nfd:3.3.3:natives-macos")
-    implementation include("org.lwjgl:lwjgl-nfd:3.3.3:natives-linux")
+    runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-windows")
+    runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-macos")
+    runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-macos-arm64")
+    runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-linux")
 
     testmodImplementation sourceSets.main.output
 
