@@ -1,5 +1,6 @@
 package com.igrium.craftui.impl.mixin;
 
+import imgui.ImGui;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,6 +25,7 @@ public class WindowMixin {
     void craftui$onFramebufferSizeChanged(long window, int width, int height, CallbackInfo ci) {
         ViewportBounds viewportBounds = AppManager.getCustomViewportBounds();
         if (viewportBounds != null) {
+            viewportBounds = viewportBounds.scaled();
             framebufferWidth = viewportBounds.width();
             framebufferHeight = viewportBounds.height();
         }

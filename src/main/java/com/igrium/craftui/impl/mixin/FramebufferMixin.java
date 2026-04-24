@@ -34,6 +34,7 @@ public class FramebufferMixin {
     void onDraw(int width, int height, CallbackInfo ci) {
         ViewportBounds customBounds = AppManager.getCustomViewportBounds();
         if (isMainFrameBuffer() && customBounds != null) {
+            customBounds = customBounds.scaled();
             RenderSystem.assertOnRenderThread();
             GlStateManager._colorMask(true, true, true, false);
             GlStateManager._disableDepthTest();

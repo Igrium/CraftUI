@@ -2,6 +2,7 @@ package com.igrium.craftui.app;
 
 import com.igrium.craftui.event.UIEvent;
 
+import imgui.ImGui;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
@@ -11,7 +12,18 @@ import org.jetbrains.annotations.Nullable;
  */
 public abstract class CraftApp {
 
-    public record ViewportBounds(int x, int y, int width, int height) {}
+    public record ViewportBounds(int x, int y, int width, int height) {
+        public ViewportBounds scaled(float scaleX, float scaleY) {
+            return new ViewportBounds((int) (x * scaleX), (int) (y * scaleY), (int) (width * scaleX), (int) (height * scaleY));
+        }
+
+        /**
+         * Scale the viewport bounds to real pixels from logical units to deal with high-dpi displays
+         */
+        public ViewportBounds scaled() {
+            return scaled(ImGui.getIO().getDisplayFramebufferScaleX(), ImGui.getIO().getDisplayFramebufferScaleY());
+        }
+    }
 
     private final UIEvent<Runnable> openEvent = UIEvent.ofRunnable();
 
