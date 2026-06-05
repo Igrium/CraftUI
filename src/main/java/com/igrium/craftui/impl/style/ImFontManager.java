@@ -72,13 +72,17 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
     // console so we don't get spam every frame.
     private final Set<Identifier> complainedIds = new HashSet<>();
 
+    private static boolean isFontExt(String path) {
+        return path.endsWith(".ttf") || path.endsWith(".otf");
+    }
+
     @Override
     public CompletableFuture<Void> reload(Synchronizer synchronizer, ResourceManager manager, Executor prepareExecutor, Executor applyExecutor) {
         
         fontFiles.clear();
         
         List<CompletableFuture<?>> futures = new ArrayList<>();
-        for (var entry : manager.findResources("fonts", id -> id.getPath().endsWith(".ttf")).entrySet()) {
+        for (var entry : manager.findResources("fonts", id -> isFontExt(id.getPath())).entrySet()) {
             /* Calculate font ID and create font file entry */
             final Identifier fileName = entry.getKey();
 
@@ -154,10 +158,10 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             }
 
             try {
-                ImFont font = renderFont(atlas, file);
+                ImFont font = renderFont(atlas, file, entry.getKey());
                 fonts.put(entry.getKey(), font);
             } catch (Exception e) {
-                LOGGER.error("Error rendering font {}. The ttf file was likely invalid.", entry.getKey(), e);
+                LOGGER.error("Error rendering font {}. The ttf/otf file was likely invalid.", entry.getKey(), e);
             }
         }
         atlas.build();
@@ -177,7 +181,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         FontReloadCallback.EVENT.invoker().onFontsReloaded(this);
     }
 
-    private ImFont renderFont(ImFontAtlas atlas, LoadedFontFile file) {
+    private ImFont renderFont(ImFontAtlas atlas, LoadedFontFile file, Identifier id) {
         FontConfig config = file.config;
         ImFontConfig imConfig = new ImFontConfig();
         float size = config.size * 16; // TODO: UI scaling
@@ -218,13 +222,14 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                 imConfig.setGlyphOffset(offsetX, offsetY);
             }
 
+            imConfig.setName(id.toString());
             if (config.glyphRanges != null) {
                 return atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig, config.glyphRanges);
             } else {
                 return atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig);
             }
         } finally {
-            imConfig.destroy();
+//            imConfig.destroy();
         }
     }
 
@@ -268,7 +273,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
         public @Nullable Integer oversampleV;
 
-        public  Boolean pixelSnapH;
+        public Boolean pixelSnapH;
 
         public @Nullable Float glyphMinAdvanceX;
 

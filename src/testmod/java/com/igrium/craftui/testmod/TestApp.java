@@ -1,5 +1,6 @@
 package com.igrium.craftui.testmod;
 
+import com.igrium.craftui.MaterialIcons;
 import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
@@ -111,10 +112,10 @@ public class TestApp extends DockSpaceApp {
                 throw new RuntimeException("Test Exception");
             }
 
-            ImGui.text("Here are some test icons from ReplayLab: ");
+            ImGui.text("Here are some test icons: ");
             ImGui.sameLine();
-            ImGui.pushFont(ReplayLabIcons.getFont());
-            ImGui.text(ReplayLabIcons.ICON_VIDEOCAM + " " + ReplayLabIcons.ICON_EYEDROPPER + " " + ReplayLabIcons.ICON_MAGNET);
+            ImGui.pushFont(MaterialIcons.getFont());
+            ImGui.text("" + MaterialIcons.ICON_1K + MaterialIcons.ICON_3D_ROTATION + MaterialIcons.ICON_ADMIN_PANEL_SETTINGS + MaterialIcons.ICON_RADIO);
             ImGui.popFont();
 
             if (ImGui.button("Open a popup")) {
