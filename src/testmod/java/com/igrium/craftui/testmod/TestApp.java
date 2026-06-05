@@ -112,6 +112,8 @@ public class TestApp extends DockSpaceApp {
                 throw new RuntimeException("Test Exception");
             }
 
+            ImGui.text("Here are some test icons! " + MaterialIcons.ICON_1K + " " + MaterialIcons.ICON_APPLE);
+
             ImGui.text("Here are some test icons: ");
             ImGui.sameLine();
             ImGui.pushFont(MaterialIcons.getFont());

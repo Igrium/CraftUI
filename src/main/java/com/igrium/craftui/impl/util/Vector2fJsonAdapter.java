@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
 import net.minecraft.client.util.math.Vector2f;
@@ -20,11 +21,17 @@ public class Vector2fJsonAdapter extends TypeAdapter<Vector2f> {
 
     @Override
     public Vector2f read(JsonReader in) throws IOException {
-        in.beginArray();
-        float x = (float) in.nextDouble();
-        float y = (float) in.nextDouble();
-        in.endArray();
-        return new Vector2f(x, y);
+        JsonToken next = in.peek();
+        if (next == JsonToken.BEGIN_ARRAY) {
+            in.beginArray();
+            float x = (float) in.nextDouble();
+            float y = (float) in.nextDouble();
+            in.endArray();
+            return new Vector2f(x, y);
+        } else {
+            float val = (float) in.nextDouble();
+            return new Vector2f(val, val);
+        }
     }
     
 }

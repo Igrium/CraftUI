@@ -158,7 +158,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             }
 
             try {
-                ImFont font = renderFont(atlas, file, entry.getKey());
+                ImFont font = renderFont(atlas, file, entry.getKey(), false, files);
                 fonts.put(entry.getKey(), font);
             } catch (Exception e) {
                 LOGGER.error("Error rendering font {}. The ttf/otf file was likely invalid.", entry.getKey(), e);
@@ -181,10 +181,22 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         FontReloadCallback.EVENT.invoker().onFontsReloaded(this);
     }
 
-    private ImFont renderFont(ImFontAtlas atlas, LoadedFontFile file, Identifier id) {
+    /**
+     * Render a font from memory onto the GPU.
+     *
+     * @param atlas Font atlas to render into.
+     * @param file  Font file to render.
+     * @param id    The ID of the font we're rendering.
+     * @param merge Indicates that this font is being appended to a "parent" font.
+     * @param fonts Map of all fonts being loaded (used to locate icon fonts).
+     * @return The ImFont
+     */
+    private ImFont renderFont(ImFontAtlas atlas, LoadedFontFile file, Identifier id,
+                              boolean merge, Map<Identifier, LoadedFontFile> fonts) {
         FontConfig config = file.config;
         ImFontConfig imConfig = new ImFontConfig();
         float size = config.size * 16; // TODO: UI scaling
+
         try {
             imConfig.setSizePixels(size);
             if (config.oversampleH != null)
@@ -197,14 +209,13 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                 imConfig.setGlyphMinAdvanceX(config.glyphMinAdvanceX);
             if (config.glyphMaxAdvanceX != null)
                 imConfig.setGlyphMaxAdvanceX(config.glyphMaxAdvanceX);
-
-            if (config.glyphExtraSpacing != null)
-                imConfig.setGlyphExtraSpacing(
-                        config.glyphExtraSpacing.getX(),
-                        config.glyphExtraSpacing.getY());
+            if (config.glyphExtraSpacing != null) {
+                imConfig.setGlyphExtraSpacing(config.glyphExtraSpacing.getX(), config.glyphExtraSpacing.getY());
+            }
 
             if (config.glyphOffset != null || config.scaledGlyphOffset != null) {
                 // TODO: make this the actual scale
+                // One year later - what did I mean by this?
                 float scale = 1;
 
                 float offsetX = 0;
@@ -214,7 +225,10 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                     offsetX += config.glyphOffset.getX();
                     offsetY += config.glyphOffset.getY();
                 }
-                if (config.scaledGlyphOffset != null) {
+                if (merge && config.iconGlyphOffset != null) {
+                    offsetX += config.iconGlyphOffset.getX() * scale;
+                    offsetY += config.iconGlyphOffset.getY() * scale;
+                } else if (config.scaledGlyphOffset != null) {
                     offsetX += config.scaledGlyphOffset.getX() * scale;
                     offsetY += config.scaledGlyphOffset.getY() * scale;
                 }
@@ -222,14 +236,36 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                 imConfig.setGlyphOffset(offsetX, offsetY);
             }
 
+
             imConfig.setName(id.toString());
-            if (config.glyphRanges != null) {
-                return atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig, config.glyphRanges);
-            } else {
-                return atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig);
+
+            if (merge) {
+                // TODO: figure out how to make this re-use parts of the font atlas.
+                imConfig.setMergeMode(true);
+                if (config.glyphRanges == null) {
+                    LOGGER.warn("Tried to load {} as an icon font, but no glyph ranges are specified!", id);
+                }
             }
+
+            ImFont font;
+            if (config.glyphRanges != null) {
+                font = atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig, config.glyphRanges);
+            } else {
+                font = atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig);
+            }
+
+            if (!merge && config.icons != null) {
+                LoadedFontFile icons = fonts.get(config.icons);
+                if (icons != null) {
+                    renderFont(atlas, icons, config.icons, true, fonts);
+                } else {
+                    LOGGER.warn("Unable to locate icon font {}", config.icons);
+                }
+            }
+
+            return font;
         } finally {
-//            imConfig.destroy();
+            imConfig.destroy();
         }
     }
 
@@ -267,27 +303,36 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         /**
          * Base size of the font in pixels
          */
-        public float size = 1f;
+        float size = 1f;
 
-        public @Nullable Integer oversampleH;
+        @Nullable Integer oversampleH;
 
-        public @Nullable Integer oversampleV;
+        @Nullable Integer oversampleV;
 
-        public Boolean pixelSnapH;
+        Boolean pixelSnapH;
 
-        public @Nullable Float glyphMinAdvanceX;
+        @Nullable Float glyphMinAdvanceX;
 
-        public @Nullable Float glyphMaxAdvanceX;
+        @Nullable Float glyphMaxAdvanceX;
 
-        public @Nullable Vector2f glyphExtraSpacing;
+        @Nullable Vector2f glyphExtraSpacing;
 
-        public @Nullable Vector2f glyphOffset;
+        @Nullable Vector2f glyphOffset;
 
-        public @Nullable Vector2f scaledGlyphOffset;
+        @Nullable Vector2f scaledGlyphOffset;
+
+        /**
+         * The glyph offset to use when loading this as an icon font.
+         * Overrides <code>scaledGlyphOffset</code>
+         */
+        @Nullable Vector2f iconGlyphOffset;
 
         @JsonAdapter(GlyphRangeTypeAdapter.class)
-        public short @Nullable [] glyphRanges;
+        short @Nullable [] glyphRanges;
+
+        @Nullable Identifier icons;
     }
+
 
     private static class GlyphRangeTypeAdapter extends TypeAdapter<short[]> {
 
