@@ -1,4 +1,4 @@
-package com.igrium.craftui.file;
+package com.igrium.craftui.impl.file;
 
 import java.util.Arrays;
 import java.util.List;
@@ -7,6 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import com.igrium.craftui.file.FileDialogInterface;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
@@ -17,7 +18,7 @@ import com.igrium.craftui.file.FileDialogs.FileFilter;
 
 import net.minecraft.client.MinecraftClient;
 
-class NFDFileDialog implements FileDialogInterface {
+public class NFDFileDialog implements FileDialogInterface {
     private static final ThreadLocal<Boolean> initialized = ThreadLocal.withInitial(() -> false);
 
     private static final Executor dialogExecutor;

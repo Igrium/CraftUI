@@ -20,6 +20,8 @@ import com.igrium.craftui.style.CraftUILayouts;
 import com.igrium.craftui.style.CraftUIStyle;
 import imgui.ImFont;
 import imgui.ImGuiIO;
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
@@ -51,8 +53,15 @@ public final class AppManager {
     private static final Queue<CraftApp> addQueue = new ArrayDeque<>();
     private static final Queue<CraftApp> removeQueue = new ArrayDeque<>();
 
-    @Nullable
-    private static ViewportBounds currentViewportBounds;
+
+    private static @Nullable ViewportBounds currentViewportBounds;
+
+    /**
+     * The draw function for a popup that renders over everything else
+     */
+    @Getter @Setter
+    private static @Nullable Runnable globalPopup;
+    private static boolean drawnGlobalPopup;
 
     /**
      * Disable ImGui from rendering if one of the apps crashed so that Minecraft can write the crash report cleanly
@@ -214,6 +223,21 @@ public final class AppManager {
     private static boolean needsCleanupFrame;
 
     /**
+     * <p>ImGui has a limitation where, if there's a modal popup open, any additional popups will cause it to
+     * close unless they're called from within the modal. CraftUI offers a way for mod systems to "inject" popups into
+     * other UI paths using the "global popup".</p>
+     *
+     * <p>If you're rendering a modal and believe an external popup might need to be displayed (file dialog, etc,)
+     * call <code>drawGlobalPopup</code> during the modal's render block.</p>
+     */
+    public static void drawGlobalPopup() {
+        if (drawnGlobalPopup) return;
+        drawnGlobalPopup = true;
+
+        if (globalPopup != null) globalPopup.run();
+    }
+
+    /**
      * Draw all open apps to the screen.
      * @param client Minecraft client instance.
      */
@@ -222,6 +246,7 @@ public final class AppManager {
         if (crashed)
             return;
 
+        drawnGlobalPopup = false;
         boolean isCleanupFrame = apps.isEmpty();
 
         if (client.mouse.isCursorLocked()) {
@@ -287,6 +312,8 @@ public final class AppManager {
             ImGui.popID();
         }
 
+        drawGlobalPopup();
+
         if (isCleanupFrame) {
             ImGui.setWindowFocus(null);
             ImGui.getIO().setWantCaptureKeyboard(false);
@@ -312,6 +339,7 @@ public final class AppManager {
 
         needsCleanupFrame = !isCleanupFrame;
     }
+
 
     /**
      * If set, mouse inputs will be consumed by the application GUI and should not be processed by Minecraft.

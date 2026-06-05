@@ -1,5 +1,6 @@
 package com.igrium.craftui.testmod;
 
+import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.icon.NbtIcons;
@@ -115,6 +116,28 @@ public class TestApp extends DockSpaceApp {
             ImGui.pushFont(ReplayLabIcons.getFont());
             ImGui.text(ReplayLabIcons.ICON_VIDEOCAM + " " + ReplayLabIcons.ICON_EYEDROPPER + " " + ReplayLabIcons.ICON_MAGNET);
             ImGui.popFont();
+
+            if (ImGui.button("Open a popup")) {
+                ImGui.openPopup("popup");
+            }
+
+            if (ImGui.beginPopupModal("popup", new ImBoolean(true))) {
+                ImGui.text("This a popup lol");
+                if (ImGui.button("Open a file dialog")) {
+                    FileDialogs.showOpenDialog(client.runDirectory.getAbsolutePath(),
+                                    new FileDialogs.FileFilter("Jpeg Files", ".jpg", ".jpeg"),
+                                    new FileDialogs.FileFilter("PNG Files", "png"))
+                            .thenAcceptAsync(opt -> {
+                                if (opt.isPresent()) {
+                                    client.player.sendMessage(Text.literal("You chose " + opt.get()), false);
+                                } else {
+                                    client.player.sendMessage(Text.literal("You didn't select a file."), false);
+                                }
+                            }, client);
+                };
+                AppManager.drawGlobalPopup();
+                ImGui.endPopup();
+            }
         }
         ImGui.end();
 

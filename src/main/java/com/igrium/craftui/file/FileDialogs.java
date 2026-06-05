@@ -3,6 +3,8 @@ package com.igrium.craftui.file;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import com.igrium.craftui.impl.file.ImFileDialog;
+import com.igrium.craftui.impl.file.NFDFileDialog;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,4 +1,4 @@
-package com.igrium.craftui.file;
+package com.igrium.craftui.impl.file;
 
 import java.awt.*;
 import java.util.Optional;
@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import com.igrium.craftui.file.FileDialogInterface;
 import org.jetbrains.annotations.Nullable;
 
 import com.igrium.craftui.file.FileDialogs.FileFilter;
