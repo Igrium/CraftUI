@@ -4,6 +4,7 @@ import com.igrium.craftui.MaterialIcons;
 import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
+import com.igrium.craftui.file.FileDialogs.FileFilter;
 import com.igrium.craftui.icon.NbtIcons;
 import com.igrium.craftui.style.CraftUILayouts;
 import com.igrium.craftui.impl.util.NbtEditor;
@@ -23,6 +24,9 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class TestApp extends DockSpaceApp {
 
@@ -75,8 +79,8 @@ public class TestApp extends DockSpaceApp {
             boolean clicked = ImGui.button("Open file chooser");
             if (clicked) {
                 FileDialogs.showOpenDialog(client.runDirectory.getAbsolutePath(),
-                                new FileDialogs.FileFilter("Jpeg Files", ".jpg", ".jpeg"),
-                                new FileDialogs.FileFilter("PNG Files", "png"))
+                                new FileFilter("Jpeg Files", ".jpg", ".jpeg"),
+                                new FileFilter("PNG Files", "png"))
                         .thenAcceptAsync(opt -> {
                             if (opt.isPresent()) {
                                 client.player.sendMessage(Text.literal("You chose " + opt.get()), false);
@@ -126,18 +130,26 @@ public class TestApp extends DockSpaceApp {
 
             if (ImGui.beginPopupModal("popup", new ImBoolean(true))) {
                 ImGui.text("This a popup lol");
-                if (ImGui.button("Open a file dialog")) {
-                    FileDialogs.showOpenDialog(client.runDirectory.getAbsolutePath(),
-                                    new FileDialogs.FileFilter("Jpeg Files", ".jpg", ".jpeg"),
-                                    new FileDialogs.FileFilter("PNG Files", "png"))
-                            .thenAcceptAsync(opt -> {
-                                if (opt.isPresent()) {
-                                    client.player.sendMessage(Text.literal("You chose " + opt.get()), false);
-                                } else {
-                                    client.player.sendMessage(Text.literal("You didn't select a file."), false);
-                                }
-                            }, client);
-                };
+                CompletableFuture<Optional<String>> dialogFuture = null;
+                if (ImGui.button("Open File")) {
+                    dialogFuture = FileDialogs.showOpenDialog(null, new FileFilter("Jpeg files", ".jpg", ".jpeg"));
+                }
+                if (ImGui.button("Open Folder")) {
+                    dialogFuture = FileDialogs.showOpenFolderDialog(null);
+                }
+                if (ImGui.button("Save File")) {
+                    dialogFuture = FileDialogs.showSaveDialog(null, "file.png");
+                }
+
+                if (dialogFuture != null) {
+                    dialogFuture.thenAccept(opt -> {
+                        if (opt.isPresent()) {
+                            client.player.sendMessage(Text.literal("You chose " + opt.get()), false);
+                        } else {
+                            client.player.sendMessage(Text.literal("You didn't select a file."), false);
+                        }
+                    });
+                }
                 AppManager.drawGlobalPopup();
                 ImGui.endPopup();
             }

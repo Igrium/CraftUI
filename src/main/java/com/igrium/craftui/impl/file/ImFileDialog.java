@@ -18,6 +18,7 @@ public class ImFileDialog implements FileDialogInterface {
     public CompletableFuture<Optional<String>> showSaveDialog(@Nullable String defaultPath, @Nullable String defaultName, FileDialogs.FileFilter... filters) {
         ImFileDialogPopup widget = new ImFileDialogPopup();
         widget.setDefaultPath(defaultPath);
+        widget.setSaveMode(true);
 
         AppManager.setGlobalPopup(widget::render);
         return widget.getFuture()
@@ -39,6 +40,7 @@ public class ImFileDialog implements FileDialogInterface {
     public CompletableFuture<Optional<String>> showOpenFolderDialog(@Nullable String defaultPath) {
         ImFileDialogPopup widget = new ImFileDialogPopup();
         widget.setDefaultPath(defaultPath);
+        widget.setDirMode(true);
 
         AppManager.setGlobalPopup(widget::render);
         return widget.getFuture()

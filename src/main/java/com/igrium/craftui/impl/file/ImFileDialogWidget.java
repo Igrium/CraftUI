@@ -22,7 +22,6 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Consumer;
 
 /**
  * Draws a fully-featured file browser purely within imgui.
@@ -67,12 +66,6 @@ public final class ImFileDialogWidget {
     private boolean dirMode;
 
     /**
-     * Will get called when a file is selected or the dialog is closed
-     */
-    @Setter
-    private @Nullable Consumer<Optional<Path>> callback;
-
-    /**
      * If the dialog should be open.
      *
      * @apiNote Does not affect rendering code; is only a flag for the caller to check.
@@ -106,12 +99,18 @@ public final class ImFileDialogWidget {
      * The current selected file
      */
     @Getter
-    @Setter
     @NonNull
     private String selectedFile = "";
 
     private final Deque<Path> backStack = new ArrayDeque<>();
     private final Deque<Path> forwardStack = new ArrayDeque<>();
+
+    /**
+     * Once a user has selected a file, this is set to the output path.
+     * If canceled, isOpen will return false without this being set.
+     */
+    @Getter
+    private @Nullable Path outPath;
 
     /// === IO STATE ===
 
@@ -137,6 +136,9 @@ public final class ImFileDialogWidget {
     private final ImString selectedFileText = new ImString(128);
     private boolean wasSelectedFileTextActive = false;
 
+    @Getter
+    private boolean selectedFileValid;
+
     /// === CONSTRUCTOR ===
 
     public ImFileDialogWidget() {
@@ -159,16 +161,21 @@ public final class ImFileDialogWidget {
 
     /// === NAVIGATION ===
 
+    public void setSelectedFile(@NonNull String selectedFile) {
+        this.selectedFile = selectedFile;
+        selectedFileValid = validateSelectedFile();
+    }
+
     public void setPath(@NonNull Path path) {
         setPath(path, true);
     }
 
     public void setPath(@NonNull Path path, boolean updateBack) {
         path = path.toAbsolutePath();
-        if (this.path.equals(path)) return;
+        if (!this.path.equals(path)) {
+            setSelectedFile("");
 
-        setSelectedFile("");
-
+        }
         if (updateBack) {
             forwardStack.clear();
             backStack.push(this.path);
@@ -176,6 +183,7 @@ public final class ImFileDialogWidget {
 
         this.path = path;
         executor.execute(this::queryDirectory);
+        validateSelectedFile();
     }
 
     public void goForward() {
@@ -204,12 +212,12 @@ public final class ImFileDialogWidget {
                     try {
                         files.put(file.getFileName().toString(), new FileEntry(file, Files.readAttributes(file, BasicFileAttributes.class)));
                     } catch (IOException e) {
-                        LOGGER.error("Error reading file attributes for {}: {}", file, e.getMessage());
+                        LOGGER.error("Error reading file attributes for {}: {}", file, e);
                     }
                 });
 
             } catch (IOException e) {
-                LOGGER.error("Error listing directory at {}: {}", getPath(), e.getMessage());
+                LOGGER.error("Error listing directory at {}: {}", getPath(), e);
             }
         }
     }
@@ -218,24 +226,21 @@ public final class ImFileDialogWidget {
 
     public void confirm() {
         setOpen(false);
-        if (callback != null) {
-            callback.accept(Optional.of(path.resolve(selectedFile)));
-        }
+        outPath = getPath().resolve(selectedFile);
     }
 
     public void cancel() {
         setOpen(false);
-        if (callback != null) callback.accept(Optional.empty());
     }
 
-    private boolean selectedItemValid() {
+    private boolean validateSelectedFile() {
         FileEntry entry = files.get(selectedFile);
         if (isDirMode()) {
             // Can always save and open current directory
             return selectedFile.isEmpty() || (entry != null && entry.attrs().isDirectory());
         } else {
             if (isSaveMode()) {
-                return entry == null || !entry.attrs().isDirectory();
+                return !selectedFile.isBlank() && (entry == null || !entry.attrs().isDirectory());
             } else {
                 return entry != null && !entry.attrs().isDirectory();
             }
@@ -250,7 +255,8 @@ public final class ImFileDialogWidget {
     public void render() {
         ImGui.beginGroup();
 
-        float footerHeight = ImGui.getFrameHeightWithSpacing() * 2 + ImGui.getStyle().getItemSpacingY();
+        float footerHeight = ImGui.getFrameHeightWithSpacing() + ImGui.getStyle().getItemSpacingY();
+        boolean wantOpenConfirm = false;
 
         ImGui.beginTable("fileBrowser", 2, ImGuiTableFlags.BordersInner | ImGuiTableFlags.Resizable);
 
@@ -344,13 +350,20 @@ public final class ImFileDialogWidget {
                     if (isDir) {
                         setPath(file.path);
                     } else if (!dirMode) {
-                        confirm();
+                        if (isSaveMode() && files.containsKey(selectedFile)) {
+                            wantOpenConfirm = true;
+                        } else {
+                            confirm();
+                        }
                     }
                 }
 
                 ImGui.endDisabled();
             }
             ImGui.endTable();
+            if (ImGui.isItemClicked()) {
+                setSelectedFile("");
+            }
         }
 
         ImGui.popStyleColor();
@@ -358,46 +371,88 @@ public final class ImFileDialogWidget {
         ImGui.endTable();
 
         /// === FOOTER ===
-        ImGui.text("File name: ");
-        ImGui.sameLine();
-        ImGui.setNextItemWidth(ImGui.getContentRegionAvailX() - prevButtonBarWidth - ImGui.getStyle().getItemSpacingX());
-        ImGui.inputText("##selectedFile", selectedFileText);
 
-        if (ImGui.isItemActive()) {
-            wasSelectedFileTextActive = true;
-        } else if (wasSelectedFileTextActive) {
-            wasSelectedFileTextActive = false;
-            selectedFile = selectedFileText.get();
-        } else {
-            selectedFileText.set(selectedFile);
+        if (ImGui.beginTable("footer", 2)) {
+            ImGui.tableSetupColumn("txtBar", ImGuiTableColumnFlags.WidthStretch);
+            ImGui.tableSetupColumn("buttons", ImGuiTableColumnFlags.WidthFixed);
+
+            ImGui.tableNextColumn();
+
+            ImGui.text("File name: ");
+            ImGui.sameLine();
+            ImGui.setNextItemWidth(ImGui.getContentRegionAvailX());
+            ImGui.inputText("##selectedFile", selectedFileText);
+
+            if (ImGui.isItemActive()) {
+                wasSelectedFileTextActive = true;
+            } else if (wasSelectedFileTextActive) {
+                wasSelectedFileTextActive = false;
+                setSelectedFile(selectedFileText.get());
+            } else {
+                selectedFileText.set(selectedFile);
+            }
+
+//            ImGui.tableNextRow();
+            ImGui.tableSetColumnIndex(1);
+
+            if (ImGui.button(t("gui.cancel"))) {
+                cancel();
+            }
+
+            ImGui.sameLine();
+
+            ImGui.beginDisabled(!isSelectedFileValid());
+
+            String confirm;
+            if (isSaveMode()) {
+                confirm = "gui.craftui.fd_save";
+            } else {
+                confirm = isDirMode() ? "gui.craftui.fd_selectFolder" : "gui.craftui.fd_selectFile";
+            }
+
+            if (ImGui.button(t(confirm))) {
+                if (isSaveMode() && files.containsKey(selectedFile)) {
+                    wantOpenConfirm = true;
+                } else {
+                    confirm();
+                }
+            }
+            ImGui.endDisabled();
+            ImGui.endTable();
+
         }
-
-        /// === BUTTON BAR ===
-        ImGui.setCursorPosX(ImGui.getContentRegionMaxX() - prevButtonBarWidth);
-
-        ImGui.beginGroup();
-        if (ImGui.button(t("gui.cancel"))) {
-            cancel();
-        }
-
-        ImGui.sameLine();
-
-        ImGui.beginDisabled(!dirMode && selectedFile.isEmpty());
-        if (ImGui.button(t("gui.ok"))) {
-            confirm();
-        }
-        ImGui.endDisabled();
-
-        ImGui.endGroup();
 
         prevButtonBarWidth = ImGui.getItemRectSizeX();
 
         ImGui.endGroup();
+
+        String overwriteName = t("gui.craftui.fd_overwrite");
+
+        if (wantOpenConfirm) {
+            ImGui.openPopup(overwriteName);
+        }
+        if (ImGui.beginPopupModal(overwriteName, ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoResize)) {
+            ImGui.text(tt("gui.craftui.fd_exists"));
+
+            if (ImGui.button(t("gui.cancel"))) {
+                ImGui.closeCurrentPopup();
+            }
+            ImGui.sameLine();
+            if (ImGui.button(t("gui.ok"))) {
+                ImGui.closeCurrentPopup();
+                confirm();
+            }
+            ImGui.endPopup();
+        }
     }
 
     /// === UTILITIES ===
 
     private static String t(String key) {
         return Language.getInstance().get(key) + "###" + key;
+    }
+
+    private static String tt(String key) {
+        return Language.getInstance().get(key);
     }
 }

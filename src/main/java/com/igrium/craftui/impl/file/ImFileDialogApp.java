@@ -15,6 +15,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.MinecraftClient;
 
+@Deprecated
 class ImFileDialogApp extends CraftApp {
 
     @Getter

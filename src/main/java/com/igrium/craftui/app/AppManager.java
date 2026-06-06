@@ -312,7 +312,13 @@ public final class AppManager {
             ImGui.popID();
         }
 
-        drawGlobalPopup();
+        try {
+            drawGlobalPopup();
+        } catch (Exception e) {
+            crashed = true;
+            CrashReport crashReport = new CrashReport("Error rendering the CraftUI global popup", e);
+            throw new CrashException(crashReport);
+        }
 
         if (isCleanupFrame) {
             ImGui.setWindowFocus(null);
