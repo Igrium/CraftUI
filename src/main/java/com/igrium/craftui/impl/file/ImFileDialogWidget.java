@@ -9,6 +9,7 @@ import imgui.type.ImString;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import net.minecraft.util.Language;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.ColorHelper;
 import org.apache.commons.lang3.SystemUtils;
@@ -187,12 +188,12 @@ public final class ImFileDialogWidget {
                     try {
                         files.add(new FileEntry(file, Files.readAttributes(file, BasicFileAttributes.class)));
                     } catch (IOException e) {
-                        LOGGER.error("Error reading file attributes for {}", file, e);
+                        LOGGER.error("Error reading file attributes for {}: {}", file, e.getMessage());
                     }
                 });
 
             } catch (IOException e) {
-                LOGGER.error("Error listing directory at {}", getPath(), e);
+                LOGGER.error("Error listing directory at {}: {}", getPath(), e.getMessage());
             }
         }
     }
@@ -202,22 +203,34 @@ public final class ImFileDialogWidget {
         executor.execute(this::queryDirectory);
     }
 
+    public void confirm() {
+        setOpen(false);
+        if (callback != null) {
+            callback.accept(Optional.of(path.resolve(fileName)));
+        }
+    }
+
+    public void cancel() {
+        setOpen(false);
+        if (callback != null) callback.accept(Optional.empty());
+    }
+
+    private float prevButtonBarWidth = 0;
+
     /**
      * Render the file chooser
      */
     public void render() {
         ImGui.beginGroup();
 
-        float footerHeight = ImGui.getFrameHeightWithSpacing();
+        float footerHeight = ImGui.getFrameHeightWithSpacing() + ImGui.getStyle().getItemSpacingY();
 
         ImGui.beginTable("fileBrowser", 2, ImGuiTableFlags.BordersInner | ImGuiTableFlags.Resizable);
 
         ImGui.tableSetupColumn("sidebar", ImGuiTableColumnFlags.WidthFixed, ImGui.getFontSize() * 10, 0);
-        ImGui.tableSetupColumn("center", ImGuiTableColumnFlags.WidthStretch);
+        ImGui.tableSetupColumn("center", ImGuiTableColumnFlags.WidthStretch, ImGui.getFontSize() * 96, 1);
 
         ImGui.pushStyleColor(ImGuiCol.Header, ColorHelper.withAlpha(96, ImGui.getColorU32(ImGuiCol.HeaderHovered)));
-
-//        ImGUi.tableSetup
 
         /// === NAVIGATION BUTTONS ===
         ImGui.tableNextColumn();
@@ -283,7 +296,7 @@ public final class ImFileDialogWidget {
         ImGui.tableNextColumn();
 
         if (ImGui.beginTable("##files", 1, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter,
-        -1, ImGui.getContentRegionAvailY() - ImGui.getTextLineHeightWithSpacing())) {
+        -1, ImGui.getContentRegionAvailY() - footerHeight)) {
             int idx = 0;
             for (FileEntry file : files) {
                 String name = file.path.getFileName().toString();
@@ -293,13 +306,22 @@ public final class ImFileDialogWidget {
 
                 ImGui.tableNextRow();
                 ImGui.tableNextColumn();
+
+                ImGui.beginDisabled(folderMode && !isDir);
+
                 if (ImGui.selectable(label + "###file" + idx++, name.equals(fileName))) {
                     setFileName(name);
                 }
 
-                if (isDir && ImGui.isItemHovered() && ImGui.isMouseDoubleClicked(0)) {
-                    setPath(file.path);
+                if (ImGui.isItemHovered() && ImGui.isMouseDoubleClicked(0)) {
+                    if (isDir) {
+                        setPath(file.path);
+                    } else if (!folderMode) {
+                        confirm();
+                    }
                 }
+
+                ImGui.endDisabled();
             }
             ImGui.endTable();
         }
@@ -307,13 +329,31 @@ public final class ImFileDialogWidget {
         ImGui.popStyleColor();
 
         ImGui.endTable();
+
+        /// === BUTTON BAR ===
+        ImGui.setCursorPosX(ImGui.getContentRegionMaxX() - prevButtonBarWidth);
+
+        ImGui.beginGroup();
+        if (ImGui.button(t("gui.cancel"))) {
+            cancel();
+        }
+
+        ImGui.sameLine();
+
+        ImGui.beginDisabled(!folderMode && fileName.isEmpty());
+        if (ImGui.button(t("gui.ok"))) {
+            confirm();
+        }
+        ImGui.endDisabled();
+
+        ImGui.endGroup();
+
+        prevButtonBarWidth = ImGui.getItemRectSizeX();
+
         ImGui.endGroup();
     }
 
-    class MyFileVisitor extends SimpleFileVisitor<Path> {
-        @Override
-        public @NotNull FileVisitResult visitFile(@NotNull Path file, @NotNull BasicFileAttributes attrs) throws IOException {
-            return super.visitFile(file, attrs);
-        }
+    private static String t(String key) {
+        return Language.getInstance().get(key) + "###" + key;
     }
 }

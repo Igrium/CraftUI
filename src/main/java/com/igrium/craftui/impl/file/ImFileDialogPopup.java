@@ -1,6 +1,8 @@
 package com.igrium.craftui.impl.file;
 
 import imgui.ImGui;
+import imgui.flag.ImGuiCond;
+import imgui.flag.ImGuiKey;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImString;
@@ -25,6 +27,7 @@ public final class ImFileDialogPopup {
 
     public ImFileDialogPopup() {
         widget = new ImFileDialogWidget();
+//        widget.setFolderMode(true);
         widget.setCallback(opt -> {
             if (opt.isPresent()) {
                 future.complete(Optional.of(opt.get().toString()));
@@ -46,24 +49,17 @@ public final class ImFileDialogPopup {
             isOpen.set(false);
         }
 
+        float txtSize = ImGui.getFontSize();
+        ImGui.setNextWindowSize(txtSize * 53, txtSize * 40, ImGuiCond.FirstUseEver);
         if (ImGui.beginPopupModal("File Dialog", isOpen, ImGuiWindowFlags.NoSavedSettings)) {
             widget.render();
-//            ImGui.text("Native file dialog failed to open. Please enter filepath.");
-//            ImGui.inputText("##File", filepath);
-//
-//            if (ImGui.button("OK")) {
-//                ImGui.closeCurrentPopup();
-//                future.complete(Optional.of(filepath.get()));
-//            }
-//            ImGui.sameLine();
-//            if (ImGui.button("Cancel")) {
-//                ImGui.closeCurrentPopup();
-//            }
-//
-//            ImGui.endPopup();
+
+            if (ImGui.shortcut(ImGuiKey.Escape)) {
+                ImGui.closeCurrentPopup();
+            }
+
             ImGui.endPopup();
         }
-
         if (!isOpen.get() && !future.isDone() && !future.isCancelled()) {
             future.complete(Optional.empty());
         }
