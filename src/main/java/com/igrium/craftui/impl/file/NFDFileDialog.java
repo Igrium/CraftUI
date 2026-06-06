@@ -78,6 +78,7 @@ public class NFDFileDialog implements FileDialogInterface {
                 return Optional.empty();
             }
         }
+
     }
 
     @Override

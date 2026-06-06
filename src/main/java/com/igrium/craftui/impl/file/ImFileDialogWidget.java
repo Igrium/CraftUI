@@ -13,7 +13,6 @@ import net.minecraft.util.Language;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.ColorHelper;
 import org.apache.commons.lang3.SystemUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +30,7 @@ import java.util.function.Consumer;
  */
 public final class ImFileDialogWidget {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ImFileDialogWidget.class);
+    /// === INNER TYPES ===
 
     private record FileEntry(Path path, BasicFileAttributes attrs) {
     }
@@ -42,6 +41,10 @@ public final class ImFileDialogWidget {
         }
     }
 
+    /// === CONSTANTS ===
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ImFileDialogWidget.class);
+
     private static final Map<String, BookmarkedFile> BOOKMARKS = ImmutableMap.of(
             "Home", new BookmarkedFile(SystemUtils.getUserHome().toPath(), MaterialIcons.ICON_HOME),
             "Documents", BookmarkedFile.create("Documents", MaterialIcons.ICON_DESCRIPTION),
@@ -49,28 +52,7 @@ public final class ImFileDialogWidget {
             "Desktop", BookmarkedFile.create("Desktop", MaterialIcons.ICON_DESKTOP_WINDOWS)
     );
 
-    /**
-     * The current directory being shown in the explorer
-     */
-    @Getter
-    @NonNull
-    private Path path = Paths.get("").toAbsolutePath();
-
-    /**
-     * The current selected file
-     */
-    @Getter
-    @Setter
-    @NonNull
-    private String fileName = "";
-
-    /**
-     * The executor that is used for IO-related functions
-     */
-    @Getter
-    @Setter
-    @NonNull
-    private Executor executor = Util.getIoWorkerExecutor();
+    /// === DIALOG CONFIG ===
 
     /**
      * Consider us saving a file rather than loading a file
@@ -82,7 +64,7 @@ public final class ImFileDialogWidget {
      * We're selecting folders rather than files.
      */
     @Getter @Setter
-    private boolean folderMode;
+    private boolean dirMode;
 
     /**
      * Will get called when a file is selected or the dialog is closed
@@ -99,13 +81,70 @@ public final class ImFileDialogWidget {
     @Setter
     private boolean open = true;
 
-
     /**
      * A mutable list of all the file filters this file browser will use.
      */
     @Getter
     private final List<FileFilter> filters = new ArrayList<>();
 
+    /**
+     * The file filter in use. <code>null</code> to use the "any" filter.
+     */
+    @Getter @Setter
+    private @Nullable FileFilter currentFilter;
+
+    /// === NAVIGATION STATE ===
+
+    /**
+     * The current directory being shown in the explorer
+     */
+    @Getter
+    @NonNull
+    private Path path = Paths.get("").toAbsolutePath();
+
+    /**
+     * The current selected file
+     */
+    @Getter
+    @Setter
+    @NonNull
+    private String selectedFile = "";
+
+    private final Deque<Path> backStack = new ArrayDeque<>();
+    private final Deque<Path> forwardStack = new ArrayDeque<>();
+
+    /// === IO STATE ===
+
+    /**
+     * The executor that is used for IO-related functions
+     */
+    @Getter
+    @Setter
+    @NonNull
+    private Executor executor = Util.getIoWorkerExecutor();
+
+    /**
+     * The files currently being rendered
+     */
+    private final Map<String, FileEntry> files = new ConcurrentSkipListMap<>();
+    /// === UI STATE ===
+
+    private final ImString directoryString = new ImString(512);
+    private boolean wasDirStringActive = false;
+
+    private float prevButtonBarWidth = 0;
+
+    private final ImString selectedFileText = new ImString(128);
+    private boolean wasSelectedFileTextActive = false;
+
+    /// === CONSTRUCTOR ===
+
+    public ImFileDialogWidget() {
+        executor.execute(this::queryFileStores);
+        executor.execute(this::queryDirectory);
+    }
+
+    /// === FILTER MANAGEMENT ===
 
     public void setFilters(Collection<? extends FileFilter> filters) {
         this.filters.clear();
@@ -118,25 +157,7 @@ public final class ImFileDialogWidget {
         this.filters.addAll(Arrays.asList(filters));
     }
 
-    /**
-     * The file filter in use. <code>null</code> to use the "any" filter.
-     */
-    @Getter @Setter
-    private @Nullable FileFilter currentFilter;
-
-    private final Deque<Path> backStack = new ArrayDeque<>();
-    private final Deque<Path> forwardStack = new ArrayDeque<>();
-
-    private final ImString directoryString = new ImString(512);
-
-    private boolean wasDirStringActive = false;
-
-    private final Deque<FileStore> fileStores = new ConcurrentLinkedDeque<>();
-
-    /**
-     * The files currently being rendered
-     */
-    private final Deque<FileEntry> files = new ConcurrentLinkedDeque<>();
+    /// === NAVIGATION ===
 
     public void setPath(@NonNull Path path) {
         setPath(path, true);
@@ -146,7 +167,7 @@ public final class ImFileDialogWidget {
         path = path.toAbsolutePath();
         if (this.path.equals(path)) return;
 
-        setFileName("");
+        setSelectedFile("");
 
         if (updateBack) {
             forwardStack.clear();
@@ -169,15 +190,10 @@ public final class ImFileDialogWidget {
         setPath(backStack.pop(), false);
     }
 
+    /// === IO ===
 
     private void queryFileStores() {
-        // Only allow one thread in this block
-        synchronized (fileStores) {
-            fileStores.clear();
-            for (var store : FileSystems.getDefault().getFileStores()) {
-                fileStores.add(store);
-            }
-        }
+        // TODO: implement
     }
 
     private void queryDirectory() {
@@ -186,7 +202,7 @@ public final class ImFileDialogWidget {
             try (var dirStream = Files.newDirectoryStream(getPath())) {
                 dirStream.forEach(file -> {
                     try {
-                        files.add(new FileEntry(file, Files.readAttributes(file, BasicFileAttributes.class)));
+                        files.put(file.getFileName().toString(), new FileEntry(file, Files.readAttributes(file, BasicFileAttributes.class)));
                     } catch (IOException e) {
                         LOGGER.error("Error reading file attributes for {}: {}", file, e.getMessage());
                     }
@@ -198,15 +214,12 @@ public final class ImFileDialogWidget {
         }
     }
 
-    public ImFileDialogWidget() {
-        executor.execute(this::queryFileStores);
-        executor.execute(this::queryDirectory);
-    }
+    /// === DIALOG CONTROL ===
 
     public void confirm() {
         setOpen(false);
         if (callback != null) {
-            callback.accept(Optional.of(path.resolve(fileName)));
+            callback.accept(Optional.of(path.resolve(selectedFile)));
         }
     }
 
@@ -215,7 +228,21 @@ public final class ImFileDialogWidget {
         if (callback != null) callback.accept(Optional.empty());
     }
 
-    private float prevButtonBarWidth = 0;
+    private boolean selectedItemValid() {
+        FileEntry entry = files.get(selectedFile);
+        if (isDirMode()) {
+            // Can always save and open current directory
+            return selectedFile.isEmpty() || (entry != null && entry.attrs().isDirectory());
+        } else {
+            if (isSaveMode()) {
+                return entry == null || !entry.attrs().isDirectory();
+            } else {
+                return entry != null && !entry.attrs().isDirectory();
+            }
+        }
+    }
+
+    /// === RENDER ===
 
     /**
      * Render the file chooser
@@ -223,7 +250,7 @@ public final class ImFileDialogWidget {
     public void render() {
         ImGui.beginGroup();
 
-        float footerHeight = ImGui.getFrameHeightWithSpacing() + ImGui.getStyle().getItemSpacingY();
+        float footerHeight = ImGui.getFrameHeightWithSpacing() * 2 + ImGui.getStyle().getItemSpacingY();
 
         ImGui.beginTable("fileBrowser", 2, ImGuiTableFlags.BordersInner | ImGuiTableFlags.Resizable);
 
@@ -256,7 +283,7 @@ public final class ImFileDialogWidget {
         }
         ImGui.endDisabled();
 
-        /// === Directory ===
+        /// === DIRECTORY BAR ===
         ImGui.tableNextColumn();
         ImGui.setNextItemWidth(ImGui.getContentRegionAvailX());
         ImGui.inputText("##directory", directoryString);
@@ -296,9 +323,9 @@ public final class ImFileDialogWidget {
         ImGui.tableNextColumn();
 
         if (ImGui.beginTable("##files", 1, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter,
-        -1, ImGui.getContentRegionAvailY() - footerHeight)) {
+                -1, ImGui.getContentRegionAvailY() - footerHeight)) {
             int idx = 0;
-            for (FileEntry file : files) {
+            for (FileEntry file : files.values()) {
                 String name = file.path.getFileName().toString();
                 boolean isDir = file.attrs.isDirectory();
                 char icon = isDir ? MaterialIcons.ICON_FOLDER : MaterialIcons.ICON_TEXT_SNIPPET;
@@ -307,16 +334,16 @@ public final class ImFileDialogWidget {
                 ImGui.tableNextRow();
                 ImGui.tableNextColumn();
 
-                ImGui.beginDisabled(folderMode && !isDir);
+                ImGui.beginDisabled(dirMode && !isDir);
 
-                if (ImGui.selectable(label + "###file" + idx++, name.equals(fileName))) {
-                    setFileName(name);
+                if (ImGui.selectable(label + "###file" + idx++, name.equals(selectedFile))) {
+                    setSelectedFile(name);
                 }
 
                 if (ImGui.isItemHovered() && ImGui.isMouseDoubleClicked(0)) {
                     if (isDir) {
                         setPath(file.path);
-                    } else if (!folderMode) {
+                    } else if (!dirMode) {
                         confirm();
                     }
                 }
@@ -330,6 +357,21 @@ public final class ImFileDialogWidget {
 
         ImGui.endTable();
 
+        /// === FOOTER ===
+        ImGui.text("File name: ");
+        ImGui.sameLine();
+        ImGui.setNextItemWidth(ImGui.getContentRegionAvailX() - prevButtonBarWidth - ImGui.getStyle().getItemSpacingX());
+        ImGui.inputText("##selectedFile", selectedFileText);
+
+        if (ImGui.isItemActive()) {
+            wasSelectedFileTextActive = true;
+        } else if (wasSelectedFileTextActive) {
+            wasSelectedFileTextActive = false;
+            selectedFile = selectedFileText.get();
+        } else {
+            selectedFileText.set(selectedFile);
+        }
+
         /// === BUTTON BAR ===
         ImGui.setCursorPosX(ImGui.getContentRegionMaxX() - prevButtonBarWidth);
 
@@ -340,7 +382,7 @@ public final class ImFileDialogWidget {
 
         ImGui.sameLine();
 
-        ImGui.beginDisabled(!folderMode && fileName.isEmpty());
+        ImGui.beginDisabled(!dirMode && selectedFile.isEmpty());
         if (ImGui.button(t("gui.ok"))) {
             confirm();
         }
@@ -352,6 +394,8 @@ public final class ImFileDialogWidget {
 
         ImGui.endGroup();
     }
+
+    /// === UTILITIES ===
 
     private static String t(String key) {
         return Language.getInstance().get(key) + "###" + key;
