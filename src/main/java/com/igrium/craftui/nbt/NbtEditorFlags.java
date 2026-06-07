@@ -41,14 +41,18 @@ public final class NbtEditorFlags {
     }
 
     static boolean canEditLabel(int flags) {
-        return !(hasFlag(flags, READONLY_LABEL) || hasFlag(flags, READONLY));
+        return !hasFlag(flags, READONLY_LABEL) && !hasFlag(flags, READONLY);
     }
 
     static boolean startsOpen(int flags) {
         return hasFlag(flags, START_OPEN) || hasFlag(flags, START_OPEN_SINGLE);
     }
 
-    private static boolean hasFlag(int flags, int flag) {
+    static boolean isReadonly(int flags) {
+        return hasFlag(flags, READONLY);
+    }
+
+    static boolean hasFlag(int flags, int flag) {
         return (flags & flag) != 0;
     }
 }

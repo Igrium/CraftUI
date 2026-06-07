@@ -28,12 +28,10 @@ public final class NbtIcons {
      */
     public static void drawIcon(byte elementType) {
         ImGui.pushFont(CraftUIFonts.nbtIcons(), ImGui.getFontSize());
-        ImGui.text(String.valueOf(getIcon(elementType)));
+        ImGui.text("" + getIcon(elementType));
         ImGui.popFont();
 
-        if (ImGui.isItemHovered()) {
-            ImGui.setTooltip(Text.translatable(tooltipTranslation(elementType)).getString());
-        }
+        ImGui.setItemTooltip(Text.translatable(tooltipTranslation(elementType)).getString());
     }
 
     private static String tooltipTranslation(byte elementType) {

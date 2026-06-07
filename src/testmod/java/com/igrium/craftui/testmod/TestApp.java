@@ -7,6 +7,7 @@ import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.file.FileDialogs.FileFilter;
 import com.igrium.craftui.icon.NbtIcons;
 import com.igrium.craftui.nbt.NbtEditor;
+import com.igrium.craftui.nbt.NbtEditorFlags;
 import com.igrium.craftui.style.CraftUILayouts;
 import com.igrium.craftui.util.RaycastUtils;
 import imgui.ImGui;
@@ -81,6 +82,8 @@ public class TestApp extends DockSpaceApp {
     protected void onOpen() {
         super.onOpen();
     }
+
+    private final ImBoolean allowEditNbt = new ImBoolean(true);
 
     protected void render(MinecraftClient client) {
         super.render(client);
@@ -183,7 +186,12 @@ public class TestApp extends DockSpaceApp {
 
         // NBT EDITOR
         if (ImGui.begin("NBT Editor")) {
-            nbtEditor.render("NBT editor##test", 0);
+            ImGui.checkbox("Allow Editing NBT", allowEditNbt);
+            ImGui.separator();
+            if (nbtEditor.render("NBT editor##test", allowEditNbt.get() ? 0 : NbtEditorFlags.READONLY)) {
+                NbtElement newVal = nbtEditor.getNbt();
+                client.player.sendMessage(Text.literal("New NBT: " + newVal), false);
+            };
 //            NbtEditor.drawNbtEditor("NBT Editor##test", editingNbt, 0);
         }
         ImGui.end();

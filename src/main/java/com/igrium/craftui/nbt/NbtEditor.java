@@ -1,16 +1,16 @@
 package com.igrium.craftui.nbt;
 
+import imgui.ImGui;
 import imgui.type.ImString;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
+import lombok.NonNull;
+import net.minecraft.nbt.*;
 
 /**
  * A visual interface for editing NBT values.
  * @param <T> NBT element type
  * @apiNote For technical reasons, always deep-copies the NBT value on get/set
  */
-public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompoundEditor, NbtGenericEditor, NbtListEditor {
+public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompoundEditor, NbtListEditor, NbtPrimitiveEditor {
 
     /**
      * Construct a new NbtEditor of the correct type for a given NBT element, and use it as an initial value.
@@ -19,19 +19,56 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
      * @param <T> The type of element
      */
     @SuppressWarnings("unchecked")
-    public static <T extends NbtElement> NbtEditor<T> of(T element) {
-        if (element instanceof NbtCompound compound) {
-            var editor = new NbtCompoundEditor();
-            editor.setNbt(compound);
-            return (NbtEditor<T>) editor;
-        } else if (element instanceof NbtList list) {
-            var editor = new NbtListEditor();
-            editor.setNbt(list);
-            return (NbtEditor<T>) editor;
-        } else {
-            var editor = new NbtGenericEditor<T>();
-            editor.setNbt(element);
-            return editor;
+    public static <T extends NbtElement> NbtEditor<T> of(@NonNull T element) {
+        switch (element) {
+            case NbtByte nByte -> {
+                var editor = new NbtByteEditor();
+                editor.setNbt(nByte);
+                return (NbtEditor<T>) editor;
+            }
+            case NbtShort nShort -> {
+                var editor = new NbtShortEditor();
+                editor.setNbt(nShort);
+                return (NbtEditor<T>) editor;
+            }
+            case NbtInt nInt -> {
+                var editor = new NbtIntEditor();
+                editor.setNbt(nInt);
+                return (NbtEditor<T>) editor;
+            }
+            case NbtLong nLong -> {
+                var editor = new NbtLongEditor();
+                editor.setNbt(nLong);
+                return (NbtEditor<T>) editor;
+            }
+            case NbtFloat nFloat -> {
+                var editor = new NbtFloatEditor();
+                editor.setNbt(nFloat);
+                return (NbtEditor<T>) editor;
+            }
+            case NbtDouble nDouble -> {
+                var editor = new NbtDoubleEditor();
+                editor.setNbt(nDouble);
+                return (NbtEditor<T>) editor;
+            }
+            case NbtCompound compound -> {
+                var editor = new NbtCompoundEditor();
+                editor.setNbt(compound);
+                return (NbtEditor<T>) editor;
+            }
+            case NbtList list -> {
+                var editor = new NbtListEditor();
+                editor.setNbt(list);
+                return (NbtEditor<T>) editor;
+            }
+            case NbtString string -> {
+                var editor = new NbtStringEditor();
+                editor.setNbt(string);
+                return (NbtEditor<T>) editor;
+            }
+            default -> {
+                return new NbtGenericEditor<>((T) element.copy());
+            }
         }
     }
     
@@ -71,5 +108,9 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
     private static String getId(String label) {
         int tripleHash = label.indexOf("###");
         return tripleHash >= 0 ? label.substring(tripleHash + 3) : label;
+    }
+
+    protected static boolean selectableText(String text) {
+        return ImGui.selectable(text, ImGui.calcTextSizeX(text, true), ImGui.calcTextSizeY(text, true));
     }
 }

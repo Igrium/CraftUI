@@ -1,5 +1,6 @@
 package com.igrium.craftui.nbt;
 
+import com.igrium.craftui.icon.NbtIcons;
 import imgui.ImGui;
 import imgui.flag.ImGuiTreeNodeFlags;
 import imgui.type.ImString;
@@ -26,6 +27,8 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
     }
 
     private final List<Entry> entries = new ArrayList<>();
+
+    private final EditableText labelText = new EditableText();
 
     /**
      * We want to keep entry IDs unique but consistent in the context of adding/removing/reordering entries.
@@ -58,11 +61,24 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
             baseFlags |= ImGuiTreeNodeFlags.DefaultOpen;
         }
 
-        boolean open = ImGui.treeNodeEx("##" + id, baseFlags);
-        ImGui.sameLine();
-        ImGui.text(label.get() + " (" + entries.size() + " items)");
+        boolean modified = false;
 
-        boolean anyModified = false;
+        ImGui.alignTextToFramePadding();
+        boolean open = ImGui.treeNodeEx("##" + id, baseFlags);
+
+        ImGui.sameLine();
+        NbtIcons.drawIcon(NbtElement.LIST_TYPE);
+
+        boolean canEditLabel = NbtEditorFlags.canEditLabel(flags);
+        ImGui.sameLine();
+        if (canEditLabel) {
+            modified = labelText.editString(id, label, ImGui.getFontSize() * 8);
+        } else {
+            ImGui.text(label.get());
+        }
+
+        ImGui.sameLine();
+        ImGui.text("(" + entries.size() + " items)");
 
         int childFlags = NbtEditorFlags.prepareForChildren(flags);
         childFlags |= NbtEditorFlags.READONLY_LABEL;
@@ -71,10 +87,10 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
             int idx = 0;
             for (var item : entries) {
                 idxString.set("[" + idx++ + "]");
-                anyModified |= item.value.render(item.id, idxString, childFlags);
+                modified |= item.value.render(item.id, idxString, childFlags);
             }
             ImGui.treePop();
         }
-        return anyModified;
+        return modified;
     }
 }
