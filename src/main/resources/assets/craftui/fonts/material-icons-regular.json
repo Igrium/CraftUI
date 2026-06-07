@@ -6,5 +6,6 @@
         "0xE000", "0xEC31",
         "0xEF38", "0xF23B",
         "0xF840", "0xF8FF"
-    ]
+    ],
+    "iconOnly": true
 }

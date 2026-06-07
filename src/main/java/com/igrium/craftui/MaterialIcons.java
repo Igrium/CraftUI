@@ -14,20 +14,6 @@ import net.minecraft.util.Identifier;
 public class MaterialIcons {
     public static final Identifier FONT_ID = Identifier.of("craftui:material-icons-regular");
 
-    public static ImFont getFont() {
-        return CraftUIFonts.getFont(FONT_ID);
-    }
-
-    /**
-     * Temporarily push the icon font and use it to draw an icon.
-     * @param icon Icon code to draw.
-     */
-    public static void drawIcon(char icon) {
-        ImGui.pushFont(getFont(), 16);
-        ImGui.text(String.valueOf(icon));
-        ImGui.popFont();
-    }
-
     public static final char ICON_10K = 0xE951;
     public static final char ICON_10MP = 0xE952;
     public static final char ICON_11MP = 0xE953;

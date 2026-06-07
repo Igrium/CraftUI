@@ -159,6 +159,9 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             }
 
             try {
+                if (entry.getValue().config.iconOnly) {
+                    continue;
+                }
                 ImFont font = renderFont(atlas, file, entry.getKey(), false, files);
                 fonts.put(entry.getKey(), font);
             } catch (Exception e) {
@@ -195,6 +198,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
     private ImFont renderFont(ImFontAtlas atlas, LoadedFontFile file, Identifier id,
                               boolean merge, Map<Identifier, LoadedFontFile> fonts) {
         FontConfig config = file.config;
+
         ImFontConfig imConfig = new ImFontConfig();
         float size = config.size * 16; // TODO: UI scaling
 
@@ -248,12 +252,14 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                 font = atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig);
             }
 
-            if (!merge && config.icons != null) {
-                LoadedFontFile icons = fonts.get(config.icons);
-                if (icons != null) {
-                    renderFont(atlas, icons, config.icons, true, fonts);
-                } else {
-                    LOGGER.warn("Unable to locate icon font {}", config.icons);
+            if (!merge) {
+                for (var iconId : config.icons) {
+                    LoadedFontFile icon = fonts.get(iconId);
+                    if (icon != null) {
+                        renderFont(atlas, icon, iconId, true, fonts);
+                    } else {
+                        LOGGER.warn("Unable to locate icon font {}", iconId);
+                    }
                 }
             }
 
@@ -320,7 +326,12 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         @JsonAdapter(GlyphRangeTypeAdapter.class)
         short @Nullable [] glyphRanges;
 
-        @Nullable Identifier icons;
+        /**
+         * The icon fonts to load on top of this one.
+         */
+        Identifier[] icons = new Identifier[0];
+
+        boolean iconOnly = false;
     }
 
 

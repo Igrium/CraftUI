@@ -120,9 +120,9 @@ public class TestApp extends DockSpaceApp {
 
             ImGui.text("Here are some test icons: ");
             ImGui.sameLine();
-            ImGui.pushFont(MaterialIcons.getFont(), 16);
-            ImGui.text("" + MaterialIcons.ICON_1K + MaterialIcons.ICON_3D_ROTATION + MaterialIcons.ICON_ADMIN_PANEL_SETTINGS + MaterialIcons.ICON_RADIO);
-            ImGui.popFont();
+//            ImGui.pushFont(MaterialIcons.getFont(), 16);
+//            ImGui.text("" + MaterialIcons.ICON_1K + MaterialIcons.ICON_3D_ROTATION + MaterialIcons.ICON_ADMIN_PANEL_SETTINGS + MaterialIcons.ICON_RADIO);
+//            ImGui.popFont();
 
             if (ImGui.button("Open a popup")) {
                 ImGui.openPopup("popup");
