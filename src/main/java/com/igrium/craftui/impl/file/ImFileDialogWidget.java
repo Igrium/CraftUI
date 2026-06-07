@@ -56,13 +56,15 @@ public final class ImFileDialogWidget {
     /**
      * Consider us saving a file rather than loading a file
      */
-    @Getter @Setter
+    @Getter
+    @Setter
     private boolean saveMode;
 
     /**
      * We're selecting folders rather than files.
      */
-    @Getter @Setter
+    @Getter
+    @Setter
     private boolean dirMode;
 
     /**
@@ -83,7 +85,8 @@ public final class ImFileDialogWidget {
     /**
      * The file filter in use. <code>null</code> to use the "any" filter.
      */
-    @Getter @Setter
+    @Getter
+    @Setter
     private @Nullable FileFilter currentFilter;
 
     /// === NAVIGATION STATE ===
@@ -288,6 +291,11 @@ public final class ImFileDialogWidget {
             setPath(pathParent);
         }
         ImGui.endDisabled();
+        ImGui.sameLine();
+
+        if (ImGui.button("" + MaterialIcons.ICON_REPLAY)) {
+            setPath(path, false);
+        }
 
         /// === DIRECTORY BAR ===
         ImGui.tableNextColumn();
@@ -392,7 +400,6 @@ public final class ImFileDialogWidget {
                 selectedFileText.set(selectedFile);
             }
 
-//            ImGui.tableNextRow();
             ImGui.tableSetColumnIndex(1);
 
             if (ImGui.button(t("gui.cancel"))) {
@@ -431,7 +438,9 @@ public final class ImFileDialogWidget {
         if (wantOpenConfirm) {
             ImGui.openPopup(overwriteName);
         }
-        if (ImGui.beginPopupModal(overwriteName, ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoResize)) {
+        if (ImGui.beginPopupModal(overwriteName, ImGuiWindowFlags.NoSavedSettings
+                | ImGuiWindowFlags.NoResize
+                | ImGuiWindowFlags.NoMove)) {
             ImGui.text(tt("gui.craftui.fd_exists"));
 
             if (ImGui.button(t("gui.cancel"))) {
