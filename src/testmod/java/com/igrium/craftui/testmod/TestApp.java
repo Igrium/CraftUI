@@ -116,11 +116,11 @@ public class TestApp extends DockSpaceApp {
                 throw new RuntimeException("Test Exception");
             }
 
-            ImGui.text("Here are some test icons! " + MaterialIcons.ICON_1K + " " + MaterialIcons.ICON_APPLE);
+            ImGui.text("Here are some test icons! " + MaterialIcons.ICON_1K + " " + MaterialIcons.ICON_APPLE + " " + MaterialIcons.ICON_CACHED);
 
             ImGui.text("Here are some test icons: ");
             ImGui.sameLine();
-            ImGui.pushFont(MaterialIcons.getFont());
+            ImGui.pushFont(MaterialIcons.getFont(), 16);
             ImGui.text("" + MaterialIcons.ICON_1K + MaterialIcons.ICON_3D_ROTATION + MaterialIcons.ICON_ADMIN_PANEL_SETTINGS + MaterialIcons.ICON_RADIO);
             ImGui.popFont();
 

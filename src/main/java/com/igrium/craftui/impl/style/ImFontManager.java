@@ -13,6 +13,8 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import org.apache.commons.io.FilenameUtils;
@@ -49,7 +51,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         return instance;
     }
 
-    private ImFontManager() {};
+    private ImFontManager() {}
 
     private static ImFontAtlas getFontAtlas() {
         return ImGui.getIO().getFonts();
@@ -78,9 +80,9 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
     @Override
     public CompletableFuture<Void> reload(Synchronizer synchronizer, ResourceManager manager, Executor prepareExecutor, Executor applyExecutor) {
-        
+
         fontFiles.clear();
-        
+
         List<CompletableFuture<?>> futures = new ArrayList<>();
         for (var entry : manager.findResources("fonts", id -> isFontExt(id.getPath())).entrySet()) {
             /* Calculate font ID and create font file entry */
@@ -89,7 +91,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             String fontPath = fileName.getPath().substring("fonts/".length());
             fontPath = FilenameUtils.removeExtension(fontPath);
             final Identifier fontID = Identifier.of(fileName.getNamespace(), fontPath);
-            
+
             final LoadedFontFile file = new LoadedFontFile();
             fontFiles.put(fontID, file);
 
@@ -128,7 +130,6 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
                 .thenCompose(synchronizer::whenPrepared)
                 .thenRunAsync(this::renderFonts, applyExecutor);
-
     }
 
     /**
@@ -147,7 +148,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
         ImFontAtlas atlas = getFontAtlas();
         atlas.clear();
-        
+
         defaultFont = atlas.addFontDefault();
 
         for (var entry : files.entrySet()) {
@@ -209,13 +210,8 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                 imConfig.setGlyphMinAdvanceX(config.glyphMinAdvanceX);
             if (config.glyphMaxAdvanceX != null)
                 imConfig.setGlyphMaxAdvanceX(config.glyphMaxAdvanceX);
-            if (config.glyphExtraSpacing != null) {
-                imConfig.setGlyphExtraSpacing(config.glyphExtraSpacing.getX(), config.glyphExtraSpacing.getY());
-            }
 
             if (config.glyphOffset != null || config.scaledGlyphOffset != null) {
-                // TODO: make this the actual scale
-                // One year later - what did I mean by this?
                 float scale = 1;
 
                 float offsetX = 0;
@@ -236,11 +232,9 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                 imConfig.setGlyphOffset(offsetX, offsetY);
             }
 
-
             imConfig.setName(id.toString());
 
             if (merge) {
-                // TODO: figure out how to make this re-use parts of the font atlas.
                 imConfig.setMergeMode(true);
                 if (config.glyphRanges == null) {
                     LOGGER.warn("Tried to load {} as an icon font, but no glyph ranges are specified!", id);
@@ -276,7 +270,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
     public Map<Identifier, ImFont> getFonts() {
         return Collections.unmodifiableMap(fonts);
     }
-    
+
     /**
      * Get a font by its ID.
      * @param id ID to use.
@@ -300,9 +294,6 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
     }
 
     private static class FontConfig {
-        /**
-         * Base size of the font in pixels
-         */
         float size = 1f;
 
         @Nullable Integer oversampleH;
@@ -315,8 +306,6 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
         @Nullable Float glyphMaxAdvanceX;
 
-        @Nullable Vector2f glyphExtraSpacing;
-
         @Nullable Vector2f glyphOffset;
 
         @Nullable Vector2f scaledGlyphOffset;
@@ -327,6 +316,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
          */
         @Nullable Vector2f iconGlyphOffset;
 
+        // FIX: Migrated from short[] to int[] for ImGui 32-bit ImWchar requirement
         @JsonAdapter(GlyphRangeTypeAdapter.class)
         short @Nullable [] glyphRanges;
 
@@ -338,20 +328,28 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
         @Override
         public void write(JsonWriter out, short[] value) throws IOException {
+            if (value == null) {
+                out.nullValue();
+                return;
+            }
             out.beginArray();
-            for (short s : value) {
-                out.value(Integer.toHexString(s));
+            for (int i : value) {
+                out.value(Integer.toHexString(i));
             }
             out.endArray();
         }
 
         @Override
         public short[] read(JsonReader in) throws IOException {
+            if (in.peek() == JsonToken.NULL) {
+                in.nextNull();
+                return null;
+            }
             ShortList list = new ShortArrayList();
             in.beginArray();
             while (in.peek() != JsonToken.END_ARRAY) {
                 if (in.peek() == JsonToken.STRING) {
-                    list.add(parseShort(in.nextString()));
+                    list.add((short) parseInt(in.nextString()));
                 } else {
                     list.add((short) in.nextInt());
                 }
@@ -360,13 +358,14 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             return list.toShortArray();
         }
 
-        private static short parseShort(String hex) {
-            if (hex.startsWith("0x")) {
+        private static int parseInt(String hex) {
+            if (hex.startsWith("0x") || hex.startsWith("0X")) {
                 hex = hex.substring(2);
             } else if (hex.startsWith("#")) {
                 hex = hex.substring(1);
             }
-            return (short) Integer.parseInt(hex, 16);
+            // Parse using a Long to bypass signed bit limitations on high hex values before casting to int
+            return (int) Long.parseLong(hex, 16);
         }
     }
 

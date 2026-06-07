@@ -9,6 +9,7 @@ import com.igrium.craftui.style.CraftUIStyles;
 import imgui.ImGui;
 import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiHoveredFlags;
+import imgui.flag.ImGuiKey;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
@@ -76,7 +77,7 @@ public class CraftUIConfigApp extends CraftApp {
                         | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings)) {
 
 
-            if (ImGui.isKeyPressed(GLFW.GLFW_KEY_ESCAPE) && ImGui.isWindowFocused()) {
+            if (ImGui.isKeyPressed(ImGuiKey.Escape) && ImGui.isWindowFocused()) {
                 close();
             }
 

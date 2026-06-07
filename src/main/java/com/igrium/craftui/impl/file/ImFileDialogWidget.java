@@ -293,7 +293,7 @@ public final class ImFileDialogWidget {
         ImGui.endDisabled();
         ImGui.sameLine();
 
-        if (ImGui.button("" + MaterialIcons.ICON_REPLAY)) {
+        if (ImGui.button("" + MaterialIcons.ICON_CACHED)) {
             setPath(path, false);
         }
 

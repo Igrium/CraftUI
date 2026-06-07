@@ -23,7 +23,7 @@ public class MaterialIcons {
      * @param icon Icon code to draw.
      */
     public static void drawIcon(char icon) {
-        ImGui.pushFont(getFont());
+        ImGui.pushFont(getFont(), 16);
         ImGui.text(String.valueOf(icon));
         ImGui.popFont();
     }
