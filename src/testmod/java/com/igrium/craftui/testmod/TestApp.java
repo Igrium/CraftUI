@@ -6,8 +6,8 @@ import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.file.FileDialogs.FileFilter;
 import com.igrium.craftui.icon.NbtIcons;
+import com.igrium.craftui.nbt.NbtEditor;
 import com.igrium.craftui.style.CraftUILayouts;
-import com.igrium.craftui.impl.util.NbtEditor;
 import com.igrium.craftui.util.RaycastUtils;
 import imgui.ImGui;
 import imgui.type.ImBoolean;
@@ -42,12 +42,15 @@ public class TestApp extends DockSpaceApp {
     private static final Identifier LAYOUT1 = Identifier.of("craftui-test", "layout1");
     private static final Identifier LAYOUT2 = Identifier.of("craftui-test", "layout2");
 
-    private final NbtCompound editingNbt = new NbtCompound();
+//    private final NbtCompound editingNbt = new NbtCompound();
 
+    private final NbtEditor<?> nbtEditor;
 
     public TestApp() {
         setViewportInputMode(ViewportInputMode.NONE);
         setViewportInputButtons(1, 2);
+
+        NbtCompound editingNbt = new NbtCompound();
 
         editingNbt.put("Value1", NbtString.of("Hello"));
         editingNbt.put("Value2", NbtInt.of(69));
@@ -64,7 +67,14 @@ public class TestApp extends DockSpaceApp {
 
         NbtCompound compound = new NbtCompound();
         compound.put("NestedStr", NbtString.of("Hello World!"));
+
+        NbtList list = new NbtList();
+        list.add(NbtString.of("Hello World!"));
+        compound.put("TestList", list);
+
         editingNbt.put("Compound", compound);
+
+        nbtEditor = NbtEditor.of(editingNbt);
     }
 
     @Override
@@ -173,7 +183,8 @@ public class TestApp extends DockSpaceApp {
 
         // NBT EDITOR
         if (ImGui.begin("NBT Editor")) {
-            NbtEditor.drawNbtEditor("NBT Editor##test", editingNbt, 0);
+            nbtEditor.render("NBT editor##test", 0);
+//            NbtEditor.drawNbtEditor("NBT Editor##test", editingNbt, 0);
         }
         ImGui.end();
     }

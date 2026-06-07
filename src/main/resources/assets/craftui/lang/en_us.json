@@ -32,7 +32,7 @@
     "gui.craftui.fd_saveAs": "Save as",
     "gui.craftui.fd_overwrite": "Overwrite?",
     "gui.craftui.fd_exists": "File already exists. Overwrite?",
-
+    
     "tooltip.craftui.nbtByte": "Byte",
     "tooltip.craftui.nbtShort": "Short",
     "tooltip.craftui.nbtInt": "Integer",
