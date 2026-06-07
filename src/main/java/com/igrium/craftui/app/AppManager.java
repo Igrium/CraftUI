@@ -27,6 +27,7 @@ import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -162,8 +163,11 @@ public final class AppManager {
             window.setFramebufferWidth(currentViewportBounds.width());
             window.setFramebufferHeight(currentViewportBounds.height());
         } else {
-            window.setFramebufferWidth(window.getWidth());
-            window.setFramebufferHeight(window.getHeight());
+            int[] width = new int[1];
+            int [] height = new int[1];
+            GLFW.glfwGetFramebufferSize(window.getHandle(), width, height);
+            window.setFramebufferWidth(width[0]);
+            window.setFramebufferHeight(height[0]);
         }
 
         client.onResolutionChanged();
