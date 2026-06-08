@@ -33,12 +33,15 @@
     "gui.craftui.fd_overwrite": "Overwrite?",
     "gui.craftui.fd_exists": "File already exists. Overwrite?",
 
-    "gui.craftui.nbt_remove": "Remove Tag",
+    "gui.craftui.nbt_remove": "Remove Item",
+    "gui.craftui.nbt_moveUp": "Move Up",
+    "gui.craftui.nbt_moveDown": "Move Down",
     "gui.craftui.nbt_addChild": "Add Child",
     "gui.craftui.nbt.copyNbt": "Copy SNBT",
     "gui.craftui.nbt.pasteNbt": "Paste SNBT",
     "gui.craftui.nbt.pasteAsChild": "Paste SNBT as Child",
     "gui.craftui.nbt.pasteInvalid": "Invalid syntax:",
+
 
     "tooltip.craftui.nbtByte": "Byte",
     "tooltip.craftui.nbtShort": "Short",

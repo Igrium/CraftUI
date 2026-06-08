@@ -17,10 +17,6 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
         final String id;
         NbtEditor<?> value;
 
-        private Entry(String id) {
-            this.id = id;
-        }
-
         private Entry(String id, NbtEditor<?> value) {
             this.id = id;
             this.value = value;
@@ -73,14 +69,16 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
 
         ImGui.alignTextToFramePadding();
         if (openTreeNode) ImGui.setNextItemOpen(true);
-        boolean open = ImGui.treeNodeEx("##" + id, baseFlags);
+        boolean open = ImGui.treeNodeEx( NbtIcons.ICON_LIST + "##" + id, baseFlags);
+
+        if (ImGui.isItemClicked(1)) {
+            rFlags |= NbtEditorFlags.RETURN_RIGHT_CLICKED;
+        }
 
         ImGui.sameLine();
         ImGui.beginGroup();
-        NbtIcons.drawIcon(NbtElement.LIST_TYPE);
 
         boolean canEditLabel = NbtEditorFlags.canEditLabel(flags);
-        ImGui.sameLine();
         if (canEditLabel) {
             if (labelText.editString(id, label, ImGui.getFontSize() * 8)) {
                 rFlags |= NbtEditorFlags.RETURN_MODIFIED_LABEL | NbtEditorFlags.RETURN_MODIFIED;
@@ -105,10 +103,13 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
 
         String removeId = null;
 
+        int toMoveUp = -1;
+        int toMoveDown = -1;
+
         if (open) {
             int idx = 0;
             for (var item : entries) {
-                idxString.set("[" + idx++ + "]");
+                idxString.set("[" + idx + "]");
                 int cFlags = item.value.render(item.id, idxString, childFlags);
 
                 // Mask out clicks! Only let modification flags bubble up to the parent
@@ -124,11 +125,27 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
                     rFlags |= (ctxFlags & ~(NbtEditorFlags.RETURN_RIGHT_CLICKED | NbtEditorFlags.RETURN_LEFT_CLICKED));
 
                     ImGui.separator();
-                    if (ImGui.menuItem("Remove")) {
+                    ImGui.beginDisabled(hasFlag(flags, NbtEditorFlags.READONLY_LABEL));
+                    if (ImGui.menuItem(t("gui.craftui.nbt_remove"))) {
                         removeId = item.id;
                     }
+
+                    ImGui.beginDisabled(idx <= 0);
+                    if (ImGui.menuItem(t("gui.craftui.nbt_moveUp"))) {
+                        toMoveUp = idx;
+                    }
+                    ImGui.endDisabled();
+
+                    ImGui.beginDisabled(idx >= entries.size() - 1);
+                    if (ImGui.menuItem(t("gui.craftui.nbt_moveDown"))) {
+                        toMoveDown = idx;
+                    }
+                    ImGui.endDisabled();
+                    ImGui.endDisabled();
+
                     ImGui.endPopup();
                 }
+                idx++;
             }
             ImGui.treePop();
         }
@@ -136,6 +153,20 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
         String r = removeId; // Lambda final restrictions are such bullshit
         if (r != null && entries.removeIf(e -> e.id.equals(r))) {
             rFlags |= NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_REMOVED_ITEM;
+        }
+
+        if (0 < toMoveUp && toMoveUp < entries.size()) {
+            Entry other = entries.get(toMoveUp - 1);
+            entries.set(toMoveUp - 1, entries.get(toMoveUp));
+            entries.set(toMoveUp, other);
+            rFlags |= NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_REARRANGED;
+        }
+
+        if (0 <= toMoveDown && toMoveDown < entries.size() - 1) {
+            Entry other = entries.get(toMoveDown + 1);
+            entries.set(toMoveDown + 1, entries.get(toMoveDown));
+            entries.set(toMoveDown, other);
+            rFlags |= NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_REARRANGED;
         }
 
         openTreeNode = false;
@@ -172,6 +203,7 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
             byte type = entry.value.getNbtType();
             if (ImGui.menuItem(NbtIcons.getIcon(type) + " " + t("gui.craftui.nbt_addChild"))) {
                 newItem(type);
+                added = true;
             }
         }
 

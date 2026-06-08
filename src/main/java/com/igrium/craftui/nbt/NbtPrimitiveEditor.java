@@ -17,16 +17,17 @@ public abstract sealed class NbtPrimitiveEditor<T extends NbtElement> extends Nb
         int rFlags = 0;
 
         ImGui.alignTextToFramePadding();
-        boolean open = ImGui.treeNodeEx("##" + id, baseFlags);
+        boolean open = ImGui.treeNodeEx(NbtIcons.getIcon(getNbtType()) + "##" + id, baseFlags);
+
+        if (ImGui.isItemClicked(1)) {
+            rFlags |= NbtEditorFlags.RETURN_RIGHT_CLICKED;
+        }
 
         ImGui.sameLine();
         ImGui.beginGroup();
-        NbtIcons.drawIcon(getNbtType());
 
         // label
         boolean canEditLabel = NbtEditorFlags.canEditLabel(flags);
-
-        ImGui.sameLine();
         if (canEditLabel) {
             if (labelText.editString(id, label, ImGui.getFontSize() * 8)) {
                 rFlags |= NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_MODIFIED_LABEL;

@@ -18,10 +18,6 @@ public final class NbtCompoundEditor extends NbtEditor<NbtCompound> {
         final ImString key = new ImString(32);
         NbtEditor<?> value;
 
-        private Entry(String id) {
-            this.id = id;
-        }
-
         private Entry(String id, String key, NbtEditor<?> value) {
             this.id = id;
             this.key.set(key);
@@ -74,14 +70,16 @@ public final class NbtCompoundEditor extends NbtEditor<NbtCompound> {
 
         ImGui.alignTextToFramePadding();
         if (openTreeNode) ImGui.setNextItemOpen(true);
-        boolean open = ImGui.treeNodeEx("##" + id, baseFlags);
+        boolean open = ImGui.treeNodeEx(NbtIcons.ICON_COMPOUND + "##" + id, baseFlags);
+
+        if (ImGui.isItemClicked(1)) {
+            rFlags |= NbtEditorFlags.RETURN_RIGHT_CLICKED;
+        }
 
         ImGui.sameLine();
         ImGui.beginGroup();
-        NbtIcons.drawIcon(NbtElement.COMPOUND_TYPE);
 
         boolean canEditLabel = NbtEditorFlags.canEditLabel(flags);
-        ImGui.sameLine();
         if (canEditLabel) {
             if (labelText.editString(id, label, ImGui.getFontSize() * 8)) {
                 rFlags |= NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_MODIFIED_LABEL;
@@ -122,7 +120,7 @@ public final class NbtCompoundEditor extends NbtEditor<NbtCompound> {
                     rFlags |= (ctxFlags & ~(NbtEditorFlags.RETURN_RIGHT_CLICKED | NbtEditorFlags.RETURN_LEFT_CLICKED));
 
                     ImGui.separator();
-                    if (ImGui.menuItem("Remove")) {
+                    if (ImGui.menuItem(t("gui.craftui.nbt_remove"))) {
                         removeId = item.id;
                     }
                     ImGui.endPopup();

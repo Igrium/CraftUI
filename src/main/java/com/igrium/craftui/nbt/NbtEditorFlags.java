@@ -37,6 +37,7 @@ public final class NbtEditorFlags {
     public static final int RETURN_RIGHT_CLICKED = 8;
     public static final int RETURN_ADDED_ITEM = 16;
     public static final int RETURN_REMOVED_ITEM = 32;
+    public static final int RETURN_REARRANGED = 64;
 
     static int prepareForChildren(int flags) {
         if (hasFlag(flags, START_OPEN_SINGLE)) {
