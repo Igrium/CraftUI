@@ -11,6 +11,7 @@ public abstract sealed class NbtPrimitiveEditor<T extends NbtElement> extends Nb
     private final EditableText labelText = new EditableText();
     @Override
     public int render(String id, ImString label, int flags) {
+        super.render(id, label, flags);
 
         int baseFlags = ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.Leaf;
 

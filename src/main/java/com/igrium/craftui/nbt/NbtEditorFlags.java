@@ -31,6 +31,11 @@ public final class NbtEditorFlags {
      */
     public static final int START_OPEN_SINGLE = 16;
 
+    /**
+     * Indicates that this editor is being rendered as a child
+     */
+    public static final int CHILD = 32;
+
     public static final int RETURN_MODIFIED = 1;
     public static final int RETURN_MODIFIED_LABEL = 2;
     public static final int RETURN_LEFT_CLICKED = 4;
@@ -45,6 +50,7 @@ public final class NbtEditorFlags {
             flags &= ~START_OPEN;
         }
         flags %= READONLY_LABEL;
+        flags |= CHILD;
         return flags;
     }
 
@@ -64,13 +70,4 @@ public final class NbtEditorFlags {
         return (flags & flag) != 0;
     }
 
-    @Deprecated
-    static int getReturnFlags(boolean modified, boolean modifiedLabel, boolean leftClicked, boolean rightClicked) {
-        int rFlags = 0;
-        if (modified) rFlags |= NbtEditorFlags.RETURN_MODIFIED;
-        if (modifiedLabel) rFlags |= NbtEditorFlags.RETURN_MODIFIED_LABEL;
-        if (leftClicked) rFlags |= NbtEditorFlags.RETURN_LEFT_CLICKED;
-        if (rightClicked) rFlags |= NbtEditorFlags.RETURN_RIGHT_CLICKED;
-        return rFlags;
-    }
 }

@@ -44,9 +44,14 @@ public final class NbtIcons {
         ImGui.text("" + getIcon(elementType));
         ImGui.popFont();
 
-        ImGui.setItemTooltip(Text.translatable(tooltipTranslation(elementType)).getString());
+        ImGui.setItemTooltip(Text.translatable(translation(elementType)).getString());
     }
 
+    /**
+     * Get only the suffix of the translation key for a given NBT element type
+     * @param elementType NBT element type to get
+     * @return Translation suffix
+     */
     public static String translationSuffix(byte elementType) {
         return switch (elementType) {
             case NbtElement.BYTE_TYPE -> "nbtByte";
@@ -65,7 +70,12 @@ public final class NbtIcons {
         };
     }
 
-    public static String tooltipTranslation(byte elementType) {
+    /**
+     * Get the translation key for a given NBT element type
+     * @param elementType NBT element type to get
+     * @return Translation key
+     */
+    public static String translation(byte elementType) {
         return "tooltip.craftui." + translationSuffix(elementType);
     }
 }

@@ -16,11 +16,14 @@ import imgui.type.ImInt;
 import imgui.type.ImString;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.TntEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.*;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
@@ -45,7 +48,7 @@ public class TestApp extends DockSpaceApp {
 
 //    private final NbtCompound editingNbt = new NbtCompound();
 
-    private final NbtEditor<?> nbtEditor;
+    private NbtEditor<?> nbtEditor;
 
     public TestApp() {
         setViewportInputMode(ViewportInputMode.NONE);
@@ -181,6 +184,10 @@ public class TestApp extends DockSpaceApp {
                     raycastExplosion();
                 }
             }
+
+            if (ImGui.isWindowHovered() && ImGui.isMouseClicked(2)) {
+                clickNbt();
+            }
         }
         ImGui.end();
 
@@ -225,6 +232,21 @@ public class TestApp extends DockSpaceApp {
                 server.getOverworld().spawnEntity(entity);
             });
 //            world.addParticle(ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 0, 0, 0);
+        }
+    }
+
+    private void clickNbt() {
+        Mouse mouse = MinecraftClient.getInstance().mouse;
+        IntegratedServer server = MinecraftClient.getInstance().getServer();
+        if (server == null) return;
+
+        HitResult raycast = RaycastUtils.raycastViewport((float)mouse.getX(), (float)mouse.getY(), 1000, e -> !(e instanceof PlayerEntity), false);
+        if (raycast instanceof EntityHitResult entHit) {
+            Entity ent = entHit.getEntity();
+            if (ent == null) return;
+
+            NbtCompound nbt = ent.writeNbt(new NbtCompound());
+            nbtEditor = NbtEditor.of(nbt);
         }
     }
 }

@@ -60,6 +60,7 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
 
     @Override
     public int render(String id, ImString label, int flags) {
+        super.render(id, label, flags);
         int baseFlags = ImGuiTreeNodeFlags.DrawLinesFull;
         if (NbtEditorFlags.startsOpen(flags)) {
             baseFlags |= ImGuiTreeNodeFlags.DefaultOpen;
@@ -125,7 +126,7 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
                     rFlags |= (ctxFlags & ~(NbtEditorFlags.RETURN_RIGHT_CLICKED | NbtEditorFlags.RETURN_LEFT_CLICKED));
 
                     ImGui.separator();
-                    ImGui.beginDisabled(hasFlag(flags, NbtEditorFlags.READONLY_LABEL));
+                    ImGui.beginDisabled(hasFlag(flags, NbtEditorFlags.READONLY));
                     if (ImGui.menuItem(t("gui.craftui.nbt_remove"))) {
                         removeId = item.id;
                     }

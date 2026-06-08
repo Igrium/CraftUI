@@ -40,8 +40,10 @@
     "gui.craftui.nbt.copyNbt": "Copy SNBT",
     "gui.craftui.nbt.pasteNbt": "Paste SNBT",
     "gui.craftui.nbt.pasteAsChild": "Paste SNBT as Child",
-    "gui.craftui.nbt.pasteInvalid": "Invalid syntax:",
-
+    "gui.craftui.nbt.pasteFailure": "Unable to paste SNBT",
+    "gui.craftui.nbt.pasteSyntax": "Invalid Syntax:",
+    "gui.craftui.nbt.badType": "Invalid NBT type. Expected %s; got %s",
+    "gui.craftui.nbt.except": "An unknown exception occurred pasting SNBT",
 
     "tooltip.craftui.nbtByte": "Byte",
     "tooltip.craftui.nbtShort": "Short",
