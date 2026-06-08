@@ -36,6 +36,11 @@ public final class NbtStringEditor extends NbtPrimitiveEditor<NbtString> {
         setValue(nbt.asString());
     }
 
+    @Override
+    protected Class<? extends NbtString> getNbtClass() {
+        return NbtString.class;
+    }
+
     private void setValue(String value) {
         if (this.value.getBufferSize() < value.length()) {
             this.value = new ImString(value.length());

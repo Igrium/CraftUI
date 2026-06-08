@@ -34,4 +34,9 @@ public final class NbtLongEditor extends NbtPrimitiveEditor<NbtLong> {
     public void setNbt(NbtLong nbt) {
         value.set(nbt.longValue());
     }
+
+    @Override
+    protected Class<? extends NbtLong> getNbtClass() {
+        return NbtLong.class;
+    }
 }

@@ -34,4 +34,9 @@ public final class NbtFloatEditor extends NbtPrimitiveEditor<NbtFloat> {
     public void setNbt(NbtFloat nbt) {
         value.set(nbt.floatValue());
     }
+
+    @Override
+    protected Class<NbtFloat> getNbtClass() {
+        return NbtFloat.class;
+    }
 }

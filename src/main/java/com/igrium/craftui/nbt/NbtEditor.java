@@ -1,9 +1,12 @@
 package com.igrium.craftui.nbt;
 
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import imgui.ImGui;
 import imgui.type.ImString;
 import lombok.NonNull;
 import net.minecraft.nbt.*;
+import net.minecraft.util.Language;
 
 /**
  * A visual interface for editing NBT values.
@@ -94,12 +97,45 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
      */
     public abstract int render(String id, ImString label, int flags);
 
-    private final ImString labelStr = new ImString(32);
+    protected abstract Class<? extends T> getNbtClass();
 
+    protected void drawContextItems(int flags) {
+        if (ImGui.menuItem(t("gui.craftui.nbt.copyNbt"))) {
+            var nbt = getNbt();
+            ImGui.setClipboardText(nbt.asString());
+        }
+//        ImGui.beginDisabled(hasFlag(flags, NbtEditorFlags.READONLY));
+//        if (ImGui.menuItem("gui.craftui.nbt.pasteNbt")) {
+//            String snbt = ImGui.getClipboardText();
+//        }
+//        ImGui.endDisabled();
+    }
+
+
+    private final ImString labelStr = new ImString(32);
+    /**
+     * Draw this editor, handling right-click actions and other return flags automatically
+     * @param label Label to render with
+     * @param flags {@link NbtEditorFlags} to use
+     * @return If the value was modified
+     */
     public boolean render(String label, int flags) {
         labelStr.set(getRenderedText(label));
         flags |= NbtEditorFlags.READONLY_LABEL;
-        return hasFlag(render(getId(label), labelStr, flags), NbtEditorFlags.RETURN_MODIFIED);
+        String id = getId(label);
+
+        int rFlags = render(id, labelStr, flags);
+
+        if (hasFlag(rFlags, NbtEditorFlags.RETURN_RIGHT_CLICKED)) {
+            ImGui.openPopup(label + ".context");
+        }
+
+        if (ImGui.beginPopup(id + ".context")) {
+            drawContextItems(flags);
+            ImGui.endPopup();
+        }
+
+        return hasFlag(rFlags, NbtEditorFlags.RETURN_MODIFIED);
     }
 
     private static String getRenderedText(String label) {
@@ -118,5 +154,13 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
 
     static boolean hasFlag(int flags, int flag) {
         return (flags & flag) != 0;
+    }
+
+    static String t(String key) {
+        return Language.getInstance().get(key) + "###" + key;
+    }
+
+    static String tt(String key) {
+        return Language.getInstance().get(key);
     }
 }

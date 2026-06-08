@@ -34,4 +34,9 @@ public final class NbtDoubleEditor extends NbtPrimitiveEditor<NbtDouble> {
     public void setNbt(NbtDouble nbt) {
         value.set(nbt.doubleValue());
     }
+
+    @Override
+    protected Class<NbtDouble> getNbtClass() {
+        return NbtDouble.class;
+    }
 }

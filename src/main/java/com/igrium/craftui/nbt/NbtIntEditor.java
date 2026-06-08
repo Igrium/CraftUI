@@ -34,4 +34,9 @@ public final class NbtIntEditor extends NbtPrimitiveEditor<NbtInt> {
     public void setNbt(NbtInt nbt) {
         value.set(nbt.intValue());
     }
+
+    @Override
+    protected Class<? extends NbtInt> getNbtClass() {
+        return NbtInt.class;
+    }
 }

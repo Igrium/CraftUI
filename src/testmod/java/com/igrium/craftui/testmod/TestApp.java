@@ -64,7 +64,7 @@ public class TestApp extends DockSpaceApp {
         editingNbt.put("floatValue", NbtFloat.of(2.54f));
         editingNbt.put("doubleValue", NbtDouble.of(2124.2));
 
-        editingNbt.put("longArray", new NbtLongArray(new long[] {}));
+        editingNbt.put("longArray", new NbtLongArray(new long[] {543, 22, 48}));
 
         NbtCompound compound = new NbtCompound();
         compound.put("NestedStr", NbtString.of("Hello World!"));

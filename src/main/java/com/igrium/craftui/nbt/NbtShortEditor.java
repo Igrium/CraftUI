@@ -34,4 +34,9 @@ public final class NbtShortEditor extends NbtPrimitiveEditor<NbtShort> {
     public void setNbt(NbtShort nbt) {
         value.set(nbt.shortValue());
     }
+
+    @Override
+    protected Class<? extends NbtShort> getNbtClass() {
+        return NbtShort.class;
+    }
 }

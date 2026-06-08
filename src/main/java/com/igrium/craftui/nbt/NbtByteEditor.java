@@ -36,4 +36,9 @@ public final class NbtByteEditor extends NbtPrimitiveEditor<NbtByte> {
     public void setNbt(NbtByte nbt) {
         value.set(nbt.byteValue());
     }
+
+    @Override
+    protected Class<NbtByte> getNbtClass() {
+        return NbtByte.class;
+    }
 }

@@ -6,6 +6,7 @@ import imgui.flag.ImGuiTreeNodeFlags;
 import imgui.type.ImString;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
+import net.minecraft.util.Language;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -110,7 +111,11 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
                     ImGui.openPopup(item.id + ".context");
                 }
                 if (ImGui.beginPopup(item.id + ".context")) {
-                    if (ImGui.selectable("Remove")) {
+
+                    item.value.drawContextItems(childFlags);
+
+                    ImGui.separator();
+                    if (ImGui.menuItem("Remove")) {
                         removeId = item.id;
                     }
                     ImGui.endPopup();
@@ -126,4 +131,18 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
 
         return NbtEditorFlags.getReturnFlags(modified, modifiedLabel, leftClicked, rightClicked);
     }
+
+    @Override
+    protected Class<? extends NbtList> getNbtClass() {
+        return NbtList.class;
+    }
+
+    @Override
+    protected void drawContextItems(int flags) {
+        ImGui.beginDisabled(hasFlag(flags, NbtEditorFlags.READONLY));
+        ImGui.menuItem(t("gui.craftui.nbt_addChild"));
+        ImGui.endDisabled();
+        super.drawContextItems(flags);
+    }
+
 }

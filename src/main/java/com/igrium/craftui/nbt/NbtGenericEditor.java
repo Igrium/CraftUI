@@ -36,4 +36,12 @@ public final class NbtGenericEditor<T extends NbtElement> extends NbtPrimitiveEd
     public void setNbt(T nbt) {
         element = (T) nbt.copy();
     }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    protected Class<? extends T> getNbtClass() {
+        return (Class<? extends T>) element.getClass();
+    }
+
+
 }
