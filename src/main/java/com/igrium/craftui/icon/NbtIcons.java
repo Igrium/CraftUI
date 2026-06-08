@@ -8,7 +8,20 @@ import net.minecraft.text.Text;
 
 @UtilityClass
 public final class NbtIcons {
-    private static final char OFFSET = 'A';
+    private static final char OFFSET = 0xEAFB;
+
+    public static final char ICON_BYTE = OFFSET + NbtElement.BYTE_TYPE;
+    public static final char ICON_SHORT = OFFSET + NbtElement.SHORT_TYPE;
+    public static final char ICON_INT = OFFSET + NbtElement.INT_TYPE;
+    public static final char ICON_LONG = OFFSET + NbtElement.LONG_TYPE;
+    public static final char ICON_FLOAT = OFFSET + NbtElement.FLOAT_TYPE;
+    public static final char ICON_DOUBLE = OFFSET + NbtElement.DOUBLE_TYPE;
+    public static final char ICON_BYTE_ARRAY = OFFSET + NbtElement.BYTE_ARRAY_TYPE;
+    public static final char ICON_STRING = OFFSET + NbtElement.STRING_TYPE;
+    public static final char ICON_LIST = OFFSET + NbtElement.LIST_TYPE;
+    public static final char ICON_COMPOUND = OFFSET + NbtElement.COMPOUND_TYPE;
+    public static final char ICON_INT_ARRAY = OFFSET + NbtElement.INT_ARRAY_TYPE;
+    public static final char ICON_LONG_ARRAY = OFFSET + NbtElement.LONG_ARRAY_TYPE;
 
     /**
      * Return the ASCII character for a given NBT element type.
@@ -34,24 +47,25 @@ public final class NbtIcons {
         ImGui.setItemTooltip(Text.translatable(tooltipTranslation(elementType)).getString());
     }
 
-    private static String tooltipTranslation(byte elementType) {
-        String suffix;
-        switch (elementType) {
-            case NbtElement.BYTE_TYPE -> suffix = "nbtByte";
-            case NbtElement.SHORT_TYPE -> suffix = "nbtShort";
-            case NbtElement.INT_TYPE -> suffix = "nbtInt";
-            case NbtElement.LONG_TYPE -> suffix = "nbtLong";
-            case NbtElement.FLOAT_TYPE -> suffix = "nbtFloat";
-            case NbtElement.DOUBLE_TYPE -> suffix = "nbtDouble";
-            case NbtElement.BYTE_ARRAY_TYPE -> suffix = "nbtByteArray";
-            case NbtElement.STRING_TYPE -> suffix = "nbtString";
-            case NbtElement.LIST_TYPE -> suffix = "nbtList";
-            case NbtElement.COMPOUND_TYPE -> suffix = "nbtCompound";
-            case NbtElement.INT_ARRAY_TYPE -> suffix = "nbtIntArray";
-            case NbtElement.LONG_ARRAY_TYPE -> suffix = "nbtLongArray";
+    public static String translationSuffix(byte elementType) {
+        return switch (elementType) {
+            case NbtElement.BYTE_TYPE -> "nbtByte";
+            case NbtElement.SHORT_TYPE -> "nbtShort";
+            case NbtElement.INT_TYPE -> "nbtInt";
+            case NbtElement.LONG_TYPE -> "nbtLong";
+            case NbtElement.FLOAT_TYPE -> "nbtFloat";
+            case NbtElement.DOUBLE_TYPE -> "nbtDouble";
+            case NbtElement.BYTE_ARRAY_TYPE -> "nbtByteArray";
+            case NbtElement.STRING_TYPE -> "nbtString";
+            case NbtElement.LIST_TYPE -> "nbtList";
+            case NbtElement.COMPOUND_TYPE -> "nbtCompound";
+            case NbtElement.INT_ARRAY_TYPE -> "nbtIntArray";
+            case NbtElement.LONG_ARRAY_TYPE -> "nbtLongArray";
             default -> throw new IllegalArgumentException("Invalid NBT tag type: " + elementType);
-        }
+        };
+    }
 
-        return "tooltip.craftui." + suffix;
+    public static String tooltipTranslation(byte elementType) {
+        return "tooltip.craftui." + translationSuffix(elementType);
     }
 }

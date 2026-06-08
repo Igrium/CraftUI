@@ -1,12 +1,12 @@
 package com.igrium.craftui.nbt;
 
 import com.igrium.craftui.icon.NbtIcons;
+import com.igrium.craftui.impl.util.NbtTypes;
 import imgui.ImGui;
 import imgui.flag.ImGuiTreeNodeFlags;
 import imgui.type.ImString;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.util.Language;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +36,12 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
      */
     private int curId = 0;
 
+    private boolean openTreeNode = false;
+
+    public void openTreeNode() {
+        openTreeNode = true;
+    }
+
     @Override
     public NbtList getNbt() {
         NbtList list = new NbtList();
@@ -55,6 +61,7 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
 
     private final ImString idxString = new ImString(3);
 
+
     @Override
     public int render(String id, ImString label, int flags) {
         int baseFlags = ImGuiTreeNodeFlags.DrawLinesFull;
@@ -62,12 +69,10 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
             baseFlags |= ImGuiTreeNodeFlags.DefaultOpen;
         }
 
-        boolean modified = false;
-        boolean modifiedLabel = false;
-        boolean leftClicked = false;
-        boolean rightClicked = false;
+        int rFlags = 0;
 
         ImGui.alignTextToFramePadding();
+        if (openTreeNode) ImGui.setNextItemOpen(true);
         boolean open = ImGui.treeNodeEx("##" + id, baseFlags);
 
         ImGui.sameLine();
@@ -77,8 +82,9 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
         boolean canEditLabel = NbtEditorFlags.canEditLabel(flags);
         ImGui.sameLine();
         if (canEditLabel) {
-            modified = labelText.editString(id, label, ImGui.getFontSize() * 8);
-            modifiedLabel = modified;
+            if (labelText.editString(id, label, ImGui.getFontSize() * 8)) {
+                rFlags |= NbtEditorFlags.RETURN_MODIFIED_LABEL | NbtEditorFlags.RETURN_MODIFIED;
+            }
         } else {
             ImGui.text(label.get());
         }
@@ -88,10 +94,10 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
 
         ImGui.endGroup();
         if (ImGui.isItemClicked(0)) {
-            leftClicked = true;
+            rFlags |= NbtEditorFlags.RETURN_LEFT_CLICKED;
         }
         if (ImGui.isItemClicked(1)) {
-            rightClicked = true;
+            rFlags |= NbtEditorFlags.RETURN_RIGHT_CLICKED;
         }
 
         int childFlags = NbtEditorFlags.prepareForChildren(flags);
@@ -103,16 +109,19 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
             int idx = 0;
             for (var item : entries) {
                 idxString.set("[" + idx++ + "]");
-                int rFlags = item.value.render(item.id, idxString, childFlags);
-                modified |= hasFlag(rFlags, NbtEditorFlags.RETURN_MODIFIED);
+                int cFlags = item.value.render(item.id, idxString, childFlags);
 
-                // CONTEXT MENU
-                if (hasFlag(rFlags, NbtEditorFlags.RETURN_RIGHT_CLICKED)) {
+                // Mask out clicks! Only let modification flags bubble up to the parent
+                rFlags |= (cFlags & ~(NbtEditorFlags.RETURN_RIGHT_CLICKED | NbtEditorFlags.RETURN_LEFT_CLICKED));
+
+                if (hasFlag(cFlags, NbtEditorFlags.RETURN_RIGHT_CLICKED)) {
                     ImGui.openPopup(item.id + ".context");
                 }
+
                 if (ImGui.beginPopup(item.id + ".context")) {
 
-                    item.value.drawContextItems(childFlags);
+                    int ctxFlags = item.value.drawContextItems(childFlags);
+                    rFlags |= (ctxFlags & ~(NbtEditorFlags.RETURN_RIGHT_CLICKED | NbtEditorFlags.RETURN_LEFT_CLICKED));
 
                     ImGui.separator();
                     if (ImGui.menuItem("Remove")) {
@@ -125,11 +134,12 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
         }
 
         String r = removeId; // Lambda final restrictions are such bullshit
-        if (r != null) {
-            modified |= entries.removeIf(e -> e.id.equals(r));
+        if (r != null && entries.removeIf(e -> e.id.equals(r))) {
+            rFlags |= NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_REMOVED_ITEM;
         }
 
-        return NbtEditorFlags.getReturnFlags(modified, modifiedLabel, leftClicked, rightClicked);
+        openTreeNode = false;
+        return rFlags;
     }
 
     @Override
@@ -138,11 +148,43 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
     }
 
     @Override
-    protected void drawContextItems(int flags) {
-        ImGui.beginDisabled(hasFlag(flags, NbtEditorFlags.READONLY));
-        ImGui.menuItem(t("gui.craftui.nbt_addChild"));
-        ImGui.endDisabled();
-        super.drawContextItems(flags);
+    protected byte getNbtType() {
+        return NbtElement.LIST_TYPE;
     }
 
+    @Override
+    protected int drawContextItems(int flags) {
+        ImGui.beginDisabled(hasFlag(flags, NbtEditorFlags.READONLY));
+        boolean added = false;
+
+        // Can only add items of the same type
+        if (entries.isEmpty()) {
+            if (ImGui.beginMenu(t("gui.craftui.nbt_addChild"))) {
+                byte type = drawTypeChooser();
+                if (type > 0) {
+                    newItem(type);
+                    added = true;
+                }
+                ImGui.endMenu();
+            }
+        } else {
+            var entry = entries.getFirst();
+            byte type = entry.value.getNbtType();
+            if (ImGui.menuItem(NbtIcons.getIcon(type) + " " + t("gui.craftui.nbt_addChild"))) {
+                newItem(type);
+            }
+        }
+
+        ImGui.endDisabled();
+
+        int rFlags = added ? NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_ADDED_ITEM : 0;
+
+        return super.drawContextItems(flags) | rFlags;
+    }
+
+    public void newItem(byte type) {
+        NbtEditor<?> editor = NbtEditor.of(NbtTypes.createElement(type));
+        entries.add(new Entry("entry." + curId++, editor));
+        openTreeNode();
+    }
 }

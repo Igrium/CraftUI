@@ -1,4 +1,3 @@
 {
-    "size": 1.4,
-    "scaledGlyphOffset": [0, -4]
+    "glyphRanges": ["0xEAFC", "0xEB07"]
 }

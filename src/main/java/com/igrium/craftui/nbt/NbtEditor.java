@@ -1,7 +1,6 @@
 package com.igrium.craftui.nbt;
 
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.igrium.craftui.icon.NbtIcons;
 import imgui.ImGui;
 import imgui.type.ImString;
 import lombok.NonNull;
@@ -99,7 +98,9 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
 
     protected abstract Class<? extends T> getNbtClass();
 
-    protected void drawContextItems(int flags) {
+    protected abstract byte getNbtType();
+
+    protected int drawContextItems(int flags) {
         if (ImGui.menuItem(t("gui.craftui.nbt.copyNbt"))) {
             var nbt = getNbt();
             ImGui.setClipboardText(nbt.asString());
@@ -109,10 +110,18 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
 //            String snbt = ImGui.getClipboardText();
 //        }
 //        ImGui.endDisabled();
+        return 0;
     }
 
 
     private final ImString labelStr = new ImString(32);
+
+    /**
+     * Force the label into edit mode if possible. Triggered next time it's rendered
+     */
+    protected void forceEditLabel() {
+        // Default noop
+    }
     /**
      * Draw this editor, handling right-click actions and other return flags automatically
      * @param label Label to render with
@@ -127,7 +136,7 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
         int rFlags = render(id, labelStr, flags);
 
         if (hasFlag(rFlags, NbtEditorFlags.RETURN_RIGHT_CLICKED)) {
-            ImGui.openPopup(label + ".context");
+            ImGui.openPopup(id + ".context");
         }
 
         if (ImGui.beginPopup(id + ".context")) {
@@ -137,6 +146,7 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
 
         return hasFlag(rFlags, NbtEditorFlags.RETURN_MODIFIED);
     }
+
 
     private static String getRenderedText(String label) {
         int i = label.indexOf("##");
@@ -150,6 +160,15 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
 
     protected static boolean selectableText(String text) {
         return ImGui.selectable(text, ImGui.calcTextSizeX(text, true), ImGui.calcTextSizeY(text, true));
+    }
+
+    protected static byte drawTypeChooser() {
+        for (byte i = 1; i <= 12; i++) {
+            if (ImGui.menuItem(NbtIcons.getIcon(i) + " " + tt(NbtIcons.tooltipTranslation(i)))) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     static boolean hasFlag(int flags, int flag) {

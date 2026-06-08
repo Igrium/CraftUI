@@ -14,10 +14,7 @@ public abstract sealed class NbtPrimitiveEditor<T extends NbtElement> extends Nb
 
         int baseFlags = ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.Leaf;
 
-        boolean modified = false;
-        boolean modifiedLabel = false;
-        boolean leftClicked = false;
-        boolean rightClicked = false;
+        int rFlags = 0;
 
         ImGui.alignTextToFramePadding();
         boolean open = ImGui.treeNodeEx("##" + id, baseFlags);
@@ -31,8 +28,9 @@ public abstract sealed class NbtPrimitiveEditor<T extends NbtElement> extends Nb
 
         ImGui.sameLine();
         if (canEditLabel) {
-            modified = labelText.editString(id, label, ImGui.getFontSize() * 8);
-            modifiedLabel = modified;
+            if (labelText.editString(id, label, ImGui.getFontSize() * 8)) {
+                rFlags |= NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_MODIFIED_LABEL;
+            }
         } else {
             ImGui.text(label.get());
         }
@@ -40,25 +38,29 @@ public abstract sealed class NbtPrimitiveEditor<T extends NbtElement> extends Nb
         ImGui.sameLine();
         ImGui.text(":");
         ImGui.sameLine();
-        modified |= renderPrimitive(id + ".value", flags);
+        if (renderPrimitive(id + ".value", flags)) {
+            rFlags |= NbtEditorFlags.RETURN_MODIFIED;
+        }
 
         ImGui.endGroup();
         if (ImGui.isItemClicked(0)) {
-           leftClicked = true;
+            rFlags |= NbtEditorFlags.RETURN_LEFT_CLICKED;
         }
         if (ImGui.isItemClicked(1)) {
-            rightClicked = true;
+            rFlags |= NbtEditorFlags.RETURN_RIGHT_CLICKED;
         }
 
         if (open) {
             ImGui.treePop();
         }
 
-        return NbtEditorFlags.getReturnFlags(modified, modifiedLabel, leftClicked, rightClicked);
+        return rFlags;
     }
 
+    @Override
+    protected void forceEditLabel() {
+        labelText.setForceEdit(true);
+    }
 
     protected abstract boolean renderPrimitive(String id, int flags);
-
-    protected abstract byte getNbtType();
 }

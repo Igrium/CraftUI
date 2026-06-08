@@ -35,6 +35,8 @@ public final class NbtEditorFlags {
     public static final int RETURN_MODIFIED_LABEL = 2;
     public static final int RETURN_LEFT_CLICKED = 4;
     public static final int RETURN_RIGHT_CLICKED = 8;
+    public static final int RETURN_ADDED_ITEM = 16;
+    public static final int RETURN_REMOVED_ITEM = 32;
 
     static int prepareForChildren(int flags) {
         if (hasFlag(flags, START_OPEN_SINGLE)) {
@@ -61,6 +63,7 @@ public final class NbtEditorFlags {
         return (flags & flag) != 0;
     }
 
+    @Deprecated
     static int getReturnFlags(boolean modified, boolean modifiedLabel, boolean leftClicked, boolean rightClicked) {
         int rFlags = 0;
         if (modified) rFlags |= NbtEditorFlags.RETURN_MODIFIED;

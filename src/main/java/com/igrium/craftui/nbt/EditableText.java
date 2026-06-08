@@ -2,10 +2,14 @@ package com.igrium.craftui.nbt;
 
 import imgui.ImGui;
 import imgui.type.*;
+import lombok.Setter;
 
 class EditableText {
     private boolean isEditing;
     private boolean wasEditing;
+
+    @Setter
+    private boolean forceEdit;
 
     public boolean editString(String id, ImString text, float editWidth) {
         return doEdit(id, text.get(), editWidth,
@@ -54,10 +58,11 @@ class EditableText {
             }
         } else {
             selectableText(displayText + "##" + id + ".text");
-            if (ImGui.isItemHovered() && ImGui.getIO().getMouseDoubleClicked(0)) {
+            if (forceEdit || (ImGui.isItemHovered() && ImGui.getIO().getMouseDoubleClicked(0))) {
                 isEditing = true;
             }
         }
+        forceEdit = false;
         return modified;
     }
 

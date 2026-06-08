@@ -23,6 +23,7 @@ import java.util.function.Predicate;
  * A simple NBT editor that can be used by applications.
  */
 @UtilityClass
+@Deprecated
 public final class NbtEditor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NbtEditor.class);

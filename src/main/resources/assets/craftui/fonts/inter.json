@@ -1,4 +1,4 @@
 {
     "size": 1,
-    "icons": ["craftui:material-icons-regular"]
+    "icons": ["craftui:material-icons-regular", "craftui:nbt-icons"]
 }
