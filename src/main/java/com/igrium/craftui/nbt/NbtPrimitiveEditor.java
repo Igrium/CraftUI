@@ -10,24 +10,29 @@ public abstract sealed class NbtPrimitiveEditor<T extends NbtElement> extends Nb
 
     private final EditableText labelText = new EditableText();
     @Override
-    public boolean render(String id, ImString label, int flags) {
+    public int render(String id, ImString label, int flags) {
 
         int baseFlags = ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.Leaf;
+
+        boolean modified = false;
+        boolean modifiedLabel = false;
+        boolean leftClicked = false;
+        boolean rightClicked = false;
 
         ImGui.alignTextToFramePadding();
         boolean open = ImGui.treeNodeEx("##" + id, baseFlags);
 
         ImGui.sameLine();
+        ImGui.beginGroup();
         NbtIcons.drawIcon(getNbtType());
 
         // label
         boolean canEditLabel = NbtEditorFlags.canEditLabel(flags);
 
-        boolean modified = false;
-
         ImGui.sameLine();
         if (canEditLabel) {
             modified = labelText.editString(id, label, ImGui.getFontSize() * 8);
+            modifiedLabel = modified;
         } else {
             ImGui.text(label.get());
         }
@@ -37,12 +42,21 @@ public abstract sealed class NbtPrimitiveEditor<T extends NbtElement> extends Nb
         ImGui.sameLine();
         modified |= renderPrimitive(id + ".value", flags);
 
+        ImGui.endGroup();
+        if (ImGui.isItemClicked(0)) {
+           leftClicked = true;
+        }
+        if (ImGui.isItemClicked(1)) {
+            rightClicked = true;
+        }
+
         if (open) {
             ImGui.treePop();
         }
 
-        return modified;
+        return NbtEditorFlags.getReturnFlags(modified, modifiedLabel, leftClicked, rightClicked);
     }
+
 
     protected abstract boolean renderPrimitive(String id, int flags);
 

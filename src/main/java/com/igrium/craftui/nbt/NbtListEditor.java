@@ -55,24 +55,29 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
     private final ImString idxString = new ImString(3);
 
     @Override
-    public boolean render(String id, ImString label, int flags) {
+    public int render(String id, ImString label, int flags) {
         int baseFlags = ImGuiTreeNodeFlags.DrawLinesFull;
         if (NbtEditorFlags.startsOpen(flags)) {
             baseFlags |= ImGuiTreeNodeFlags.DefaultOpen;
         }
 
         boolean modified = false;
+        boolean modifiedLabel = false;
+        boolean leftClicked = false;
+        boolean rightClicked = false;
 
         ImGui.alignTextToFramePadding();
         boolean open = ImGui.treeNodeEx("##" + id, baseFlags);
 
         ImGui.sameLine();
+        ImGui.beginGroup();
         NbtIcons.drawIcon(NbtElement.LIST_TYPE);
 
         boolean canEditLabel = NbtEditorFlags.canEditLabel(flags);
         ImGui.sameLine();
         if (canEditLabel) {
             modified = labelText.editString(id, label, ImGui.getFontSize() * 8);
+            modifiedLabel = modified;
         } else {
             ImGui.text(label.get());
         }
@@ -80,17 +85,45 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
         ImGui.sameLine();
         ImGui.text("(" + entries.size() + " items)");
 
+        ImGui.endGroup();
+        if (ImGui.isItemClicked(0)) {
+            leftClicked = true;
+        }
+        if (ImGui.isItemClicked(1)) {
+            rightClicked = true;
+        }
+
         int childFlags = NbtEditorFlags.prepareForChildren(flags);
         childFlags |= NbtEditorFlags.READONLY_LABEL;
+
+        String removeId = null;
 
         if (open) {
             int idx = 0;
             for (var item : entries) {
                 idxString.set("[" + idx++ + "]");
-                modified |= item.value.render(item.id, idxString, childFlags);
+                int rFlags = item.value.render(item.id, idxString, childFlags);
+                modified |= hasFlag(rFlags, NbtEditorFlags.RETURN_MODIFIED);
+
+                // CONTEXT MENU
+                if (hasFlag(rFlags, NbtEditorFlags.RETURN_RIGHT_CLICKED)) {
+                    ImGui.openPopup(item.id + ".context");
+                }
+                if (ImGui.beginPopup(item.id + ".context")) {
+                    if (ImGui.selectable("Remove")) {
+                        removeId = item.id;
+                    }
+                    ImGui.endPopup();
+                }
             }
             ImGui.treePop();
         }
-        return modified;
+
+        String r = removeId; // Lambda final restrictions are such bullshit
+        if (r != null) {
+            modified |= entries.removeIf(e -> e.id.equals(r));
+        }
+
+        return NbtEditorFlags.getReturnFlags(modified, modifiedLabel, leftClicked, rightClicked);
     }
 }

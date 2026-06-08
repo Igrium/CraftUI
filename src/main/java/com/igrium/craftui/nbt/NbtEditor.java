@@ -86,18 +86,20 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
 
     /**
      * Draw this editor
-     * @param id ID to give to the underlying stack
+     *
+     * @param id    ID to give to the underlying stack
      * @param label Label to render with
      * @param flags {@link NbtEditorFlags} to use
-     * @return If the value was updated this frame
+     * @return "return" flags
      */
-    public abstract boolean render(String id, ImString label, int flags);
+    public abstract int render(String id, ImString label, int flags);
 
     private final ImString labelStr = new ImString(32);
 
     public boolean render(String label, int flags) {
         labelStr.set(getRenderedText(label));
-        return render(getId(label), labelStr, flags | NbtEditorFlags.READONLY_LABEL);
+        flags |= NbtEditorFlags.READONLY_LABEL;
+        return hasFlag(render(getId(label), labelStr, flags), NbtEditorFlags.RETURN_MODIFIED);
     }
 
     private static String getRenderedText(String label) {
@@ -112,5 +114,9 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
 
     protected static boolean selectableText(String text) {
         return ImGui.selectable(text, ImGui.calcTextSizeX(text, true), ImGui.calcTextSizeY(text, true));
+    }
+
+    static boolean hasFlag(int flags, int flag) {
+        return (flags & flag) != 0;
     }
 }
