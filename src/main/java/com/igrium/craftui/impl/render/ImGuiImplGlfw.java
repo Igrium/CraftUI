@@ -448,10 +448,10 @@ public class ImGuiImplGlfw {
                 return ImGuiKey.LeftBracket;
             case GLFW_KEY_BACKSLASH:
                 return ImGuiKey.Backslash;
-            case GLFW_KEY_WORLD_1:
-                return ImGuiKey.Oem102;
-            case GLFW_KEY_WORLD_2:
-                return ImGuiKey.Oem102;
+//            case GLFW_KEY_WORLD_1:
+//                return ImGuiKey.Oem102;
+//            case GLFW_KEY_WORLD_2:
+//                return ImGuiKey.Oem102;
             case GLFW_KEY_RIGHT_BRACKET:
                 return ImGuiKey.RightBracket;
             case GLFW_KEY_GRAVE_ACCENT:

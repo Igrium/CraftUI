@@ -40,7 +40,7 @@ public final class NbtIcons {
      * on any line where an icon is used.
      */
     public static void drawIcon(byte elementType) {
-        ImGui.pushFont(CraftUIFonts.nbtIcons(), ImGui.getFontSize());
+        ImGui.pushFont(CraftUIFonts.nbtIcons());
         ImGui.text("" + getIcon(elementType));
         ImGui.popFont();
 

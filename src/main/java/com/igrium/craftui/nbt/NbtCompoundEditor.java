@@ -61,7 +61,8 @@ public final class NbtCompoundEditor extends NbtEditor<NbtCompound> {
     @Override
     public int render(String id, ImString label, int flags) {
         super.render(id, label, flags);
-        int baseFlags = ImGuiTreeNodeFlags.DrawLinesFull;
+//        int baseFlags = ImGuiTreeNodeFlags.DrawLinesFull;
+        int baseFlags = 0;
         if (NbtEditorFlags.startsOpen(flags)) {
             baseFlags |= ImGuiTreeNodeFlags.DefaultOpen;
         }

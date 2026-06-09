@@ -13,7 +13,7 @@ public abstract sealed class NbtPrimitiveEditor<T extends NbtElement> extends Nb
     public int render(String id, ImString label, int flags) {
         super.render(id, label, flags);
 
-        int baseFlags = ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.Leaf;
+        int baseFlags = ImGuiTreeNodeFlags.Leaf;
 
         int rFlags = 0;
 

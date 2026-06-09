@@ -230,7 +230,7 @@ public class CraftUIStyle {
         style.setLogSliderDeadzone(logSliderDeadzone);
         style.setTabRounding(tabRounding);
         style.setTabBorderSize(tabBorderSize);
-        style.setTabCloseButtonMinWidthSelected(tabCloseButtonMinWidthSelected);
+//        style.setTabCloseButtonMinWidthSelected(tabCloseButtonMinWidthSelected);
         style.setColorButtonPosition(colorButtonPosition);
         style.setButtonTextAlign(buttonTextAlign.x, buttonTextAlign.y);
         style.setSelectableTextAlign(selectableTextAlign.x, selectableTextAlign.y);
@@ -275,8 +275,8 @@ public class CraftUIStyle {
         this.logSliderDeadzone = style.getLogSliderDeadzone();
         this.tabRounding = style.getTabRounding();
         this.tabBorderSize = style.getTabBorderSize();
-        this.tabCloseButtonMinWidthSelected = style.getTabCloseButtonMinWidthSelected();
-        this.tabCloseButtonMinWidthUnselected = style.getTabCloseButtonMinWidthUnselected();
+//        this.tabCloseButtonMinWidthSelected = style.getTabCloseButtonMinWidthSelected();
+//        this.tabCloseButtonMinWidthUnselected = style.getTabCloseButtonMinWidthUnselected();
         this.colorButtonPosition = style.getColorButtonPosition();
         this.buttonTextAlign = new StyleVec2(style.getButtonTextAlign());
         this.selectableTextAlign = new StyleVec2(style.getSelectableTextAlign());
