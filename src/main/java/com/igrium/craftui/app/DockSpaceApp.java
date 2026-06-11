@@ -30,13 +30,21 @@ public abstract class DockSpaceApp extends CraftApp {
          */
         HOLD,
         /**
+         * Identical to <code>HOLD</code>, but only triggers when the mouse starts dragging
+         */
+        DRAG,
+        /**
          * Forward input to Minecraft if the viewport window is focused.
          */
         FOCUS,
         /**
          * If the vanilla client wants to lock the cursor, always do it.
          */
-        ALWAYS
+        ALWAYS,
+        /**
+         * Don't handle any UI behavior; let the app do it manually.
+         */
+        MANUAL
     }
 
     @Getter
@@ -80,6 +88,10 @@ public abstract class DockSpaceApp extends CraftApp {
         return (ImGui.isWindowHovered() || MinecraftClient.getInstance().mouse.isCursorLocked()) && ImGui.isMouseDown(mouseButton);
     }
 
+    protected static boolean mouseDraggedOverViewport(int mouseButton) {
+        return (ImGui.isWindowHovered() || MinecraftClient.getInstance().mouse.isCursorLocked()) && ImGui.isMouseDragging(mouseButton);
+    }
+
     /**
      * If any window is focused, unlock the mouse
      */
@@ -95,6 +107,17 @@ public abstract class DockSpaceApp extends CraftApp {
 
         for (var button : viewportInputButtons) {
             if (mousePressedOverViewport(button))
+                return true;
+        }
+        return false;
+    }
+
+    private boolean isViewportButtonDragging() {
+        if (viewportInputButtons == null)
+            return false;
+
+        for (var button : viewportInputButtons) {
+            if (mouseDraggedOverViewport(button))
                 return true;
         }
         return false;
@@ -131,6 +154,14 @@ public abstract class DockSpaceApp extends CraftApp {
                 }
                 case HOLD -> {
                     if (isViewportButtonDown()) {
+                        ImGui.setWindowFocus(null);
+                    } else if (!ImGui.isWindowFocused(ImGuiFocusedFlags.AnyWindow)) {
+                        ImGui.setWindowFocus();
+                    }
+                    unlockIfWindowFocused();
+                }
+                case DRAG -> {
+                    if (isViewportButtonDragging()) {
                         ImGui.setWindowFocus(null);
                     } else if (!ImGui.isWindowFocused(ImGuiFocusedFlags.AnyWindow)) {
                         ImGui.setWindowFocus();

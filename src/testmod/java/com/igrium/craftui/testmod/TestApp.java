@@ -11,6 +11,7 @@ import com.igrium.craftui.nbt.NbtEditorFlags;
 import com.igrium.craftui.style.CraftUILayouts;
 import com.igrium.craftui.util.RaycastUtils;
 import imgui.ImGui;
+import imgui.flag.ImGuiFocusedFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import imgui.type.ImString;
@@ -51,7 +52,7 @@ public class TestApp extends DockSpaceApp {
     private NbtEditor<?> nbtEditor;
 
     public TestApp() {
-        setViewportInputMode(ViewportInputMode.NONE);
+        setViewportInputMode(ViewportInputMode.DRAG);
         setViewportInputButtons(1, 2);
 
         NbtCompound editingNbt = new NbtCompound();
@@ -178,7 +179,6 @@ public class TestApp extends DockSpaceApp {
             boolean mousePressed = mousePressedOverViewport(0);
             ImGui.text("Mouse down: " + mousePressed);
 
-
             if (doClickExplosion.get()) {
                 if (ImGui.isWindowHovered() && ImGui.isMouseClicked(0)) {
                     raycastExplosion();
@@ -187,6 +187,15 @@ public class TestApp extends DockSpaceApp {
 
             if (ImGui.isWindowHovered() && ImGui.isMouseClicked(2)) {
                 clickNbt();
+            }
+
+            if (ImGui.isWindowHovered() && ImGui.isMouseReleased(1)) {
+                ImGui.openPopup("ctxMenu");
+            }
+
+            if (ImGui.beginPopup("ctxMenu")) {
+                ImGui.menuItem("This is the context menu");
+                ImGui.endPopup();
             }
         }
         ImGui.end();
@@ -202,6 +211,15 @@ public class TestApp extends DockSpaceApp {
 //            NbtEditor.drawNbtEditor("NBT Editor##test", editingNbt, 0);
         }
         ImGui.end();
+    }
+
+    /**
+     * If any window is focused, unlock the mouse
+     */
+    private static void unlockIfWindowFocused() {
+        if (ImGui.isWindowFocused(ImGuiFocusedFlags.AnyWindow)) {
+            AppManager.forceMouseUnlock();
+        }
     }
 
     @Override
@@ -249,4 +267,5 @@ public class TestApp extends DockSpaceApp {
             nbtEditor = NbtEditor.of(nbt);
         }
     }
+
 }
