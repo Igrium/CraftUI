@@ -7,5 +7,7 @@
         "0xEF38", "0xF23B",
         "0xF840", "0xF8FF"
     ],
+    "glyphMinAdvanceX": 16,
+    "glyphMaxAdvanceX": 16,
     "iconOnly": true
 }
