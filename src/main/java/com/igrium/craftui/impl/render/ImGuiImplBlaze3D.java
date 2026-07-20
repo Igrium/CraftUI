@@ -1,31 +1,36 @@
 package com.igrium.craftui.impl.render;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalDouble;
 
 import org.joml.Matrix4f;
-import org.lwjgl.system.MemoryUtil;
+import org.joml.Vector4f;
 
 import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.IndexType;
 import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.buffers.Std140Builder;
+import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.shaders.ShaderType;
+import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+
+import org.lwjgl.system.MemoryStack;
 
 import imgui.ImDrawData;
 import imgui.ImFontAtlas;
@@ -35,10 +40,6 @@ import imgui.ImVec4;
 import imgui.flag.ImGuiBackendFlags;
 import imgui.type.ImInt;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BindGroupLayouts;
-import net.minecraft.client.renderer.Projection;
-import net.minecraft.client.renderer.ProjectionMatrixBuffer;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
 /**
@@ -47,73 +48,145 @@ import net.minecraft.resources.Identifier;
  * (experimental) Vulkan backend. This replaces the old raw-OpenGL {@code ImGuiImplGl3},
  * which cannot function under Vulkan (there is no GL context).
  *
- * <p>The structure mirrors imgui-java's {@code ImGuiImplSdlGpu3} (upload vertex/index
- * buffers, then issue draws inside a render pass). Instead of shipping custom shaders,
- * it reuses Minecraft's stock {@code core/position_tex_color} shaders via a pipeline
- * modelled on {@link RenderPipelines#GUI_TEXTURED} (same bind-group layouts, blend and
- * vertex format) but with {@link PrimitiveTopology#TRIANGLES}, since ImGui emits an
- * indexed triangle list rather than quads. ImGui's {@code ImDrawVert} (pos vec2, uv vec2,
- * color RGBA8) is expanded per-vertex into Minecraft's {@code POSITION_TEX_COLOR}
- * (pos vec3 with z=0, uv vec2, color RGBA8).
+ * <p>Modelled on the imgui-mc project's {@code ImGuiRenderImplRenderSystem}: it ships its
+ * own trivial shader pair whose vertex format matches ImGui's {@code ImDrawVert} exactly
+ * (Position vec2, UV vec2, Color RGBA8), so vertex data is uploaded verbatim with no
+ * expansion. The fragment shader is a plain {@code color * texture(...)} with no alpha
+ * discard and no color modulator, culling is disabled, and depth testing is disabled —
+ * the reasons MC's stock {@code core/position_tex_color} pipeline could not be reused
+ * directly (its {@code if (color.a == 0.0) discard} plus GUI depth state dropped ImGui's
+ * fills and text).
  */
 public class ImGuiImplBlaze3D {
 
-    /** ImGui vertex stride: pos(2f) + uv(2f) + color(4b) = 20 bytes. */
-    private static final int IMGUI_VTX_STRIDE = ImDrawData.sizeOfImDrawVert();
-    /** POSITION_TEX_COLOR stride: pos(3f) + uv(2f) + color(4b) = 24 bytes. */
-    private static final int MC_VTX_STRIDE = 24;
+    private static final Identifier VERTEX_SHADER_ID = Identifier.fromNamespaceAndPath("craftui", "imgui_vertex");
+    private static final Identifier FRAGMENT_SHADER_ID = Identifier.fromNamespaceAndPath("craftui", "imgui_fragment");
 
-    private static RenderPipeline pipeline;
+    private static final String VERTEX_SHADER = """
+            #version 410 core
+            layout (location = 0) in vec2 Position;
+            layout (location = 1) in vec2 UV;
+            layout (location = 2) in vec4 Color;
+            layout(std140) uniform Projection {
+                mat4 ProjMtx;
+            };
+            out vec2 Frag_UV;
+            out vec4 Frag_Color;
+            void main()
+            {
+                Frag_UV = UV;
+                Frag_Color = Color;
+                gl_Position = ProjMtx * vec4(Position.xy, 0, 1);
+            }
+            """;
 
-    private final Projection projection = new Projection();
-    private final ProjectionMatrixBuffer projectionMatrixBuffer = new ProjectionMatrixBuffer("craftui_imgui");
+    private static final String FRAGMENT_SHADER = """
+            #version 410 core
+            in vec2 Frag_UV;
+            in vec4 Frag_Color;
+            uniform sampler2D Texture;
+            layout (location = 0) out vec4 Out_Color;
+            void main()
+            {
+                Out_Color = Frag_Color * texture(Texture, Frag_UV.st);
+            }
+            """;
+
+    private static final Map<Identifier, String> SHADER_SOURCES = Map.of(
+            VERTEX_SHADER_ID, VERTEX_SHADER,
+            FRAGMENT_SHADER_ID, FRAGMENT_SHADER);
+
+    /** Vertex format matching imgui's {@code ImDrawVert}: pos(2f) + uv(2f) + color(RGBA8) = 20 bytes. */
+    private static final VertexFormat VERTEX_FORMAT = VertexFormat.builder(0)
+            .addAttribute("Position", GpuFormat.RG32_FLOAT)
+            .addAttribute("UV", GpuFormat.RG32_FLOAT)
+            .addAttribute("Color", GpuFormat.RGBA8_UNORM)
+            .build();
+
+    private static final BindGroupLayout BIND_GROUP_LAYOUT = BindGroupLayout.builder()
+            .withSampler("Texture")
+            .withUniform("Projection", UniformType.UNIFORM_BUFFER)
+            .build();
+
+    private static final RenderPipeline PIPELINE = RenderPipeline.builder()
+            .withLocation(Identifier.fromNamespaceAndPath("craftui", "pipeline/imgui"))
+            .withVertexShader(VERTEX_SHADER_ID)
+            .withFragmentShader(FRAGMENT_SHADER_ID)
+            .withBindGroupLayout(BIND_GROUP_LAYOUT)
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .withCull(false)
+            .withVertexBinding(0, VERTEX_FORMAT)
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
+            .withDepthStencilState(Optional.empty())
+            .build();
+
+    /**
+     * Opaque variant used to composite the finished game image into the viewport sub-rectangle.
+     * The game frame is already final, so it must be copied verbatim (no alpha blend) — blending
+     * it against the cleared composite corrupts pixels whose color-buffer alpha is &lt; 1 (e.g. the
+     * sky/horizon).
+     */
+    private static final RenderPipeline BLIT_PIPELINE = RenderPipeline.builder()
+            .withLocation(Identifier.fromNamespaceAndPath("craftui", "pipeline/imgui_blit"))
+            .withVertexShader(VERTEX_SHADER_ID)
+            .withFragmentShader(FRAGMENT_SHADER_ID)
+            .withBindGroupLayout(BIND_GROUP_LAYOUT)
+            .withColorTargetState(new ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_ALL))
+            .withCull(false)
+            .withVertexBinding(0, VERTEX_FORMAT)
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
+            .withDepthStencilState(Optional.empty())
+            .build();
 
     private GpuTexture fontTexture;
     private GpuTextureView fontTextureView;
     private GpuSampler fontSampler;
+
+    private GpuBuffer projectionBuffer;
+    private final Matrix4f projectionMatrix = new Matrix4f();
+    private float projLeft, projRight, projBottom, projTop;
 
     private GpuBuffer vertexBuffer;
     private GpuBuffer indexBuffer;
     private int vertexBufferSize;
     private int indexBufferSize;
 
-    // Reused native scratch buffer for the ImGui -> POSITION_TEX_COLOR vertex expansion.
-    private ByteBuffer vtxScratch;
-    private ByteBuffer idxScratch;
+    // Resources for compositing the game texture into the viewport sub-rectangle (a single
+    // textured quad drawn with the same pipeline). Kept separate from the ImGui draw buffers so
+    // the two draws in a frame don't clobber each other's projection UBO / vertex data.
+    private GpuBuffer blitProjectionBuffer;
+    private final Matrix4f blitProjectionMatrix = new Matrix4f();
+    private float blitProjW, blitProjH;
+    private GpuBuffer blitVertexBuffer;
+    private GpuBuffer blitIndexBuffer;
 
     private final ImVec4 clipRect = new ImVec4();
 
-    private static RenderPipeline getPipeline() {
-        if (pipeline == null) {
-            // Mirrors RenderPipelines.GUI_TEXTURED_SNIPPET (GLOBALS + MATRICES_PROJECTION + SAMPLER0,
-            // core/position_tex_color shaders, translucent blend, POSITION_TEX_COLOR) but with a
-            // triangle-list topology to match ImGui's index buffer.
-            pipeline = RenderPipelines.register(RenderPipeline.builder()
-                    .withLocation(Identifier.fromNamespaceAndPath("craftui", "pipeline/imgui"))
-                    .withBindGroupLayout(BindGroupLayouts.GLOBALS)
-                    .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
-                    .withVertexShader("core/position_tex_color")
-                    .withFragmentShader("core/position_tex_color")
-                    .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
-                    .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-                    .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX_COLOR)
-                    .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
-                    .build());
-        }
-        return pipeline;
+    /**
+     * Target to draw ImGui into instead of the main render target. Set per-frame when a custom
+     * viewport is active so ImGui composites over the full-window {@link ViewportCompositor}
+     * texture rather than the (shrunken) game render target.
+     */
+    private GpuTextureView targetOverride;
+
+    public void setTargetOverride(final GpuTextureView targetOverride) {
+        this.targetOverride = targetOverride;
+    }
+
+    private static String getShaderSource(final Identifier id, final ShaderType type) {
+        return SHADER_SOURCES.get(id);
     }
 
     public boolean init() {
         final ImGuiIO io = ImGui.getIO();
         io.setBackendRendererName("imgui-java_impl_blaze3d");
         io.addBackendFlags(ImGuiBackendFlags.RendererHasVtxOffset);
-        getPipeline();
+        RenderSystem.getDevice().precompilePipeline(PIPELINE, ImGuiImplBlaze3D::getShaderSource);
         return true;
     }
 
     /** Ensures GPU objects exist. Mirrors the {@code newFrame} lazy-init used by the other backends. */
     public void newFrame() {
-        getPipeline();
         if (fontTexture == null) {
             createFontsTexture();
         }
@@ -136,13 +209,14 @@ public class ImGuiImplBlaze3D {
                 GpuFormat.RGBA8_UNORM, w, h, 1, 1);
         fontTextureView = device.createTextureView(fontTexture);
 
-        RenderSystem.getDevice().createCommandEncoder()
-                .writeToTexture(fontTexture, pixels, 0, 0, 0, 0, w, h);
+        device.createCommandEncoder().writeToTexture(fontTexture, pixels, 0, 0, 0, 0, w, h);
 
-        fontSampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
+        fontSampler = RenderSystem.getSamplerCache().getSampler(
+                AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
+                FilterMode.LINEAR, FilterMode.LINEAR, false);
 
-        // ImGui stores the backend texture id; we only use the font atlas, so bind it below regardless.
-        fontAtlas.setTexID(fontTexture.hashCode());
+        // We only ever bind the font atlas, so a fixed non-zero id is enough.
+        fontAtlas.setTexID(1);
     }
 
     public void destroyFontsTexture() {
@@ -176,24 +250,26 @@ public class ImGuiImplBlaze3D {
         }
 
         final GpuDevice device = RenderSystem.getDevice();
+        device.precompilePipeline(PIPELINE, ImGuiImplBlaze3D::getShaderSource);
         final CommandEncoder encoder = device.createCommandEncoder();
 
         uploadBuffers(device, encoder, drawData, totalVtxCount, totalIdxCount);
 
-        // Ortho projection mapping ImGui display-space (top-left origin) to clip space.
-        // Mirrors GuiRenderer's setup so Minecraft's core/position_tex_color shader lands correctly.
-        projection.setupOrtho(1000.0F, 11000.0F, drawData.getDisplaySizeX(), drawData.getDisplaySizeY(), true);
-        final GpuBufferSlice projectionSlice = projectionMatrixBuffer.getBuffer(projection);
-        RenderSystem.setProjectionMatrix(projectionSlice, ProjectionType.ORTHOGRAPHIC);
-        final GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms()
-                .writeTransform(new Matrix4f().setTranslation(0.0F, 0.0F, -11000.0F));
+        // Plain 2D orthographic projection mapping ImGui display-space (top-left origin) straight to
+        // clip space. bottom > top gives the Y-flip; depth range is irrelevant (depth test is off).
+        final float left = drawData.getDisplayPosX();
+        final float right = drawData.getDisplayPosX() + drawData.getDisplaySizeX();
+        final float top = drawData.getDisplayPosY();
+        final float bottom = drawData.getDisplayPosY() + drawData.getDisplaySizeY();
+        final GpuBufferSlice projectionSlice = getProjectionBuffer(left, right, bottom, top);
 
-        final RenderTarget target = Minecraft.getInstance().gameRenderer.mainRenderTarget();
-        // Clamp scissor rectangles to the render target's real size rather than ImGui's DisplaySize:
-        // the two normally match, but can diverge (e.g. an offscreen/headless surface), and RenderPass
-        // rejects any scissor that exceeds its render area.
-        final int renderW = target.width;
-        final int renderH = target.height;
+        final GpuTextureView colorTexture = targetOverride != null
+                ? targetOverride
+                : Minecraft.getInstance().gameRenderer.mainRenderTarget().getColorTextureView();
+        // Scissor rectangles are expressed in the render target's real size; clamp against it since
+        // the RenderPass rejects any scissor that exceeds its render area.
+        final int renderW = colorTexture.getWidth(0);
+        final int renderH = colorTexture.getHeight(0);
         final IndexType indexType = ImDrawData.sizeOfImDrawIdx() == 2 ? IndexType.SHORT : IndexType.INT;
 
         final float clipOffX = drawData.getDisplayPosX();
@@ -203,12 +279,10 @@ public class ImGuiImplBlaze3D {
 
         try (RenderPass renderPass = encoder.createRenderPass(
                 () -> "CraftUI ImGui",
-                target.getColorTextureView(), Optional.empty(),
-                null, OptionalDouble.empty())) {
+                colorTexture, Optional.empty())) {
 
-            renderPass.setPipeline(getPipeline());
-            RenderSystem.bindDefaultUniforms(renderPass);
-            renderPass.setUniform("DynamicTransforms", dynamicTransforms);
+            renderPass.setPipeline(PIPELINE);
+            renderPass.setUniform("Projection", projectionSlice);
             renderPass.setVertexBuffer(0, vertexBuffer.slice());
             renderPass.setIndexBuffer(indexBuffer, indexType);
 
@@ -218,19 +292,27 @@ public class ImGuiImplBlaze3D {
                 final int cmdCount = drawData.getCmdListCmdBufferSize(n);
                 for (int cmdIdx = 0; cmdIdx < cmdCount; cmdIdx++) {
                     drawData.getCmdListCmdBufferClipRect(clipRect, n, cmdIdx);
-                    final float clipMinX = Math.max(0.0F, (clipRect.x - clipOffX) * clipScaleX);
-                    final float clipMinY = Math.max(0.0F, (clipRect.y - clipOffY) * clipScaleY);
-                    final float clipMaxX = Math.min(renderW, (clipRect.z - clipOffX) * clipScaleX);
-                    final float clipMaxY = Math.min(renderH, (clipRect.w - clipOffY) * clipScaleY);
+                    final float clipMinX = (clipRect.x - clipOffX) * clipScaleX;
+                    final float clipMinY = (clipRect.y - clipOffY) * clipScaleY;
+                    final float clipMaxX = (clipRect.z - clipOffX) * clipScaleX;
+                    final float clipMaxY = (clipRect.w - clipOffY) * clipScaleY;
                     if (clipMaxX <= clipMinX || clipMaxY <= clipMinY) {
                         continue;
                     }
 
-                    renderPass.enableScissor((int) clipMinX, (int) clipMinY,
-                            (int) (clipMaxX - clipMinX), (int) (clipMaxY - clipMinY));
+                    // Apply scissor/clipping rectangle. Scissor coordinates use a bottom-left origin,
+                    // so Y is flipped relative to ImGui's top-left clip rectangles.
+                    final int minX = Math.max((int) clipMinX, 0);
+                    final int minY = Math.max((int) (fbHeight - clipMaxY), 0);
+                    if (renderW < minX || renderH < minY) {
+                        continue;
+                    }
+                    final int scissorWidth = Math.clamp((int) (clipMaxX - clipMinX), 0, renderW - minX);
+                    final int scissorHeight = Math.clamp((int) (clipMaxY - clipMinY), 0, renderH - minY);
+                    renderPass.enableScissor(minX, minY, scissorWidth, scissorHeight);
 
                     // We only ever bind the font atlas texture (the mod does not register custom ImGui images yet).
-                    renderPass.bindTexture("Sampler0", fontTextureView, fontSampler);
+                    renderPass.bindTexture("Texture", fontTextureView, fontSampler);
 
                     final int elemCount = drawData.getCmdListCmdBufferElemCount(n, cmdIdx);
                     final int idxOffset = drawData.getCmdListCmdBufferIdxOffset(n, cmdIdx);
@@ -243,80 +325,147 @@ public class ImGuiImplBlaze3D {
         }
     }
 
-    private void uploadBuffers(final GpuDevice device, final CommandEncoder encoder, final ImDrawData drawData,
-                               final int totalVtxCount, final int totalIdxCount) {
-        final int vtxBytes = totalVtxCount * MC_VTX_STRIDE;
-        final int idxBytes = totalIdxCount * ImDrawData.sizeOfImDrawIdx();
+    /**
+     * Composite the (frame-sized) game color texture into the viewport sub-rectangle of a
+     * full-window target, clearing the rest to black. Draws a single textured quad through the
+     * ImGui pipeline, so the game image is scaled to exactly the sub-rectangle regardless of any
+     * size difference. Coordinates are in top-left-origin screen pixels of the {@code target}.
+     */
+    public void renderGameToComposite(final GpuTextureView target, final int fbWidth, final int fbHeight,
+                                      final GpuTextureView game, final int x, final int y, final int w, final int h) {
+        final GpuDevice device = RenderSystem.getDevice();
+        device.precompilePipeline(BLIT_PIPELINE, ImGuiImplBlaze3D::getShaderSource);
+        final CommandEncoder encoder = device.createCommandEncoder();
 
-        vtxScratch = ensureScratch(vtxScratch, vtxBytes);
-        idxScratch = ensureScratch(idxScratch, idxBytes);
-
-        // NOTE: getCmdListVtxBufferData / getCmdListIdxBufferData reuse a single shared ByteBuffer,
-        // so each must be fully consumed before the next call (vtx, then idx, per list).
-        int vtxWritePos = 0;
-        int idxWritePos = 0;
-        for (int n = 0; n < drawData.getCmdListsCount(); n++) {
-            final ByteBuffer vtx = drawData.getCmdListVtxBufferData(n);
-            vtxWritePos = expandVertices(vtx, vtxScratch, vtxWritePos);
-
-            final ByteBuffer idx = drawData.getCmdListIdxBufferData(n);
-            final int ilen = idx.remaining();
-            for (int i = 0; i < ilen; i++) {
-                idxScratch.put(idxWritePos + i, idx.get(idx.position() + i));
-            }
-            idxWritePos += ilen;
+        if (fontSampler == null) {
+            createFontsTexture();
         }
 
-        vtxScratch.position(0).limit(vtxBytes);
-        idxScratch.position(0).limit(idxBytes);
+        final GpuBufferSlice projection = getBlitProjectionBuffer(device, encoder, fbWidth, fbHeight);
+        uploadBlitQuad(device, encoder, x, y, w, h);
+
+        // Clear the whole target to opaque black, then draw the game quad on top (opaque copy).
+        try (RenderPass renderPass = encoder.createRenderPass(
+                () -> "CraftUI Viewport Composite",
+                target, Optional.of(new Vector4f(0f, 0f, 0f, 1f)))) {
+            renderPass.setPipeline(BLIT_PIPELINE);
+            renderPass.setUniform("Projection", projection);
+            renderPass.setVertexBuffer(0, blitVertexBuffer.slice());
+            renderPass.setIndexBuffer(blitIndexBuffer, IndexType.SHORT);
+            renderPass.bindTexture("Texture", game, fontSampler);
+            renderPass.drawIndexed(6, 1, 0, 0, 0);
+        }
+    }
+
+    private GpuBufferSlice getBlitProjectionBuffer(final GpuDevice device, final CommandEncoder encoder,
+                                                   final int fbWidth, final int fbHeight) {
+        if (blitProjectionBuffer == null) {
+            blitProjectionBuffer = device.createBuffer(
+                    () -> "CraftUI Viewport Blit Projection",
+                    GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
+                    RenderSystem.PROJECTION_MATRIX_UBO_SIZE);
+            blitProjW = blitProjH = Float.NaN;
+        }
+        if (blitProjW != fbWidth || blitProjH != fbHeight) {
+            // Top-left origin ortho: (0,0) top-left, (fbWidth, fbHeight) bottom-right.
+            blitProjectionMatrix.setOrtho(0f, fbWidth, fbHeight, 0f, -1.0F, 1.0F);
+            try (final MemoryStack stack = MemoryStack.stackPush()) {
+                final ByteBuffer buffer = Std140Builder.onStack(stack, RenderSystem.PROJECTION_MATRIX_UBO_SIZE)
+                        .putMat4f(blitProjectionMatrix).get();
+                encoder.writeToBuffer(blitProjectionBuffer.slice(), buffer);
+            }
+            blitProjW = fbWidth;
+            blitProjH = fbHeight;
+        }
+        return blitProjectionBuffer.slice(0, RenderSystem.PROJECTION_MATRIX_UBO_SIZE);
+    }
+
+    private void uploadBlitQuad(final GpuDevice device, final CommandEncoder encoder,
+                                final int x, final int y, final int w, final int h) {
+        if (blitVertexBuffer == null) {
+            blitVertexBuffer = device.createBuffer(() -> "CraftUI Viewport Blit Vertices",
+                    GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, 4 * 20);
+        }
+        if (blitIndexBuffer == null) {
+            blitIndexBuffer = device.createBuffer(() -> "CraftUI Viewport Blit Indices",
+                    GpuBuffer.USAGE_INDEX | GpuBuffer.USAGE_COPY_DST, 6 * 2);
+            try (final MemoryStack stack = MemoryStack.stackPush()) {
+                final ByteBuffer idx = stack.malloc(6 * 2);
+                idx.putShort((short) 0).putShort((short) 1).putShort((short) 2);
+                idx.putShort((short) 0).putShort((short) 2).putShort((short) 3);
+                idx.flip();
+                encoder.writeToBuffer(blitIndexBuffer.slice(), idx);
+            }
+        }
+
+        final float x0 = x, y0 = y, x1 = x + w, y1 = y + h;
+        final int color = 0xFFFFFFFF;
+        try (final MemoryStack stack = MemoryStack.stackPush()) {
+            final ByteBuffer vtx = stack.malloc(4 * 20);
+            // pos(2f) uv(2f) color(RGBA8). V is flipped (game color texture is bottom-left origin).
+            putVert(vtx, x0, y0, 0f, 1f, color); // top-left
+            putVert(vtx, x1, y0, 1f, 1f, color); // top-right
+            putVert(vtx, x1, y1, 1f, 0f, color); // bottom-right
+            putVert(vtx, x0, y1, 0f, 0f, color); // bottom-left
+            vtx.flip();
+            encoder.writeToBuffer(blitVertexBuffer.slice(), vtx);
+        }
+    }
+
+    private static void putVert(final ByteBuffer buffer, final float px, final float py,
+                                final float u, final float v, final int color) {
+        buffer.putFloat(px).putFloat(py).putFloat(u).putFloat(v).putInt(color);
+    }
+
+    private GpuBufferSlice getProjectionBuffer(final float left, final float right, final float bottom, final float top) {
+        if (projectionBuffer == null) {
+            projectionBuffer = RenderSystem.getDevice().createBuffer(
+                    () -> "CraftUI ImGui Projection",
+                    GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
+                    RenderSystem.PROJECTION_MATRIX_UBO_SIZE);
+            projLeft = projRight = projBottom = projTop = Float.NaN;
+        }
+        if (projLeft != left || projRight != right || projBottom != bottom || projTop != top) {
+            projectionMatrix.setOrtho(left, right, bottom, top, -1.0F, 1.0F);
+            try (final MemoryStack stack = MemoryStack.stackPush()) {
+                final ByteBuffer buffer = Std140Builder.onStack(stack, RenderSystem.PROJECTION_MATRIX_UBO_SIZE)
+                        .putMat4f(projectionMatrix).get();
+                RenderSystem.getDevice().createCommandEncoder().writeToBuffer(projectionBuffer.slice(), buffer);
+            }
+            projLeft = left;
+            projRight = right;
+            projBottom = bottom;
+            projTop = top;
+        }
+        return projectionBuffer.slice(0, RenderSystem.PROJECTION_MATRIX_UBO_SIZE);
+    }
+
+    private void uploadBuffers(final GpuDevice device, final CommandEncoder encoder, final ImDrawData drawData,
+                               final int totalVtxCount, final int totalIdxCount) {
+        final int vtxBytes = totalVtxCount * ImDrawData.sizeOfImDrawVert();
+        final int idxBytes = totalIdxCount * ImDrawData.sizeOfImDrawIdx();
 
         vertexBuffer = ensureBuffer(device, vertexBuffer, GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST,
                 vtxBytes, true);
         indexBuffer = ensureBuffer(device, indexBuffer, GpuBuffer.USAGE_INDEX | GpuBuffer.USAGE_COPY_DST,
                 idxBytes, false);
 
-        encoder.writeToBuffer(vertexBuffer.slice(0, vtxBytes), vtxScratch);
-        encoder.writeToBuffer(indexBuffer.slice(0, idxBytes), idxScratch);
-    }
+        // Upload each command list's vertex/index data verbatim (no format change needed).
+        // NOTE: getCmdListVtxBufferData / getCmdListIdxBufferData reuse a single shared ByteBuffer,
+        // so each must be fully consumed before the next call (vtx, then idx, per list).
+        int vtxByteOffset = 0;
+        int idxByteOffset = 0;
+        for (int n = 0; n < drawData.getCmdListsCount(); n++) {
+            final ByteBuffer vtx = drawData.getCmdListVtxBufferData(n);
+            final int vtxLen = vtx.remaining();
+            encoder.writeToBuffer(vertexBuffer.slice(vtxByteOffset, vtxLen), vtx);
+            vtxByteOffset += vtxLen;
 
-    /**
-     * Expands one command list's ImGui vertices (stride 20) into POSITION_TEX_COLOR (stride 24),
-     * inserting z=0. Byte-copies to avoid any endianness translation. Returns the new write position.
-     */
-    private static int expandVertices(final ByteBuffer src, final ByteBuffer dst, final int dstStart) {
-        final int vertCount = src.remaining() / IMGUI_VTX_STRIDE;
-        final int base = src.position();
-        int dstPos = dstStart;
-        for (int v = 0; v < vertCount; v++) {
-            final int s = base + v * IMGUI_VTX_STRIDE;
-            // pos.xy (8 bytes)
-            for (int b = 0; b < 8; b++) {
-                dst.put(dstPos + b, src.get(s + b));
-            }
-            // pos.z = 0 (4 bytes)
-            dst.putInt(dstPos + 8, 0);
-            // uv (8 bytes) at src offset 8
-            for (int b = 0; b < 8; b++) {
-                dst.put(dstPos + 12 + b, src.get(s + 8 + b));
-            }
-            // color (4 bytes) at src offset 16
-            for (int b = 0; b < 4; b++) {
-                dst.put(dstPos + 20 + b, src.get(s + 16 + b));
-            }
-            dstPos += MC_VTX_STRIDE;
+            final ByteBuffer idx = drawData.getCmdListIdxBufferData(n);
+            final int idxLen = idx.remaining();
+            encoder.writeToBuffer(indexBuffer.slice(idxByteOffset, idxLen), idx);
+            idxByteOffset += idxLen;
         }
-        return dstPos;
-    }
-
-    private static ByteBuffer ensureScratch(final ByteBuffer current, final int needed) {
-        if (current != null && current.capacity() >= needed) {
-            current.clear();
-            return current;
-        }
-        if (current != null) {
-            MemoryUtil.memFree(current);
-        }
-        return MemoryUtil.memAlloc(Math.max(needed, 64 * 1024));
     }
 
     private GpuBuffer ensureBuffer(final GpuDevice device, GpuBuffer current, final int usage,
@@ -349,13 +498,21 @@ public class ImGuiImplBlaze3D {
             indexBuffer.close();
             indexBuffer = null;
         }
-        if (vtxScratch != null) {
-            MemoryUtil.memFree(vtxScratch);
-            vtxScratch = null;
+        if (projectionBuffer != null) {
+            projectionBuffer.close();
+            projectionBuffer = null;
         }
-        if (idxScratch != null) {
-            MemoryUtil.memFree(idxScratch);
-            idxScratch = null;
+        if (blitProjectionBuffer != null) {
+            blitProjectionBuffer.close();
+            blitProjectionBuffer = null;
+        }
+        if (blitVertexBuffer != null) {
+            blitVertexBuffer.close();
+            blitVertexBuffer = null;
+        }
+        if (blitIndexBuffer != null) {
+            blitIndexBuffer.close();
+            blitIndexBuffer = null;
         }
         vertexBufferSize = 0;
         indexBufferSize = 0;

@@ -35,9 +35,14 @@ import org.slf4j.LoggerFactory;
 import com.igrium.craftui.app.CraftApp.ViewportBounds;
 import com.igrium.craftui.CraftUIFonts;
 import com.igrium.craftui.impl.render.ImGuiUtil;
+import com.igrium.craftui.impl.render.ViewportCompositor;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
 
+import imgui.ImDrawData;
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
 
@@ -56,6 +61,21 @@ public final class AppManager {
 
 
     private static @Nullable ViewportBounds currentViewportBounds;
+
+    private static final ViewportCompositor viewportCompositor = new ViewportCompositor();
+
+
+    /**
+     * The full-window composite texture that the final frame should be presented from, or
+     * {@code null} to present the game's main render target directly. Non-null only while a
+     * custom viewport is active. Consumed by the render-frame present-blit redirect.
+     */
+    public static @Nullable GpuTextureView getCompositeTextureView() {
+        if (currentViewportBounds == null) {
+            return null;
+        }
+        return viewportCompositor.getView();
+    }
 
     /**
      * The draw function for a popup that renders over everything else
@@ -160,8 +180,13 @@ public final class AppManager {
     private static void updateViewportBounds(Minecraft client) {
         Window window = client.getWindow();
         if (currentViewportBounds != null) {
-            window.setWidth(currentViewportBounds.width());
-            window.setHeight(currentViewportBounds.height());
+            // setWidth/setHeight set the *framebuffer* (physical pixel) size, which drives the
+            // game render target dimensions. Use the DPI-scaled bounds so the world renders at
+            // native resolution and lines up 1:1 with the physical-pixel composite. (getScreenWidth
+            // reports the real logical window size and is untouched here, so mouse mapping is safe.)
+            ViewportBounds scaled = currentViewportBounds.scaled();
+            window.setWidth(scaled.width());
+            window.setHeight(scaled.height());
         } else {
             int[] width = new int[1];
             int [] height = new int[1];
@@ -331,7 +356,36 @@ public final class AppManager {
         }
 
         ImGui.render();
-        ImGuiUtil.IM_BLAZE3D.renderDrawData(ImGui.getDrawData());
+
+        // If a custom viewport is active, the game has rendered into a shrunken main render target.
+        // Copy that frame-sized image into the correct sub-rectangle of a full-window composite
+        // texture, then draw ImGui on top of the composite instead of the game target. The composite
+        // is what gets presented (see getCompositeTextureView / the render-frame present redirect).
+        ImDrawData drawData = ImGui.getDrawData();
+        GpuTextureView imguiTarget = null;
+        ViewportBounds bounds = currentViewportBounds;
+        if (bounds != null) {
+            RenderTarget mainTarget = client.gameRenderer.mainRenderTarget();
+            GpuTexture gameColor = mainTarget.getColorTexture();
+            if (gameColor != null) {
+                int fbWidth = (int) (drawData.getDisplaySizeX() * drawData.getFramebufferScaleX());
+                int fbHeight = (int) (drawData.getDisplaySizeY() * drawData.getFramebufferScaleY());
+                if (fbWidth > 0 && fbHeight > 0) {
+                    viewportCompositor.ensureSize(fbWidth, fbHeight, gameColor.getFormat());
+                    // ViewportBounds y is bottom-left origin (see DockSpaceApp); convert to a
+                    // top-left-origin screen rect for the composite blit.
+                    ViewportBounds scaled = bounds.scaled();
+                    int destX = scaled.x();
+                    int destY = fbHeight - scaled.y() - scaled.height();
+                    ImGuiUtil.IM_BLAZE3D.renderGameToComposite(
+                            viewportCompositor.getView(), fbWidth, fbHeight,
+                            mainTarget.getColorTextureView(), destX, destY, scaled.width(), scaled.height());
+                    imguiTarget = viewportCompositor.getView();
+                }
+            }
+        }
+        ImGuiUtil.IM_BLAZE3D.setTargetOverride(imguiTarget);
+        ImGuiUtil.IM_BLAZE3D.renderDrawData(drawData);
 
         // CLEANUP
         if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {

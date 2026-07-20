@@ -68,7 +68,7 @@ I vibe-ported this to 26.2. Bite me.
 ## *** STILL TODO ***
 1. **Vulkan backend not yet exercised** — the run used OpenGL (`Using graphics backend OpenGL`). Force Vulkan (launch arg / options) and confirm ImGuiImplBlaze3D renders. It's backend-agnostic by construction but unproven on Vulkan.
 2. **Visual verification** — headless render target is 1x1, so no pixels to inspect. Need a real desktop session to confirm font atlas, blend, projection y-flip, scissor rects look right.
-3. **Custom-viewport sub-region rendering** (render MC into a sub-rect so imgui panels surround it): FramebufferMixin was DELETED (RenderTarget.draw gone). Needs redesign via RenderPass into the main target / present path. Deferred. Common case (full-window overlay) works.
+3. ~~**Custom-viewport sub-region rendering**~~ **DONE 2026-07-20** — world now confined to a docked sub-rect. Shrink the game render target via the framebuffer-size override, composite the shrunken frame into a full-window texture with a scaling quad blit (opaque `BLIT_PIPELINE`), draw ImGui onto that composite, and present the composite via a redirect on the window present blit. Mirrors Flashback's viewport subsystem. Full writeup: `updating/viewport-sub-region.md`.
 4. **Multi-viewport (ImGui docking to OS windows)**: initPlatformInterface not ported to Blaze3D. ViewportsEnable secondary windows won't render until a Blaze3D platform renderer hook is added.
 
 ### KNOWN PRE-EXISTING BUG (not port-related, left as-is): `AppManager.wantCaptureMouse()` returns `getWantCaptureKeyboard()` (should be `getWantCaptureMouse()`).

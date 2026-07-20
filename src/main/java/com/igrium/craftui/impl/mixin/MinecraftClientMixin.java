@@ -4,9 +4,13 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.igrium.craftui.app.AppManager;
+import com.mojang.blaze3d.systems.CommandEncoder;
+import com.mojang.blaze3d.systems.GpuSurface;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import net.minecraft.client.Minecraft;
 
 @Mixin(Minecraft.class)
@@ -17,6 +21,15 @@ public class MinecraftClientMixin {
     @Inject(method = "renderFrame", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/GpuSurface;blitFromTexture(Lcom/mojang/blaze3d/systems/CommandEncoder;Lcom/mojang/blaze3d/textures/GpuTextureView;)V", shift = Shift.BEFORE))
     void craftui$afterMainBlit(boolean advanceGameTime, CallbackInfo ci) {
         AppManager.render((Minecraft) (Object) this);
+    }
+
+    // When a custom viewport is active, present the full-window composite texture (game confined to
+    // its sub-rectangle, with ImGui drawn over it) instead of the shrunken game render target.
+    // Runs after craftui$afterMainBlit, which populates the composite for this frame.
+    @Redirect(method = "renderFrame", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/GpuSurface;blitFromTexture(Lcom/mojang/blaze3d/systems/CommandEncoder;Lcom/mojang/blaze3d/textures/GpuTextureView;)V"))
+    void craftui$redirectPresentBlit(GpuSurface surface, CommandEncoder encoder, GpuTextureView colorTexture) {
+        GpuTextureView composite = AppManager.getCompositeTextureView();
+        surface.blitFromTexture(encoder, composite != null ? composite : colorTexture);
     }
 
     // Run app pre-render logic near the start of the frame, right after the render-start timer is sampled.
