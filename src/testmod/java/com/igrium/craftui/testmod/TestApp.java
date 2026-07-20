@@ -32,6 +32,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -41,7 +42,8 @@ public class TestApp extends DockSpaceApp {
     private final ImInt inputMode = new ImInt(2);
     private final ImBoolean doClickExplosion = new ImBoolean();
 
-    private static final String[] INPUT_MODE_OPTIONS = new String[]{"None", "Hold", "Focus", "Always"};
+    private static final String[] INPUT_MODE_OPTIONS =
+            Arrays.stream(ViewportInputMode.values()).map(Enum::name).toArray(String[]::new);
 
     private final ImInt layout = new ImInt(0);
     private static final String[] LAYOUT_OPTIONS = new String[]{"Default", "Layout 1", "Layout 2"};
@@ -101,10 +103,12 @@ public class TestApp extends DockSpaceApp {
                                 new FileFilter("Jpeg Files", ".jpg", ".jpeg"),
                                 new FileFilter("PNG Files", "png"))
                         .thenAcceptAsync(opt -> {
-                            if (opt.isPresent()) {
-                                client.player.sendSystemMessage(Component.literal("You chose " + opt.get()));
-                            } else {
-                                client.player.sendSystemMessage(Component.literal("You didn't select a file."));
+                            if (client.player != null) {
+                                if (opt.isPresent()) {
+                                    client.player.sendSystemMessage(Component.literal("You chose " + opt.get()));
+                                } else {
+                                    client.player.sendSystemMessage(Component.literal("You didn't select a file."));
+                                }
                             }
                         }, client);
             }
@@ -116,6 +120,7 @@ public class TestApp extends DockSpaceApp {
             }
 
             if (ImGui.button("Close Chat Window")) {
+                //noinspection DataFlowIssue
                 Minecraft.getInstance().setScreenAndShow(null);
             }
 
@@ -162,10 +167,12 @@ public class TestApp extends DockSpaceApp {
 
                 if (dialogFuture != null) {
                     dialogFuture.thenAccept(opt -> {
-                        if (opt.isPresent()) {
-                            client.player.sendSystemMessage(Component.literal("You chose " + opt.get()));
-                        } else {
-                            client.player.sendSystemMessage(Component.literal("You didn't select a file."));
+                        if (client.player != null) {
+                            if (opt.isPresent()) {
+                                client.player.sendSystemMessage(Component.literal("You chose " + opt.get()));
+                            } else {
+                                client.player.sendSystemMessage(Component.literal("You didn't select a file."));
+                            }
                         }
                     });
                 }
@@ -208,7 +215,9 @@ public class TestApp extends DockSpaceApp {
             ImGui.separator();
             if (nbtEditor.render("NBT editor##test", allowEditNbt.get() ? 0 : NbtEditorFlags.READONLY)) {
                 Tag newVal = nbtEditor.getNbt();
-                client.player.sendSystemMessage(Component.literal("New NBT: " + newVal));
+                if (client.player != null) {
+                    client.player.sendSystemMessage(Component.literal("New NBT: " + newVal));
+                }
             };
 //            NbtEditor.drawNbtEditor("NBT Editor##test", editingNbt, 0);
         }
@@ -263,7 +272,6 @@ public class TestApp extends DockSpaceApp {
         HitResult raycast = RaycastUtils.raycastViewport((float)mouse.xpos(), (float)mouse.ypos(), 1000, e -> !(e instanceof Player), false);
         if (raycast instanceof EntityHitResult entHit) {
             Entity ent = entHit.getEntity();
-            if (ent == null) return;
 
             TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, ent.registryAccess());
             ent.saveWithoutId(output);

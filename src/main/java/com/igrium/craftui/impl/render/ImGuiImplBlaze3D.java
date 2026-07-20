@@ -4,6 +4,8 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Optional;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
@@ -44,18 +46,9 @@ import net.minecraft.resources.Identifier;
 
 /**
  * Dear ImGui renderer backend built on Minecraft 26.2's Blaze3D GPU abstraction
- * ({@link GpuDevice} / {@link RenderPass}), so it runs on both the OpenGL and the
- * (experimental) Vulkan backend. This replaces the old raw-OpenGL {@code ImGuiImplGl3},
- * which cannot function under Vulkan (there is no GL context).
+ * ({@link GpuDevice} / {@link RenderPass})
  *
- * <p>Modelled on the imgui-mc project's {@code ImGuiRenderImplRenderSystem}: it ships its
- * own trivial shader pair whose vertex format matches ImGui's {@code ImDrawVert} exactly
- * (Position vec2, UV vec2, Color RGBA8), so vertex data is uploaded verbatim with no
- * expansion. The fragment shader is a plain {@code color * texture(...)} with no alpha
- * discard and no color modulator, culling is disabled, and depth testing is disabled —
- * the reasons MC's stock {@code core/position_tex_color} pipeline could not be reused
- * directly (its {@code if (color.a == 0.0) discard} plus GUI depth state dropped ImGui's
- * fills and text).
+ * <p>Modeled on the imgui-mc project's {@code ImGuiRenderImplRenderSystem}:
  */
 public class ImGuiImplBlaze3D {
 
@@ -122,9 +115,6 @@ public class ImGuiImplBlaze3D {
 
     /**
      * Opaque variant used to composite the finished game image into the viewport sub-rectangle.
-     * The game frame is already final, so it must be copied verbatim (no alpha blend) — blending
-     * it against the cleared composite corrupts pixels whose color-buffer alpha is &lt; 1 (e.g. the
-     * sky/horizon).
      */
     private static final RenderPipeline BLIT_PIPELINE = RenderPipeline.builder()
             .withLocation(Identifier.fromNamespaceAndPath("craftui", "pipeline/imgui_blit"))
@@ -167,11 +157,9 @@ public class ImGuiImplBlaze3D {
      * viewport is active so ImGui composites over the full-window {@link ViewportCompositor}
      * texture rather than the (shrunken) game render target.
      */
+    @Getter
+    @Setter
     private GpuTextureView targetOverride;
-
-    public void setTargetOverride(final GpuTextureView targetOverride) {
-        this.targetOverride = targetOverride;
-    }
 
     private static String getShaderSource(final Identifier id, final ShaderType type) {
         return SHADER_SOURCES.get(id);

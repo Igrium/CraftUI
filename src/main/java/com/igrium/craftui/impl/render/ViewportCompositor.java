@@ -4,6 +4,7 @@ import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
+import lombok.Getter;
 
 /**
  * Owns the full-window composite texture used to confine the 3D world to a docked viewport.
@@ -15,22 +16,23 @@ import com.mojang.blaze3d.textures.GpuTextureView;
  * sub-rectangle's size (via the window-size override) and then, each frame, draw that
  * frame-sized image into the correct sub-rectangle of this full-window composite texture (see
  * {@link ImGuiImplBlaze3D#renderGameToComposite}). ImGui is drawn on top of the composite and
- * the composite is what gets presented. This mirrors the compositing step of Moulberry's
- * Flashback viewport subsystem.
+ * the composite is what gets presented.
  */
 public class ViewportCompositor {
 
     private GpuTexture texture;
+
+    /**
+     * The full-window composite texture view, or {@code null} if not yet allocated.
+     */
+    @Getter
     private GpuTextureView view;
     private int width;
     private int height;
 
-    /** The full-window composite texture view, or {@code null} if not yet allocated. */
-    public GpuTextureView getView() {
-        return view;
-    }
-
-    /** (Re)allocate the composite texture so it matches the given full-window framebuffer size. */
+    /**
+     * (Re)allocate the composite texture so it matches the given full-window framebuffer size.
+     */
     public void ensureSize(int fbWidth, int fbHeight, GpuFormat format) {
         if (texture != null && width == fbWidth && height == fbHeight && texture.getFormat() == format) {
             return;

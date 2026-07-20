@@ -16,7 +16,7 @@ import imgui.flag.ImGuiConfigFlags;
 
 public class ImGuiUtil {
     public static final ImGuiImplGlfw IM_GLFW = new ImGuiImplGlfw();
-    // Renderer backend built on Minecraft 26.2's Blaze3D GPU abstraction (works on OpenGL and Vulkan).
+
     public static final ImGuiImplBlaze3D IM_BLAZE3D = new ImGuiImplBlaze3D();
 
     private static final Minecraft client = Minecraft.getInstance();

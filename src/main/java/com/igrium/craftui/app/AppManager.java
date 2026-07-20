@@ -414,7 +414,7 @@ public final class AppManager {
         // (touching ImGui.getIO() with no context segfaults the native library).
         if (!ImGuiUtil.isInitialized())
             return false;
-        return !forwardMouseInputNextFrame && ImGui.getIO().getWantCaptureKeyboard();
+        return !forwardMouseInputNextFrame && ImGui.getIO().getWantCaptureMouse();
     }
 
     /**
