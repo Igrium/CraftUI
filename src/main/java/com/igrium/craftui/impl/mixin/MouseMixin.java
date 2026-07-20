@@ -52,11 +52,6 @@ public class MouseMixin {
         }
     }
 
-    @Inject(method = "handleAccumulatedMovement", at = @At("HEAD"), cancellable = true)
-    void craftui$onUpdateMouse(CallbackInfo ci) {
-        if (AppManager.wantCaptureMouse())
-            ci.cancel();
-    }
 
     @Inject(method = "releaseMouse", at = @At("HEAD"), cancellable = true)
     void craftui$unlockCursor(CallbackInfo ci) {

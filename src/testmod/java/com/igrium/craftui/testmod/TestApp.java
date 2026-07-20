@@ -51,8 +51,6 @@ public class TestApp extends DockSpaceApp {
     private static final Identifier LAYOUT1 = Identifier.fromNamespaceAndPath("craftui-test", "layout1");
     private static final Identifier LAYOUT2 = Identifier.fromNamespaceAndPath("craftui-test", "layout2");
 
-//    private final NbtCompound editingNbt = new NbtCompound();
-
     private NbtEditor<?> nbtEditor;
 
     public TestApp() {
