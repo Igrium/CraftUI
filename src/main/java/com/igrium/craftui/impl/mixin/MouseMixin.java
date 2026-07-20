@@ -1,8 +1,6 @@
 package com.igrium.craftui.impl.mixin;
 
 import com.igrium.craftui.impl.input.CursorLockManager;
-import net.minecraft.client.option.KeyBinding;
-import org.joml.Vector2d;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,88 +14,85 @@ import com.igrium.craftui.app.CraftApp.ViewportBounds;
 import com.igrium.craftui.impl.input.MouseUtils;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalDoubleRef;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
+import net.minecraft.client.input.MouseButtonInfo;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.Mouse;
-import net.minecraft.client.util.InputUtil;
-
-@Mixin(Mouse.class)
+@Mixin(MouseHandler.class)
 public class MouseMixin {
 
     @Shadow
     @Final
-    private MinecraftClient client;
+    private Minecraft minecraft;
 
     @Shadow
-    private boolean cursorLocked;
+    private boolean mouseGrabbed;
 
     @Shadow
-    private double x;
+    private double xpos;
 
     @Shadow
-    private double y;
+    private double ypos;
 
-    @Inject(method = "onCursorPos", at = @At("HEAD"))
-    void craftui$onCursorPos(long window, double mouseX, double mouseY, CallbackInfo ci,
+    @Inject(method = "onMove", at = @At("HEAD"))
+    void craftui$onCursorPos(long handle, double mouseX, double mouseY, CallbackInfo ci,
             @Local(argsOnly = true, ordinal = 0) LocalDoubleRef x, @Local(argsOnly = true, ordinal = 1) LocalDoubleRef y) {
         // Do the if check again because it's easier to mix into the head.
-        if (window != MinecraftClient.getInstance().getWindow().getHandle()) {
+        if (handle != Minecraft.getInstance().getWindow().handle()) {
             return;
         }
 
         ViewportBounds viewport = AppManager.getCustomViewportBounds();
         if (viewport != null) {
-            var newPos = MouseUtils.calculateViewportMouse(client.getWindow(), viewport, x.get(), y.get());
+            var newPos = MouseUtils.calculateViewportMouse(minecraft.getWindow(), viewport, x.get(), y.get());
             x.set(newPos.x());
             y.set(newPos.y());
         }
-        // if (viewport != null) {
-        //     x.set(x.get() + 512);
-        //     y.set(y.get() - viewport.y());
-        // }
     }
 
-    @Inject(method = "updateMouse", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "handleAccumulatedMovement", at = @At("HEAD"), cancellable = true)
     void craftui$onUpdateMouse(CallbackInfo ci) {
         if (AppManager.wantCaptureMouse())
             ci.cancel();
     }
 
-    @Inject(method = "unlockCursor", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "releaseMouse", at = @At("HEAD"), cancellable = true)
     void craftui$unlockCursor(CallbackInfo ci) {
         // Do the if check again because it's easier to mix into the head.
-        if (!cursorLocked) {
+        if (!mouseGrabbed) {
             return;
         }
 
         // Fix an issue where keys could get stuck when switching between ui and MC
         // Honestly this should be called in vanilla code. No idea why it's not.
-        KeyBinding.unpressAll();
+        KeyMapping.releaseAll();
 
         ViewportBounds viewport = AppManager.getCustomViewportBounds();
         if (viewport != null) {
 
-            this.cursorLocked = false;
+            this.mouseGrabbed = false;
 
-            this.x = (double) viewport.width() / 2 + viewport.x();
-            this.y = client.getWindow().getHeight() - ((double) viewport.height() / 2 + viewport.y());
+            this.xpos = (double) viewport.width() / 2 + viewport.x();
+            this.ypos = minecraft.getWindow().getScreenHeight() - ((double) viewport.height() / 2 + viewport.y());
 
-            InputUtil.setCursorParameters(client.getWindow().getHandle(), InputUtil.GLFW_CURSOR_NORMAL, x, y);
-            
+            InputConstants.grabOrReleaseMouse(minecraft.getWindow(), InputConstants.CURSOR_NORMAL, xpos, ypos);
+
             // For some reason, setCursorParameters attempts to set the cursor pos BEFORE changing its mode, making the x and y args useless.
-            GLFW.glfwSetCursorPos(client.getWindow().getHandle(), x, y); 
+            GLFW.glfwSetCursorPos(minecraft.getWindow().handle(), xpos, ypos);
             ci.cancel();
         }
     }
 
-    @Inject(method = "lockCursor", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "grabMouse", at = @At("HEAD"), cancellable = true)
     void craftui$onLockCursor(CallbackInfo ci) {
         if (CursorLockManager.isForceUnlock())
             ci.cancel();
     }
 
-    @Inject(method = "onMouseButton", at = @At("HEAD"), cancellable = true)
-    void craftui$onMouseButton(long window, int button, int action, int mods, CallbackInfo ci) {
+    @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
+    void craftui$onMouseButton(long handle, MouseButtonInfo rawButtonInfo, int action, CallbackInfo ci) {
         if (AppManager.wantCaptureMouse()) {
             ci.cancel();
             return;
@@ -106,8 +101,8 @@ public class MouseMixin {
         MouseUtils.setMousePressed(action == GLFW.GLFW_PRESS);
     }
 
-    @Inject(method = "onMouseScroll", at = @At("HEAD"), cancellable = true)
-    void craftui$onMouseScroll(long window, double horizontal, double vertical, CallbackInfo ci) {
+    @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
+    void craftui$onMouseScroll(long handle, double horizontal, double vertical, CallbackInfo ci) {
         if (AppManager.wantCaptureMouse())
             ci.cancel();
     }

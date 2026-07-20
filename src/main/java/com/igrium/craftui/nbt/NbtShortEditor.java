@@ -2,10 +2,10 @@ package com.igrium.craftui.nbt;
 
 import imgui.ImGui;
 import imgui.type.ImShort;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtShort;
+import net.minecraft.nbt.ShortTag;
+import net.minecraft.nbt.Tag;
 
-public final class NbtShortEditor extends NbtPrimitiveEditor<NbtShort> {
+public final class NbtShortEditor extends NbtPrimitiveEditor<ShortTag> {
     private final ImShort value = new ImShort();
     private final EditableText editable = new EditableText();
 
@@ -22,21 +22,21 @@ public final class NbtShortEditor extends NbtPrimitiveEditor<NbtShort> {
 
     @Override
     protected byte getNbtType() {
-        return NbtElement.SHORT_TYPE;
+        return Tag.TAG_SHORT;
     }
 
     @Override
-    public NbtShort getNbt() {
-        return NbtShort.of(value.get());
+    public ShortTag getNbt() {
+        return ShortTag.valueOf(value.get());
     }
 
     @Override
-    public void setNbt(NbtShort nbt) {
+    public void setNbt(ShortTag nbt) {
         value.set(nbt.shortValue());
     }
 
     @Override
-    protected Class<? extends NbtShort> getNbtClass() {
-        return NbtShort.class;
+    protected Class<? extends ShortTag> getNbtClass() {
+        return ShortTag.class;
     }
 }

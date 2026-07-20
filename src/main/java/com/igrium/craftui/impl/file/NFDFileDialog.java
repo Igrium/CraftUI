@@ -6,7 +6,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.Util;
 import com.igrium.craftui.file.FileDialogInterface;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
@@ -16,8 +17,6 @@ import org.lwjgl.util.nfd.NativeFileDialog;
 
 import com.igrium.craftui.file.FileDialogs.FileFilter;
 
-import net.minecraft.client.MinecraftClient;
-
 public class NFDFileDialog implements FileDialogInterface {
     private static final ThreadLocal<Boolean> initialized = ThreadLocal.withInitial(() -> false);
 
@@ -26,8 +25,8 @@ public class NFDFileDialog implements FileDialogInterface {
     // The UI can only be opened on the main thread on Mac. However, this will cause
     // the rest of the game to hang, so only do that if we have to.
     static {
-        if (MinecraftClient.IS_SYSTEM_MAC) {
-            dialogExecutor = MinecraftClient.getInstance();
+        if ((Util.getPlatform() == Util.OS.OSX)) {
+            dialogExecutor = Minecraft.getInstance();
         } else {
             dialogExecutor = Executors.newSingleThreadExecutor(r -> new Thread(r, "File Dialog Thread"));
         }

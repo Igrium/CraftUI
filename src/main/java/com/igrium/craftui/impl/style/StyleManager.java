@@ -12,9 +12,9 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import net.minecraft.resource.Resource;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
 import org.apache.commons.io.FilenameUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -90,23 +90,24 @@ public class StyleManager implements IdentifiableResourceReloadListener {
 
     @Override
     public Identifier getFabricId() {
-        return Identifier.of("craftui:stylemanager");
+        return Identifier.parse("craftui:stylemanager");
     }
 
 
     @Override
-    public CompletableFuture<Void> reload(Synchronizer synchronizer, ResourceManager manager, Executor prepareExecutor, Executor applyExecutor) {
+    public CompletableFuture<Void> reload(SharedState currentReload, Executor prepareExecutor, PreparationBarrier synchronizer, Executor applyExecutor) {
+        ResourceManager manager = currentReload.resourceManager();
         List<CompletableFuture<?>> futures = new ArrayList<>();
 
         final Map<Identifier, JsonObject> parsedJson = new ConcurrentHashMap<>();
 
         // Used as base for all styles
 
-        for (var entry : manager.findAllResources("ui/styles", p -> p.toString().endsWith(".json")).entrySet()) {
+        for (var entry : manager.listResourceStacks("ui/styles", p -> p.toString().endsWith(".json")).entrySet()) {
             futures.add(CompletableFuture.runAsync(() -> {
                 JsonObject obj = null;
                 for (Resource r : entry.getValue()) {
-                    try(var reader = r.getReader()) {
+                    try(var reader = r.openAsReader()) {
                         var obj2 = GSON.fromJson(reader, JsonObject.class);
 
                         if (obj == null) {
@@ -116,7 +117,7 @@ public class StyleManager implements IdentifiableResourceReloadListener {
                         }
 
                     } catch (Exception e) {
-                        LOGGER.error("Error loading style {} from pack {}: ", entry.getKey(), r.getPackId(), e);
+                        LOGGER.error("Error loading style {} from pack {}: ", entry.getKey(), r.sourcePackId(), e);
                     }
                 }
 
@@ -126,7 +127,7 @@ public class StyleManager implements IdentifiableResourceReloadListener {
             }, prepareExecutor));
         }
 
-        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).thenCompose(synchronizer::whenPrepared).thenRunAsync(() -> {
+        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).thenCompose(synchronizer::wait).thenRunAsync(() -> {
             styles.clear();
             for (var entry : parsedJson.entrySet()) {
                 try {
@@ -143,12 +144,12 @@ public class StyleManager implements IdentifiableResourceReloadListener {
 
     private Identifier getStyleId(Identifier fileId) {
         String path = FilenameUtils.removeExtension(fileId.getPath().substring("ui/styles/".length()));
-        return Identifier.of(fileId.getNamespace(), path);
+        return Identifier.fromNamespaceAndPath(fileId.getNamespace(), path);
     }
 
     private static void applyParents(JsonObject obj, Map<Identifier, JsonObject> allValues, Set<Identifier> usedIdentifiers) {
         if (obj.has("parent")) {
-            Identifier parentName = Identifier.of(obj.get("parent").getAsString());
+            Identifier parentName = Identifier.parse(obj.get("parent").getAsString());
             if (usedIdentifiers.contains(parentName)) {
                 throw new IllegalStateException("Circular style dependency: " + parentName);
             }

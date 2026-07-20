@@ -10,8 +10,7 @@ import com.igrium.craftui.style.CraftUIStyles;
 import lombok.Getter;
 import lombok.Setter;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.resources.Identifier;
 import java.io.Reader;
 import java.io.Writer;
 

@@ -2,8 +2,8 @@ package com.igrium.craftui.impl.input;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.Mouse;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
 
 /**
  * Keeps track of when the cursor should be locked vs unlocked.
@@ -17,26 +17,26 @@ public class CursorLockManager {
     private static boolean prevForceUnlock;
 
     public static void onBeginFrame() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
 
         if (forceUnlock != prevForceUnlock) {
             if (forceUnlock) {
-                client.mouse.unlockCursor();
+                client.mouseHandler.releaseMouse();
             } else {
-                setCursorLock(client.mouse, clientWantsLockCursor());
+                setCursorLock(client.mouseHandler, clientWantsLockCursor());
             }
         }
         prevForceUnlock = forceUnlock;
     }
 
-    private static void setCursorLock(Mouse mouse, boolean lock) {
+    private static void setCursorLock(MouseHandler mouse, boolean lock) {
         if (lock)
-            mouse.lockCursor();
+            mouse.grabMouse();
         else
-            mouse.unlockCursor();
+            mouse.releaseMouse();
     }
 
     public static boolean clientWantsLockCursor() {
-        return MinecraftClient.getInstance().currentScreen == null;
+        return Minecraft.getInstance().gui.screen() == null;
     }
 }

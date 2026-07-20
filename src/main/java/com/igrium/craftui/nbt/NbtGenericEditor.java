@@ -1,12 +1,12 @@
 package com.igrium.craftui.nbt;
 
 import imgui.ImGui;
-import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.Tag;
 
 /**
  * A read-only editor that just display's the nbt's toString function
  */
-public final class NbtGenericEditor<T extends NbtElement> extends NbtPrimitiveEditor<T> {
+public final class NbtGenericEditor<T extends Tag> extends NbtPrimitiveEditor<T> {
 
     private T element;
 
@@ -22,7 +22,7 @@ public final class NbtGenericEditor<T extends NbtElement> extends NbtPrimitiveEd
 
     @Override
     protected byte getNbtType() {
-        return element.getType();
+        return element.getId();
     }
 
     @SuppressWarnings("unchecked")

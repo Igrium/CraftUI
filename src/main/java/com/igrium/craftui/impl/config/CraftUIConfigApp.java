@@ -13,16 +13,16 @@ import imgui.flag.ImGuiKey;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.Language;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import net.minecraft.client.Minecraft;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 public class CraftUIConfigApp extends CraftApp {
 
@@ -46,7 +46,7 @@ public class CraftUIConfigApp extends CraftApp {
     public CraftUIConfigApp() {
         styles = CraftUIStyles.getStyles().keySet().toArray(new Identifier[0]);
         styleNames = Arrays.stream(styles)
-                .map(i -> Language.getInstance().get(i.toTranslationKey("style")))
+                .map(i -> Language.getInstance().getOrDefault(i.toLanguageKey("style")))
                 .toArray(String[]::new);
 
         int styleIndex = find(CraftUIStyles.getActiveStyle(), styles);
@@ -65,7 +65,7 @@ public class CraftUIConfigApp extends CraftApp {
     }
 
     @Override
-    protected void render(MinecraftClient client) {
+    protected void render(Minecraft client) {
         boolean wantsSave = false;
 
         var viewport = ImGui.getMainViewport();
@@ -73,7 +73,7 @@ public class CraftUIConfigApp extends CraftApp {
 
 
         if (ImGui.begin(
-                Text.translatable("options.craftui.header").getString(), ImGuiWindowFlags.NoCollapse
+                Component.translatable("options.craftui.header").getString(), ImGuiWindowFlags.NoCollapse
                         | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings)) {
 
 
@@ -132,19 +132,19 @@ public class CraftUIConfigApp extends CraftApp {
     }
 
     private boolean checkbox(String name, ImBoolean active, @Nullable String tooltip) {
-        boolean updated = ImGui.checkbox(Language.getInstance().get(name), active);
+        boolean updated = ImGui.checkbox(Language.getInstance().getOrDefault(name), active);
         setTooltip(tooltip);
         return updated;
     }
 
     private boolean combo(String name, ImInt currentItem, String[] items, @Nullable String tooltip) {
-        boolean updated = ImGui.combo(Language.getInstance().get(name), currentItem, items);
+        boolean updated = ImGui.combo(Language.getInstance().getOrDefault(name), currentItem, items);
         setTooltip(tooltip);
         return updated;
     }
 
     private boolean button(String name, @Nullable String tooltip) {
-        boolean pressed = ImGui.button(Language.getInstance().get(name));
+        boolean pressed = ImGui.button(Language.getInstance().getOrDefault(name));
         setTooltip(tooltip);
         return pressed;
     }
@@ -152,7 +152,7 @@ public class CraftUIConfigApp extends CraftApp {
 
     private void setTooltip(@Nullable String tooltip) {
         if (tooltip != null) {
-            ImGui.setItemTooltip(Language.getInstance().get(tooltip));
+            ImGui.setItemTooltip(Language.getInstance().getOrDefault(tooltip));
         }
     }
 

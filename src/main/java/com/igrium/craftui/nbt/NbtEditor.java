@@ -9,8 +9,8 @@ import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImString;
 import lombok.NonNull;
+import net.minecraft.locale.Language;
 import net.minecraft.nbt.*;
-import net.minecraft.util.Language;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
  * @param <T> NBT element type
  * @apiNote For technical reasons, always deep-copies the NBT value on get/set
  */
-public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompoundEditor, NbtListEditor, NbtPrimitiveEditor {
+public sealed abstract class NbtEditor<T extends Tag> permits NbtCompoundEditor, NbtListEditor, NbtPrimitiveEditor {
 
     private record PasteFailure(String msg, @Nullable Throwable cause) {}
 
@@ -29,49 +29,49 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
      * @param <T> The type of element
      */
     @SuppressWarnings("unchecked")
-    public static <T extends NbtElement> NbtEditor<T> of(@NonNull T element) {
+    public static <T extends Tag> NbtEditor<T> of(@NonNull T element) {
         switch (element) {
-            case NbtByte nByte -> {
+            case ByteTag nByte -> {
                 var editor = new NbtByteEditor();
                 editor.setNbt(nByte);
                 return (NbtEditor<T>) editor;
             }
-            case NbtShort nShort -> {
+            case ShortTag nShort -> {
                 var editor = new NbtShortEditor();
                 editor.setNbt(nShort);
                 return (NbtEditor<T>) editor;
             }
-            case NbtInt nInt -> {
+            case IntTag nInt -> {
                 var editor = new NbtIntEditor();
                 editor.setNbt(nInt);
                 return (NbtEditor<T>) editor;
             }
-            case NbtLong nLong -> {
+            case LongTag nLong -> {
                 var editor = new NbtLongEditor();
                 editor.setNbt(nLong);
                 return (NbtEditor<T>) editor;
             }
-            case NbtFloat nFloat -> {
+            case FloatTag nFloat -> {
                 var editor = new NbtFloatEditor();
                 editor.setNbt(nFloat);
                 return (NbtEditor<T>) editor;
             }
-            case NbtDouble nDouble -> {
+            case DoubleTag nDouble -> {
                 var editor = new NbtDoubleEditor();
                 editor.setNbt(nDouble);
                 return (NbtEditor<T>) editor;
             }
-            case NbtCompound compound -> {
+            case CompoundTag compound -> {
                 var editor = new NbtCompoundEditor();
                 editor.setNbt(compound);
                 return (NbtEditor<T>) editor;
             }
-            case NbtList list -> {
+            case ListTag list -> {
                 var editor = new NbtListEditor();
                 editor.setNbt(list);
                 return (NbtEditor<T>) editor;
             }
-            case NbtString string -> {
+            case StringTag string -> {
                 var editor = new NbtStringEditor();
                 editor.setNbt(string);
                 return (NbtEditor<T>) editor;
@@ -146,7 +146,7 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
     protected int drawContextItems(int flags) {
         if (ImGui.menuItem(t("gui.craftui.nbt.copyNbt"))) {
             var nbt = getNbt();
-            ImGui.setClipboardText(nbt.asString());
+            ImGui.setClipboardText(nbt.toString());
         }
         ImGui.beginDisabled(hasFlag(flags, NbtEditorFlags.READONLY));
         if (ImGui.menuItem(t("gui.craftui.nbt.pasteNbt"))) {
@@ -159,14 +159,14 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
     private void pasteNbt() {
         String snbt = ImGui.getClipboardText();
         try {
-            NbtElement element = new StringNbtReader(new StringReader(snbt)).parseElement();
+            Tag element = TagParser.create(NbtOps.INSTANCE).parseFully(snbt);
             try {
                 setNbt(getNbtClass().cast(element));
             } catch (ClassCastException e) {
                 pasteFailure = new PasteFailure(tt("gui.craftui.nbt.badType")
                         .formatted(
                                 tt(NbtIcons.translation(getNbtType())),
-                                tt(NbtIcons.translation(element.getType()))), null);
+                                tt(NbtIcons.translation(element.getId()))), null);
             }
         } catch (CommandSyntaxException e) {
             pasteFailure = new PasteFailure(tt("gui.craftui.nbt.pasteSyntax"), e);
@@ -239,10 +239,10 @@ public sealed abstract class NbtEditor<T extends NbtElement> permits NbtCompound
     }
 
     static String t(String key) {
-        return Language.getInstance().get(key) + "###" + key;
+        return Language.getInstance().getOrDefault(key) + "###" + key;
     }
 
     static String tt(String key) {
-        return Language.getInstance().get(key);
+        return Language.getInstance().getOrDefault(key);
     }
 }

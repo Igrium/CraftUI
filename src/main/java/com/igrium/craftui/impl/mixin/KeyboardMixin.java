@@ -1,22 +1,24 @@
 package com.igrium.craftui.impl.mixin;
 
 import com.igrium.craftui.app.AppManager;
-import net.minecraft.client.Keyboard;
+import net.minecraft.client.KeyboardHandler;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(Keyboard.class)
+@Mixin(KeyboardHandler.class)
 public class KeyboardMixin {
-    @Inject(method = "onKey", at = @At("HEAD"), cancellable = true)
-    void craftui$onKey(long window, int keycode, int scancode, int action, int modifiers, CallbackInfo ci) {
+    @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
+    void craftui$onKey(long window, int action, KeyEvent event, CallbackInfo ci) {
         if (AppManager.wantCaptureKeyboard())
             ci.cancel();
     }
 
-    @Inject(method = "onChar", at = @At("HEAD"), cancellable = true)
-    void craftui$onChar(long window, int codePoint, int modifiers, CallbackInfo ci) {
+    @Inject(method = "charTyped", at = @At("HEAD"), cancellable = true)
+    void craftui$onChar(long window, CharacterEvent event, CallbackInfo ci) {
         if (AppManager.wantCaptureKeyboard())
             ci.cancel();
     }

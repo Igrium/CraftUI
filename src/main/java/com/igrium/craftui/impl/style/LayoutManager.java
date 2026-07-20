@@ -6,9 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.InvalidIdentifierException;
+import net.minecraft.IdentifierException;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.ResourceManager;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -152,8 +152,8 @@ public class LayoutManager implements IdentifiableResourceReloadListener {
 
                 Identifier id;
                 try {
-                    id = Identifier.of(namespace, idPath);
-                } catch (InvalidIdentifierException e) {
+                    id = Identifier.fromNamespaceAndPath(namespace, idPath);
+                } catch (IdentifierException e) {
                     LOGGER.error(e.getMessage());
                     return;
                 }
@@ -200,14 +200,14 @@ public class LayoutManager implements IdentifiableResourceReloadListener {
 
     private void loadNativeLayouts(ResourceManager manager) {
         nativeLayouts.clear();
-        for (var entry : manager.findResources("layouts", id -> id.getPath().endsWith(".ini")).entrySet()) {
+        for (var entry : manager.listResources("layouts", id -> id.getPath().endsWith(".ini")).entrySet()) {
             Identifier filename = entry.getKey();
             String filepath = FilenameUtils.removeExtension(filename.getPath().substring("layouts/".length()));
 
-            Identifier id = Identifier.of(filename.getNamespace(), filepath);
+            Identifier id = Identifier.fromNamespaceAndPath(filename.getNamespace(), filepath);
             LOGGER.debug("Loading IMGUI layout from {} as {}", filename, id);
 
-            try (var reader = entry.getValue().getReader()) {
+            try (var reader = entry.getValue().openAsReader()) {
                 String text = reader.lines().collect(Collectors.joining(System.lineSeparator()));
                 nativeLayouts.put(id, text);
             } catch (Exception e) {
@@ -219,14 +219,15 @@ public class LayoutManager implements IdentifiableResourceReloadListener {
 
     @Override
     public Identifier getFabricId() {
-        return Identifier.of("craftui:layouts");
+        return Identifier.parse("craftui:layouts");
     }
 
     @Override
-    public CompletableFuture<Void> reload(Synchronizer synchronizer, ResourceManager manager, Executor prepareExecutor, Executor applyExecutor) {
+    public CompletableFuture<Void> reload(SharedState currentReload, Executor prepareExecutor, PreparationBarrier synchronizer, Executor applyExecutor) {
+        ResourceManager manager = currentReload.resourceManager();
         nativeLayouts.clear();
         return CompletableFuture.runAsync(() -> this.loadNativeLayouts(manager), prepareExecutor)
                 .thenRun(this::loadUserLayouts)
-                .thenCompose(synchronizer::whenPrepared);
+                .thenCompose(synchronizer::wait);
     }
 }

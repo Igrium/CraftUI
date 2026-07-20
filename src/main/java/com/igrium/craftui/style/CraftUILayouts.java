@@ -2,7 +2,7 @@ package com.igrium.craftui.style;
 
 import com.igrium.craftui.impl.style.LayoutManager;
 import lombok.experimental.UtilityClass;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 @UtilityClass
 public class CraftUILayouts {
 
-    public static final Identifier DEFAULT = Identifier.of("craftui:default");
+    public static final Identifier DEFAULT = Identifier.parse("craftui:default");
 
     /**
      * Get the layout ID that is currently in use.

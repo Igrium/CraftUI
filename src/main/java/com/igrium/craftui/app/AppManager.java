@@ -22,9 +22,10 @@ import imgui.ImFont;
 import imgui.ImGuiIO;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.crash.CrashException;
-import net.minecraft.util.crash.CrashReport;
+import net.minecraft.CrashReport;
+import net.minecraft.ReportedException;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.lwjgl.glfw.GLFW;
@@ -34,12 +35,11 @@ import org.slf4j.LoggerFactory;
 import com.igrium.craftui.app.CraftApp.ViewportBounds;
 import com.igrium.craftui.CraftUIFonts;
 import com.igrium.craftui.impl.render.ImGuiUtil;
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.Window;
 
 /**
  * Manages global app state, keeping track of active apps, and rendering.
@@ -110,7 +110,7 @@ public final class AppManager {
         removeQueue.add(app);
     }
 
-    public static void preRender(MinecraftClient client) {
+    public static void preRender(Minecraft client) {
         RenderSystem.assertOnRenderThread();
 
         if (!ImGuiUtil.isInitialized()) {
@@ -157,21 +157,21 @@ public final class AppManager {
 
     }
 
-    private static void updateViewportBounds(MinecraftClient client) {
+    private static void updateViewportBounds(Minecraft client) {
         Window window = client.getWindow();
         if (currentViewportBounds != null) {
-            window.setFramebufferWidth(currentViewportBounds.width());
-            window.setFramebufferHeight(currentViewportBounds.height());
+            window.setWidth(currentViewportBounds.width());
+            window.setHeight(currentViewportBounds.height());
         } else {
             int[] width = new int[1];
             int [] height = new int[1];
-            GLFW.glfwGetFramebufferSize(window.getHandle(), width, height);
-            window.setFramebufferWidth(width[0]);
-            window.setFramebufferHeight(height[0]);
+            GLFW.glfwGetFramebufferSize(window.handle(), width, height);
+            window.setWidth(width[0]);
+            window.setHeight(height[0]);
         }
 
-        client.onResolutionChanged();
-        client.mouse.onResolutionChanged();
+        client.resizeGui();
+        client.mouseHandler.setIgnoreFirstMove();
     }
 
     public static @Nullable ViewportBounds getCustomViewportBounds() {
@@ -192,7 +192,7 @@ public final class AppManager {
             return new Vector2d(globalX, globalY);
         }
 
-        return MouseUtils.calculateViewportMouse(MinecraftClient.getInstance().getWindow(), viewportBounds, globalX, globalY);
+        return MouseUtils.calculateViewportMouse(Minecraft.getInstance().getWindow(), viewportBounds, globalX, globalY);
     }
 
     private static boolean forwardInputNextFrame;
@@ -245,7 +245,7 @@ public final class AppManager {
      * Draw all open apps to the screen.
      * @param client Minecraft client instance.
      */
-    public static void render(MinecraftClient client) {
+    public static void render(Minecraft client) {
         RenderSystem.assertOnRenderThread();
         if (crashed)
             return;
@@ -253,7 +253,7 @@ public final class AppManager {
         drawnGlobalPopup = false;
         boolean isCleanupFrame = apps.isEmpty();
 
-        if (client.mouse.isCursorLocked()) {
+        if (client.mouseHandler.isMouseGrabbed()) {
             ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NoMouse);
         } else {
             ImGui.getIO().removeConfigFlags(ImGuiConfigFlags.NoMouse);
@@ -311,7 +311,7 @@ public final class AppManager {
             } catch (Exception e) {
                 crashed = true;
                 CrashReport crashReport = new CrashReport("Error rendering CraftUI app " + app.getClass().getSimpleName(), e);
-                throw new CrashException(crashReport);
+                throw new ReportedException(crashReport);
             }
             ImGui.popID();
         }
@@ -321,7 +321,7 @@ public final class AppManager {
         } catch (Exception e) {
             crashed = true;
             CrashReport crashReport = new CrashReport("Error rendering the CraftUI global popup", e);
-            throw new CrashException(crashReport);
+            throw new ReportedException(crashReport);
         }
 
         if (isCleanupFrame) {
@@ -331,7 +331,7 @@ public final class AppManager {
         }
 
         ImGui.render();
-        ImGuiUtil.IM_GL3.renderDrawData(ImGui.getDrawData());
+        ImGuiUtil.IM_BLAZE3D.renderDrawData(ImGui.getDrawData());
 
         // CLEANUP
         if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
@@ -356,6 +356,10 @@ public final class AppManager {
      * @see ImGuiIO#getWantCaptureMouse()
      */
     public static boolean wantCaptureMouse() {
+        // Guard against input events that arrive before the first frame initializes the ImGui context
+        // (touching ImGui.getIO() with no context segfaults the native library).
+        if (!ImGuiUtil.isInitialized())
+            return false;
         return !forwardMouseInputNextFrame && ImGui.getIO().getWantCaptureKeyboard();
     }
 
@@ -364,6 +368,9 @@ public final class AppManager {
      * @see ImGuiIO#getWantCaptureKeyboard()
      */
     public static boolean wantCaptureKeyboard() {
+        // See wantCaptureMouse: avoid touching ImGui before its context exists.
+        if (!ImGuiUtil.isInitialized())
+            return false;
         return !forwardInputNextFrame && ImGui.getIO().getWantCaptureKeyboard();
     }
 }

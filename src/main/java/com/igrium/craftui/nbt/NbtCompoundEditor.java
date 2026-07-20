@@ -5,13 +5,12 @@ import com.igrium.craftui.impl.util.NbtTypes;
 import imgui.ImGui;
 import imgui.flag.ImGuiTreeNodeFlags;
 import imgui.type.ImString;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 
-public final class NbtCompoundEditor extends NbtEditor<NbtCompound> {
+public final class NbtCompoundEditor extends NbtEditor<CompoundTag> {
 
     private static class Entry {
         final String id;
@@ -41,8 +40,8 @@ public final class NbtCompoundEditor extends NbtEditor<NbtCompound> {
     }
 
     @Override
-    public NbtCompound getNbt() {
-        NbtCompound compound = new NbtCompound();
+    public CompoundTag getNbt() {
+        CompoundTag compound = new CompoundTag();
         for (var entry : entries) {
             compound.put(entry.key.get(), entry.value.getNbt());
         }
@@ -50,9 +49,9 @@ public final class NbtCompoundEditor extends NbtEditor<NbtCompound> {
     }
 
     @Override
-    public void setNbt(NbtCompound nbt) {
+    public void setNbt(CompoundTag nbt) {
         entries.clear();
-        for (String key : nbt.getKeys()) {
+        for (String key : nbt.keySet()) {
             //noinspection DataFlowIssue
             entries.add(new Entry("entry." + curId++, key, NbtEditor.of(nbt.get(key))));
         }
@@ -142,13 +141,13 @@ public final class NbtCompoundEditor extends NbtEditor<NbtCompound> {
     }
 
     @Override
-    protected Class<NbtCompound> getNbtClass() {
-        return NbtCompound.class;
+    protected Class<CompoundTag> getNbtClass() {
+        return CompoundTag.class;
     }
 
     @Override
     protected byte getNbtType() {
-        return NbtElement.COMPOUND_TYPE;
+        return Tag.TAG_COMPOUND;
     }
 
     @Override

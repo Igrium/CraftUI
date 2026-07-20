@@ -2,6 +2,8 @@ package com.igrium.craftui.impl.render;
 
 import imgui.extension.implot.ImPlot;
 import lombok.Getter;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,15 +13,13 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
-import net.minecraft.client.MinecraftClient;
 
 public class ImGuiUtil {
     public static final ImGuiImplGlfw IM_GLFW = new ImGuiImplGlfw();
-    public static final ImGuiImplGl3 IM_GL3 = new ImGuiImplGl3();
+    // Renderer backend built on Minecraft 26.2's Blaze3D GPU abstraction (works on OpenGL and Vulkan).
+    public static final ImGuiImplBlaze3D IM_BLAZE3D = new ImGuiImplBlaze3D();
 
-    private static final String GLSL_VERSION = "#version 150";
-
-    private static final MinecraftClient client = MinecraftClient.getInstance();
+    private static final Minecraft client = Minecraft.getInstance();
 
     public static final Logger LOGGER = LoggerFactory.getLogger("ImGui Integration");
 
@@ -29,7 +29,7 @@ public class ImGuiUtil {
     public static void ensureInitialized() {
         if (initialized)
             return;
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         init();
     }
 
@@ -45,7 +45,7 @@ public class ImGuiUtil {
         ImGuiEvents.PRE_INIT.invoker().preInit();
 
         ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NavEnableKeyboard | ImGuiConfigFlags.DockingEnable);
-        ImGui.getIO().setConfigMacOSXBehaviors(MinecraftClient.IS_SYSTEM_MAC);
+        ImGui.getIO().setConfigMacOSXBehaviors((Util.getPlatform() == Util.OS.OSX));
         if (CraftUI.getConfig().isEnableViewports())
             ImGui.getIO().addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
 
@@ -53,9 +53,9 @@ public class ImGuiUtil {
 
         ImGuiEvents.INIT_IO.invoker().initIO(ImGui.getIO());
         
-        IM_GLFW.init(client.getWindow().getHandle(), true);
-        IM_GL3.init(GLSL_VERSION);
-        IM_GL3.newFrame(); // force new frame to init buffers before font loading
+        IM_GLFW.init(client.getWindow().handle(), true);
+        IM_BLAZE3D.init();
+        IM_BLAZE3D.newFrame(); // force new frame to init resources before font loading
         ImGuiEvents.POST_INIT.invoker().postInit();
         initialized = true;
     }

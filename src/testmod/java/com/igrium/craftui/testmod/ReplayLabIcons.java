@@ -3,11 +3,11 @@ package com.igrium.craftui.testmod;
 import com.igrium.craftui.CraftUIFonts;
 import imgui.ImFont;
 import lombok.experimental.UtilityClass;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 
 @UtilityClass
 public class ReplayLabIcons {
-    public static final Identifier FONT_ID = Identifier.of("craftui-test:replaylab-icons");
+    public static final Identifier FONT_ID = Identifier.parse("craftui-test:replaylab-icons");
 
     public static ImFont getFont() {
         return CraftUIFonts.getFont(FONT_ID);

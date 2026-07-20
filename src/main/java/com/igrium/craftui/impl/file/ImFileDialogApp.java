@@ -13,7 +13,7 @@ import imgui.type.ImBoolean;
 import imgui.type.ImString;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 @Deprecated
 class ImFileDialogApp extends CraftApp {
@@ -52,7 +52,7 @@ class ImFileDialogApp extends CraftApp {
     private final ImString filepath = new ImString();
 
     @Override
-    protected void render(MinecraftClient client) {
+    protected void render(Minecraft client) {
         if (!isOpen.get()) {
             ImGui.openPopup("File Dialog");
             filepath.set(defaultPath);

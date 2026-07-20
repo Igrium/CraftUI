@@ -2,10 +2,10 @@ package com.igrium.craftui.nbt;
 
 import imgui.ImGui;
 import imgui.type.ImDouble;
-import net.minecraft.nbt.NbtDouble;
-import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.Tag;
 
-public final class NbtDoubleEditor extends NbtPrimitiveEditor<NbtDouble> {
+public final class NbtDoubleEditor extends NbtPrimitiveEditor<DoubleTag> {
     private final ImDouble value = new ImDouble();
     private final EditableText editable = new EditableText();
 
@@ -22,21 +22,21 @@ public final class NbtDoubleEditor extends NbtPrimitiveEditor<NbtDouble> {
 
     @Override
     protected byte getNbtType() {
-        return NbtElement.DOUBLE_TYPE;
+        return Tag.TAG_DOUBLE;
     }
 
     @Override
-    public NbtDouble getNbt() {
-        return NbtDouble.of(value.get());
+    public DoubleTag getNbt() {
+        return DoubleTag.valueOf(value.get());
     }
 
     @Override
-    public void setNbt(NbtDouble nbt) {
+    public void setNbt(DoubleTag nbt) {
         value.set(nbt.doubleValue());
     }
 
     @Override
-    protected Class<NbtDouble> getNbtClass() {
-        return NbtDouble.class;
+    protected Class<DoubleTag> getNbtClass() {
+        return DoubleTag.class;
     }
 }

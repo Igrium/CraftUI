@@ -3,8 +3,8 @@ package com.igrium.craftui.app;
 import com.igrium.craftui.event.UIEvent;
 
 import imgui.ImGui;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -54,7 +54,7 @@ public abstract class CraftApp {
      * 
      * @param client The client
      */
-    protected abstract void render(MinecraftClient client);
+    protected abstract void render(Minecraft client);
     
     /**
      * Called before the game begins to render a frame if this app is active.
@@ -62,7 +62,7 @@ public abstract class CraftApp {
      * 
      * @param client The client
      */
-    protected void preRender(MinecraftClient client) {
+    protected void preRender(Minecraft client) {
 
     }
 

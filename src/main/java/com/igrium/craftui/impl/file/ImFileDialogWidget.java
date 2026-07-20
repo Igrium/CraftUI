@@ -9,9 +9,9 @@ import imgui.type.ImString;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import net.minecraft.util.Language;
 import net.minecraft.util.Util;
-import net.minecraft.util.math.ColorHelper;
+import net.minecraft.locale.Language;
+import net.minecraft.util.ARGB;
 import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -123,7 +123,7 @@ public final class ImFileDialogWidget {
     @Getter
     @Setter
     @NonNull
-    private Executor executor = Util.getIoWorkerExecutor();
+    private Executor executor = Util.ioPool();
 
     /**
      * The files currently being rendered
@@ -266,7 +266,7 @@ public final class ImFileDialogWidget {
         ImGui.tableSetupColumn("sidebar", ImGuiTableColumnFlags.WidthFixed, ImGui.getFontSize() * 10, 0);
         ImGui.tableSetupColumn("center", ImGuiTableColumnFlags.WidthStretch, ImGui.getFontSize() * 96, 1);
 
-        ImGui.pushStyleColor(ImGuiCol.Header, ColorHelper.withAlpha(96, ImGui.getColorU32(ImGuiCol.HeaderHovered)));
+        ImGui.pushStyleColor(ImGuiCol.Header, ARGB.color(96, ImGui.getColorU32(ImGuiCol.HeaderHovered)));
 
         /// === NAVIGATION BUTTONS ===
         ImGui.tableNextColumn();
@@ -458,10 +458,10 @@ public final class ImFileDialogWidget {
     /// === UTILITIES ===
 
     private static String t(String key) {
-        return Language.getInstance().get(key) + "###" + key;
+        return Language.getInstance().getOrDefault(key) + "###" + key;
     }
 
     private static String tt(String key) {
-        return Language.getInstance().get(key);
+        return Language.getInstance().getOrDefault(key);
     }
 }

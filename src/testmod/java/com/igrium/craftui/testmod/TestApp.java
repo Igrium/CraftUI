@@ -15,18 +15,20 @@ import imgui.flag.ImGuiFocusedFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import imgui.type.ImString;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.Mouse;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.TntEntity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.nbt.*;
-import net.minecraft.server.integrated.IntegratedServer;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.PrimedTnt;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
@@ -44,8 +46,8 @@ public class TestApp extends DockSpaceApp {
     private final ImInt layout = new ImInt(0);
     private static final String[] LAYOUT_OPTIONS = new String[]{"Default", "Layout 1", "Layout 2"};
 
-    private static final Identifier LAYOUT1 = Identifier.of("craftui-test", "layout1");
-    private static final Identifier LAYOUT2 = Identifier.of("craftui-test", "layout2");
+    private static final Identifier LAYOUT1 = Identifier.fromNamespaceAndPath("craftui-test", "layout1");
+    private static final Identifier LAYOUT2 = Identifier.fromNamespaceAndPath("craftui-test", "layout2");
 
 //    private final NbtCompound editingNbt = new NbtCompound();
 
@@ -55,26 +57,26 @@ public class TestApp extends DockSpaceApp {
         setViewportInputMode(ViewportInputMode.DRAG);
         setViewportInputButtons(1, 2);
 
-        NbtCompound editingNbt = new NbtCompound();
+        CompoundTag editingNbt = new CompoundTag();
 
-        editingNbt.put("Value1", NbtString.of("Hello"));
-        editingNbt.put("Value2", NbtInt.of(69));
+        editingNbt.put("Value1", StringTag.valueOf("Hello"));
+        editingNbt.put("Value2", IntTag.valueOf(69));
 
 
-        editingNbt.put("byteValue", NbtByte.of((byte)2));
-        editingNbt.put("shortValue", NbtShort.of((short)5));
-        editingNbt.put("intValue", NbtInt.of(69));
-        editingNbt.put("longValue", NbtLong.of(69420));
-        editingNbt.put("floatValue", NbtFloat.of(2.54f));
-        editingNbt.put("doubleValue", NbtDouble.of(2124.2));
+        editingNbt.put("byteValue", ByteTag.valueOf((byte)2));
+        editingNbt.put("shortValue", ShortTag.valueOf((short)5));
+        editingNbt.put("intValue", IntTag.valueOf(69));
+        editingNbt.put("longValue", LongTag.valueOf(69420));
+        editingNbt.put("floatValue", FloatTag.valueOf(2.54f));
+        editingNbt.put("doubleValue", DoubleTag.valueOf(2124.2));
 
-        editingNbt.put("longArray", new NbtLongArray(new long[] {543, 22, 48}));
+        editingNbt.put("longArray", new LongArrayTag(new long[] {543, 22, 48}));
 
-        NbtCompound compound = new NbtCompound();
-        compound.put("NestedStr", NbtString.of("Hello World!"));
+        CompoundTag compound = new CompoundTag();
+        compound.put("NestedStr", StringTag.valueOf("Hello World!"));
 
-        NbtList list = new NbtList();
-        list.add(NbtString.of("Hello World!"));
+        ListTag list = new ListTag();
+        list.add(StringTag.valueOf("Hello World!"));
         compound.put("TestList", list);
 
         editingNbt.put("Compound", compound);
@@ -89,20 +91,20 @@ public class TestApp extends DockSpaceApp {
 
     private final ImBoolean allowEditNbt = new ImBoolean(true);
 
-    protected void render(MinecraftClient client) {
+    protected void render(Minecraft client) {
         super.render(client);
 
         if (ImGui.begin("Upper Window")) {
             boolean clicked = ImGui.button("Open file chooser");
             if (clicked) {
-                FileDialogs.showOpenDialog(client.runDirectory.getAbsolutePath(),
+                FileDialogs.showOpenDialog(client.gameDirectory.getAbsolutePath(),
                                 new FileFilter("Jpeg Files", ".jpg", ".jpeg"),
                                 new FileFilter("PNG Files", "png"))
                         .thenAcceptAsync(opt -> {
                             if (opt.isPresent()) {
-                                client.player.sendMessage(Text.literal("You chose " + opt.get()), false);
+                                client.player.sendSystemMessage(Component.literal("You chose " + opt.get()));
                             } else {
-                                client.player.sendMessage(Text.literal("You didn't select a file."), false);
+                                client.player.sendSystemMessage(Component.literal("You didn't select a file."));
                             }
                         }, client);
             }
@@ -114,7 +116,7 @@ public class TestApp extends DockSpaceApp {
             }
 
             if (ImGui.button("Close Chat Window")) {
-                MinecraftClient.getInstance().setScreen(null);
+                Minecraft.getInstance().setScreenAndShow(null);
             }
 
             ImGui.checkbox("Do Click Explosion", doClickExplosion);
@@ -122,7 +124,7 @@ public class TestApp extends DockSpaceApp {
             ImGui.alignTextToFramePadding();
             ImGui.text("Here is an NBT icon:");
             ImGui.sameLine();
-            NbtIcons.drawIcon(NbtElement.LIST_TYPE);
+            NbtIcons.drawIcon(Tag.TAG_LIST);
 
             ImGui.combo("Viewport Input Mode", inputMode, INPUT_MODE_OPTIONS);
             setViewportInputMode(ViewportInputMode.values()[inputMode.get()]);
@@ -161,9 +163,9 @@ public class TestApp extends DockSpaceApp {
                 if (dialogFuture != null) {
                     dialogFuture.thenAccept(opt -> {
                         if (opt.isPresent()) {
-                            client.player.sendMessage(Text.literal("You chose " + opt.get()), false);
+                            client.player.sendSystemMessage(Component.literal("You chose " + opt.get()));
                         } else {
-                            client.player.sendMessage(Text.literal("You didn't select a file."), false);
+                            client.player.sendSystemMessage(Component.literal("You didn't select a file."));
                         }
                     });
                 }
@@ -205,8 +207,8 @@ public class TestApp extends DockSpaceApp {
             ImGui.checkbox("Allow Editing NBT", allowEditNbt);
             ImGui.separator();
             if (nbtEditor.render("NBT editor##test", allowEditNbt.get() ? 0 : NbtEditorFlags.READONLY)) {
-                NbtElement newVal = nbtEditor.getNbt();
-                client.player.sendMessage(Text.literal("New NBT: " + newVal), false);
+                Tag newVal = nbtEditor.getNbt();
+                client.player.sendSystemMessage(Component.literal("New NBT: " + newVal));
             };
 //            NbtEditor.drawNbtEditor("NBT Editor##test", editingNbt, 0);
         }
@@ -233,37 +235,39 @@ public class TestApp extends DockSpaceApp {
     }
 
     private void raycastExplosion() {
-        Mouse mouse = MinecraftClient.getInstance().mouse;
+        MouseHandler mouse = Minecraft.getInstance().mouseHandler;
 //        float mouseX = ImGui.getMousePosX();
 //        float mouseY = ImGui.getMousePosY();
 
-        IntegratedServer server = MinecraftClient.getInstance().getServer();
+        IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
         if (server == null) return;
 
-        HitResult raycast = RaycastUtils.raycastViewport((float)mouse.getX(), (float)mouse.getY(), 1000, e -> false, false);
-        LoggerFactory.getLogger(getClass()).info("Position: {} {} {}", raycast.getPos().x, raycast.getPos().y, raycast.getPos().z);
+        HitResult raycast = RaycastUtils.raycastViewport((float)mouse.xpos(), (float)mouse.ypos(), 1000, e -> false, false);
+        LoggerFactory.getLogger(getClass()).info("Position: {} {} {}", raycast.getLocation().x, raycast.getLocation().y, raycast.getLocation().z);
 
         if (raycast.getType() != HitResult.Type.MISS) {
-            Vec3d pos = raycast.getPos();
+            Vec3 pos = raycast.getLocation();
             server.execute(() -> {
-                TntEntity entity = new TntEntity(server.getOverworld(), pos.x, pos.y, pos.z, null);
-                server.getOverworld().spawnEntity(entity);
+                PrimedTnt entity = new PrimedTnt(server.overworld(), pos.x, pos.y, pos.z, null);
+                server.overworld().addFreshEntity(entity);
             });
 //            world.addParticle(ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 0, 0, 0);
         }
     }
 
     private void clickNbt() {
-        Mouse mouse = MinecraftClient.getInstance().mouse;
-        IntegratedServer server = MinecraftClient.getInstance().getServer();
+        MouseHandler mouse = Minecraft.getInstance().mouseHandler;
+        IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
         if (server == null) return;
 
-        HitResult raycast = RaycastUtils.raycastViewport((float)mouse.getX(), (float)mouse.getY(), 1000, e -> !(e instanceof PlayerEntity), false);
+        HitResult raycast = RaycastUtils.raycastViewport((float)mouse.xpos(), (float)mouse.ypos(), 1000, e -> !(e instanceof Player), false);
         if (raycast instanceof EntityHitResult entHit) {
             Entity ent = entHit.getEntity();
             if (ent == null) return;
 
-            NbtCompound nbt = ent.writeNbt(new NbtCompound());
+            TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, ent.registryAccess());
+            ent.saveWithoutId(output);
+            CompoundTag nbt = output.buildResult();
             nbtEditor = NbtEditor.of(nbt);
         }
     }

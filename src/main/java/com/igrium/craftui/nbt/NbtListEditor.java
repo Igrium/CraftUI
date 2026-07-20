@@ -5,13 +5,12 @@ import com.igrium.craftui.impl.util.NbtTypes;
 import imgui.ImGui;
 import imgui.flag.ImGuiTreeNodeFlags;
 import imgui.type.ImString;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 
-public final class NbtListEditor extends NbtEditor<NbtList> {
+public final class NbtListEditor extends NbtEditor<ListTag> {
 
     private static class Entry {
         final String id;
@@ -39,8 +38,8 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
     }
 
     @Override
-    public NbtList getNbt() {
-        NbtList list = new NbtList();
+    public ListTag getNbt() {
+        ListTag list = new ListTag();
         for (Entry entry : entries) {
             list.add(entry.value.getNbt());
         }
@@ -48,9 +47,9 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
     }
 
     @Override
-    public void setNbt(NbtList nbt) {
+    public void setNbt(ListTag nbt) {
         entries.clear();
-        for (NbtElement item : nbt) {
+        for (Tag item : nbt) {
             entries.add(new Entry("entry." + curId++, NbtEditor.of(item)));
         }
     }
@@ -176,13 +175,13 @@ public final class NbtListEditor extends NbtEditor<NbtList> {
     }
 
     @Override
-    protected Class<? extends NbtList> getNbtClass() {
-        return NbtList.class;
+    protected Class<? extends ListTag> getNbtClass() {
+        return ListTag.class;
     }
 
     @Override
     protected byte getNbtType() {
-        return NbtElement.LIST_TYPE;
+        return Tag.TAG_LIST;
     }
 
     @Override

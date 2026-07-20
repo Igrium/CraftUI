@@ -6,21 +6,21 @@ import net.minecraft.nbt.*;
 @UtilityClass
 public final class NbtTypes {
 
-    public static NbtElement createElement(byte type) {
+    public static Tag createElement(byte type) {
         return switch (type) {
-            case NbtElement.END_TYPE -> NbtByte.of((byte) 0);
-            case NbtElement.BYTE_TYPE -> NbtByte.of((byte) 0);
-            case NbtElement.SHORT_TYPE -> NbtShort.of((short) 0);
-            case NbtElement.INT_TYPE -> NbtInt.of(0);
-            case NbtElement.LONG_TYPE -> NbtLong.of(0L);
-            case NbtElement.FLOAT_TYPE -> NbtFloat.of(0f);
-            case NbtElement.DOUBLE_TYPE -> NbtDouble.of(0d);
-            case NbtElement.BYTE_ARRAY_TYPE -> new NbtByteArray(new byte[0]);
-            case NbtElement.STRING_TYPE -> NbtString.of("");
-            case NbtElement.LIST_TYPE -> new NbtList();
-            case NbtElement.COMPOUND_TYPE -> new NbtCompound();
-            case NbtElement.INT_ARRAY_TYPE -> new NbtIntArray(new int[0]);
-            case NbtElement.LONG_ARRAY_TYPE -> new NbtLongArray(new long[0]);
+            case Tag.TAG_END -> ByteTag.valueOf((byte) 0);
+            case Tag.TAG_BYTE -> ByteTag.valueOf((byte) 0);
+            case Tag.TAG_SHORT -> ShortTag.valueOf((short) 0);
+            case Tag.TAG_INT -> IntTag.valueOf(0);
+            case Tag.TAG_LONG -> LongTag.valueOf(0L);
+            case Tag.TAG_FLOAT -> FloatTag.valueOf(0f);
+            case Tag.TAG_DOUBLE -> DoubleTag.valueOf(0d);
+            case Tag.TAG_BYTE_ARRAY -> new ByteArrayTag(new byte[0]);
+            case Tag.TAG_STRING -> StringTag.valueOf("");
+            case Tag.TAG_LIST -> new ListTag();
+            case Tag.TAG_COMPOUND -> new CompoundTag();
+            case Tag.TAG_INT_ARRAY -> new IntArrayTag(new int[0]);
+            case Tag.TAG_LONG_ARRAY -> new LongArrayTag(new long[0]);
             default -> throw new IllegalArgumentException("Unknown nbt type: " + type);
         };
     }
