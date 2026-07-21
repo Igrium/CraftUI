@@ -28,7 +28,11 @@ public class NFDFileDialog implements FileDialogInterface {
         if ((Util.getPlatform() == Util.OS.OSX)) {
             dialogExecutor = Minecraft.getInstance();
         } else {
-            dialogExecutor = Executors.newSingleThreadExecutor(r -> new Thread(r, "File Dialog Thread"));
+            dialogExecutor = Executors.newSingleThreadExecutor(r -> {
+                Thread thread = new Thread(r, "File Dialog Thread");
+                thread.setDaemon(true);
+                return thread;
+            });
         }
     }
 
