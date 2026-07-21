@@ -13,8 +13,6 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import org.apache.commons.io.FilenameUtils;
@@ -25,8 +23,9 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.igrium.craftui.event.FontReloadCallback;
+import com.igrium.craftui.impl.render.CraftImGuiService;
 import com.igrium.craftui.impl.util.IdentifierJsonAdapter;
-import com.igrium.craftui.impl.render.ImGuiUtil;
+import cn.enaium.fabric.imgui.FabricImGui;
 import com.igrium.craftui.impl.util.Vector2fJsonAdapter;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -142,7 +141,6 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
     private void renderFonts(Map<Identifier, LoadedFontFile> files) {
         RenderSystem.assertOnRenderThread();
-        ImGuiUtil.ensureInitialized();
 
         fonts.clear();
         complainedIds.clear();
@@ -170,8 +168,11 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             }
         }
         atlas.build();
-        ImGuiUtil.IM_BLAZE3D.createFontsTexture();
-        atlas.clearTexData();
+        if (FabricImGui.IMGUI instanceof CraftImGuiService service) {
+            service.reloadFontsTexture();
+        }
+        // The render backend uploads the font texture lazily and reads the atlas pixels then, so
+        // they must stay resident. clearTexData() would free them early and segfault that upload.
 
         var fontIterator = fonts.entrySet().iterator();
         while (fontIterator.hasNext()) {
