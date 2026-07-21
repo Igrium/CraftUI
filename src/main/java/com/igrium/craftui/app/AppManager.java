@@ -1,8 +1,5 @@
 package com.igrium.craftui.app;
 
-import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
-import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
-
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,15 +31,12 @@ import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.app.CraftApp.ViewportBounds;
 import com.igrium.craftui.CraftUIFonts;
-import com.igrium.craftui.impl.render.ImGuiUtil;
 import com.igrium.craftui.impl.render.ViewportCompositor;
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
-import imgui.ImDrawData;
+import cn.enaium.fabric.imgui.FabricImGui;
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
 
@@ -71,10 +65,10 @@ public final class AppManager {
      * custom viewport is active. Consumed by the render-frame present-blit redirect.
      */
     public static @Nullable GpuTextureView getCompositeTextureView() {
-        if (currentViewportBounds == null) {
-            return null;
-        }
-        return viewportCompositor.getView();
+        // Stubbed: the custom-viewport compositor is disabled while rendering is delegated to the
+        // library (which draws onto the main render target directly). Returning null presents the
+        // main target as-is. viewportCompositor is retained for the deferred dockspace feature.
+        return null;
     }
 
     /**
@@ -133,11 +127,6 @@ public final class AppManager {
     public static void preRender(Minecraft client) {
         RenderSystem.assertOnRenderThread();
 
-        if (!ImGuiUtil.isInitialized()) {
-            ImGuiUtil.init();
-        }
-
-
         while (!removeQueue.isEmpty()) {
             CraftApp app = removeQueue.poll();
             app.onClose();
@@ -194,7 +183,6 @@ public final class AppManager {
             window.setWidth(width[0]);
             window.setHeight(height[0]);
         }
-
         client.resizeGui();
         client.mouseHandler.setIgnoreFirstMove();
     }
@@ -294,109 +282,70 @@ public final class AppManager {
             return;
         }
 
-        // STYLE
-        StyleManager styleManager = StyleManager.getInstance();
-        if (styleManager.isWantStyleUpdate()) {
-            CraftUIStyle activeStyle = styleManager.getActiveStyleData();
-            activeStyle.buildStyle(ImGui.getStyle());
+        // The library's draw() runs ImGui.newFrame() before and ImGui.render() + backend draw after
+        // this callback, so all widget-emitting work happens inside it. Multi-viewport platform
+        // windows are handled by the library too.
+        FabricImGui.IMGUI.draw(io -> {
+            // STYLE
+            StyleManager styleManager = StyleManager.getInstance();
+            if (styleManager.isWantStyleUpdate()) {
+                CraftUIStyle activeStyle = styleManager.getActiveStyleData();
+                activeStyle.buildStyle(ImGui.getStyle());
 
-            Identifier font = activeStyle.getDefaultFont();
-            if (font != null) {
-                ImFont imFont = CraftUIFonts.getFont(font);
-                ImGui.getIO().setFontDefault(imFont);
+                Identifier font = activeStyle.getDefaultFont();
+                if (font != null) {
+                    ImFont imFont = CraftUIFonts.getFont(font);
+                    ImGui.getIO().setFontDefault(imFont);
+                }
+
+                styleManager.setWantStyleUpdate(false);
             }
 
-            styleManager.setWantStyleUpdate(false);
-        }
-
-
-        // LAYOUT
-        Identifier desiredLayout = null;
-        for (CraftApp app : apps) {
-            Identifier l = app.getLayoutPreset();
-            if (l != null) {
-                desiredLayout = l;
-            }
-        }
-        if (desiredLayout != null) {
-            CraftUILayouts.setActiveLayout(desiredLayout);
-        }
-
-        LayoutManager layoutManager = LayoutManager.getInstance();
-        if (layoutManager.isLayoutUpdate()) {
-            ImGui.loadIniSettingsFromMemory(layoutManager.getActiveLayoutData());
-            layoutManager.setLayoutUpdate(false);
-        }
-
-        // PRIMARY RENDER
-        ImGuiUtil.IM_GLFW.newFrame();
-        ImGui.newFrame();
-
-        for (CraftApp app : apps) {
-            ImGui.pushID(app.getClass().getCanonicalName().hashCode());
-            try {
-                app.render(client);
-            } catch (Exception e) {
-                crashed = true;
-                CrashReport crashReport = new CrashReport("Error rendering CraftUI app " + app.getClass().getSimpleName(), e);
-                throw new ReportedException(crashReport);
-            }
-            ImGui.popID();
-        }
-
-        try {
-            drawGlobalPopup();
-        } catch (Exception e) {
-            crashed = true;
-            CrashReport crashReport = new CrashReport("Error rendering the CraftUI global popup", e);
-            throw new ReportedException(crashReport);
-        }
-
-        if (isCleanupFrame) {
-            ImGui.setWindowFocus(null);
-            ImGui.getIO().setWantCaptureKeyboard(false);
-            ImGui.getIO().setWantCaptureMouse(false);
-        }
-
-        ImGui.render();
-
-        // If a custom viewport is active, the game has rendered into a shrunken main render target.
-        // Copy that frame-sized image into the correct sub-rectangle of a full-window composite
-        // texture, then draw ImGui on top of the composite instead of the game target. The composite
-        // is what gets presented (see getCompositeTextureView / the render-frame present redirect).
-        ImDrawData drawData = ImGui.getDrawData();
-        GpuTextureView imguiTarget = null;
-        ViewportBounds bounds = currentViewportBounds;
-        if (bounds != null) {
-            RenderTarget mainTarget = client.gameRenderer.mainRenderTarget();
-            GpuTexture gameColor = mainTarget.getColorTexture();
-            if (gameColor != null) {
-                int fbWidth = (int) (drawData.getDisplaySizeX() * drawData.getFramebufferScaleX());
-                int fbHeight = (int) (drawData.getDisplaySizeY() * drawData.getFramebufferScaleY());
-                if (fbWidth > 0 && fbHeight > 0) {
-                    viewportCompositor.ensureSize(fbWidth, fbHeight, gameColor.getFormat());
-                    // ViewportBounds y is bottom-left origin (see DockSpaceApp); convert to a
-                    // top-left-origin screen rect for the composite blit.
-                    ViewportBounds scaled = bounds.scaled();
-                    int destX = scaled.x();
-                    int destY = fbHeight - scaled.y() - scaled.height();
-                    ImGuiUtil.IM_BLAZE3D.renderGameToComposite(
-                            viewportCompositor.getView(), fbWidth, fbHeight,
-                            mainTarget.getColorTextureView(), destX, destY, scaled.width(), scaled.height());
-                    imguiTarget = viewportCompositor.getView();
+            // LAYOUT
+            Identifier desiredLayout = null;
+            for (CraftApp app : apps) {
+                Identifier l = app.getLayoutPreset();
+                if (l != null) {
+                    desiredLayout = l;
                 }
             }
-        }
-        ImGuiUtil.IM_BLAZE3D.setTargetOverride(imguiTarget);
-        ImGuiUtil.IM_BLAZE3D.renderDrawData(drawData);
+            if (desiredLayout != null) {
+                CraftUILayouts.setActiveLayout(desiredLayout);
+            }
 
-        // CLEANUP
-        if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
-            long backupWindowPtr = glfwGetCurrentContext();
-            ImGui.updatePlatformWindows();
-            ImGui.renderPlatformWindowsDefault();
-            glfwMakeContextCurrent(backupWindowPtr);
-        }
+            LayoutManager layoutManager = LayoutManager.getInstance();
+            if (layoutManager.isLayoutUpdate()) {
+                ImGui.loadIniSettingsFromMemory(layoutManager.getActiveLayoutData());
+                layoutManager.setLayoutUpdate(false);
+            }
+
+            // PRIMARY RENDER
+            for (CraftApp app : apps) {
+                ImGui.pushID(app.getClass().getCanonicalName().hashCode());
+                try {
+                    app.render(client);
+                } catch (Exception e) {
+                    crashed = true;
+                    CrashReport crashReport = new CrashReport("Error rendering CraftUI app " + app.getClass().getSimpleName(), e);
+                    throw new ReportedException(crashReport);
+                }
+                ImGui.popID();
+            }
+
+            try {
+                drawGlobalPopup();
+            } catch (Exception e) {
+                crashed = true;
+                CrashReport crashReport = new CrashReport("Error rendering the CraftUI global popup", e);
+                throw new ReportedException(crashReport);
+            }
+
+            if (isCleanupFrame) {
+                ImGui.setWindowFocus(null);
+                ImGui.getIO().setWantCaptureKeyboard(false);
+                ImGui.getIO().setWantCaptureMouse(false);
+            }
+        });
 
         if (ImGui.getIO().getWantSaveIniSettings() && CraftUI.getConfig().isLayoutPersistent()) {
             LayoutManager.getInstance().saveUserLayoutData(ImGui.saveIniSettingsToMemory());
@@ -413,10 +362,6 @@ public final class AppManager {
      * @see ImGuiIO#getWantCaptureMouse()
      */
     public static boolean wantCaptureMouse() {
-        // Guard against input events that arrive before the first frame initializes the ImGui context
-        // (touching ImGui.getIO() with no context segfaults the native library).
-        if (!ImGuiUtil.isInitialized())
-            return false;
         return !forwardMouseInputNextFrame && ImGui.getIO().getWantCaptureMouse();
     }
 
@@ -425,9 +370,6 @@ public final class AppManager {
      * @see ImGuiIO#getWantCaptureKeyboard()
      */
     public static boolean wantCaptureKeyboard() {
-        // See wantCaptureMouse: avoid touching ImGui before its context exists.
-        if (!ImGuiUtil.isInitialized())
-            return false;
         return !forwardInputNextFrame && ImGui.getIO().getWantCaptureKeyboard();
     }
 }

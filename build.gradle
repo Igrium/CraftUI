@@ -17,6 +17,7 @@ lombok {
 }
 
 repositories {
+    mavenCentral()
     maven {
         name = "Terraformers"
         url = "https://maven.terraformersmc.com/"
@@ -53,11 +54,9 @@ dependencies {
 
     compileOnly("com.terraformersmc:modmenu:${project.modmenu_version}")
 
-    // Dear ImGui
-    api include("io.github.spair:imgui-java-binding:${project.imgui_version}")
-    runtimeOnly include("io.github.spair:imgui-java-natives-windows:${project.imgui_version}")
-    runtimeOnly include("io.github.spair:imgui-java-natives-linux:${project.imgui_version}")
-    runtimeOnly include("io.github.spair:imgui-java-natives-macos:${project.imgui_version}")
+    // Dear ImGui — provides the ImGui context, GLFW input, and render backend.
+    // Pulls in imgui-java (binding + natives) transitively.
+    api "cn.enaium:fabric-gui-imgui:26.2-1.1.0+imgui.1.92.0"
 
     api include("org.lwjgl:lwjgl-nfd:3.3.3")
     runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-windows")
