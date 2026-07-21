@@ -142,6 +142,9 @@ public final class ImFileDialogWidget {
     @Getter
     private boolean selectedFileValid;
 
+    private final ImString newFolderText = new ImString(128);
+    private boolean newFolderNameValid = false;
+
     /// === CONSTRUCTOR ===
 
     public ImFileDialogWidget() {
@@ -202,6 +205,25 @@ public final class ImFileDialogWidget {
     }
 
     /// === IO ===
+
+    private void checkNewFolderValid() {
+        String name = newFolderText.get();
+        newFolderNameValid = !name.isBlank() && !Files.exists(getPath().resolve(name));
+    }
+
+    private void newFolder() {
+        String name = newFolderText.get();
+        if (name.isBlank()) return;
+
+        try {
+            Files.createDirectory(getPath().resolve(name));
+        } catch (IOException e) {
+            LOGGER.error("Could not create directory {}", name, e);
+        }
+        newFolderText.clear();
+        newFolderNameValid = false;
+        setPath(path, false);
+    }
 
     private void queryFileStores() {
         // TODO: implement
@@ -372,6 +394,29 @@ public final class ImFileDialogWidget {
             if (ImGui.isItemClicked()) {
                 setSelectedFile("");
             }
+
+            if (ImGui.isItemClicked(ImGuiMouseButton.Right)) {
+                ImGui.openPopup("newFolder");
+            }
+        }
+
+        if (ImGui.beginPopup("newFolder")) {
+            int bg = newFolderNameValid ? ImGui.getColorU32(ImGuiCol.FrameBg) : 0xFF000066; // red
+            ImGui.pushStyleColor(ImGuiCol.FrameBg, bg);
+            if (ImGui.inputText("Folder Name", newFolderText)) {
+                checkNewFolderValid();
+            }
+            ImGui.setItemDefaultFocus();
+            ImGui.popStyleColor();
+            if (ImGui.isItemDeactivated()) {
+                ImGui.closeCurrentPopup();
+                checkNewFolderValid();
+                if (newFolderNameValid) {
+                    newFolder();
+                }
+                newFolderText.clear();
+            }
+            ImGui.endPopup();
         }
 
         ImGui.popStyleColor();
