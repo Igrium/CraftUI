@@ -282,43 +282,45 @@ public final class AppManager {
             return;
         }
 
+        // STYLE and LAYOUT must be applied *before* draw(), because the library's draw() calls
+        // ImGui.newFrame() before invoking this callback. newFrame() reads io.FontDefault to fix the
+        // frame's font size and expects ini settings to be loaded between frames, so setting them
+        // inside the callback would apply the default font a frame late and load ini mid-frame.
+        StyleManager styleManager = StyleManager.getInstance();
+        if (styleManager.isWantStyleUpdate()) {
+            CraftUIStyle activeStyle = styleManager.getActiveStyleData();
+            activeStyle.buildStyle(ImGui.getStyle());
+
+            Identifier font = activeStyle.getDefaultFont();
+            if (font != null) {
+                ImFont imFont = CraftUIFonts.getFont(font);
+                ImGui.getIO().setFontDefault(imFont);
+            }
+
+            styleManager.setWantStyleUpdate(false);
+        }
+
+        Identifier desiredLayout = null;
+        for (CraftApp app : apps) {
+            Identifier l = app.getLayoutPreset();
+            if (l != null) {
+                desiredLayout = l;
+            }
+        }
+        if (desiredLayout != null) {
+            CraftUILayouts.setActiveLayout(desiredLayout);
+        }
+
+        LayoutManager layoutManager = LayoutManager.getInstance();
+        if (layoutManager.isLayoutUpdate()) {
+            ImGui.loadIniSettingsFromMemory(layoutManager.getActiveLayoutData());
+            layoutManager.setLayoutUpdate(false);
+        }
+
         // The library's draw() runs ImGui.newFrame() before and ImGui.render() + backend draw after
         // this callback, so all widget-emitting work happens inside it. Multi-viewport platform
         // windows are handled by the library too.
         FabricImGui.IMGUI.draw(io -> {
-            // STYLE
-            StyleManager styleManager = StyleManager.getInstance();
-            if (styleManager.isWantStyleUpdate()) {
-                CraftUIStyle activeStyle = styleManager.getActiveStyleData();
-                activeStyle.buildStyle(ImGui.getStyle());
-
-                Identifier font = activeStyle.getDefaultFont();
-                if (font != null) {
-                    ImFont imFont = CraftUIFonts.getFont(font);
-                    ImGui.getIO().setFontDefault(imFont);
-                }
-
-                styleManager.setWantStyleUpdate(false);
-            }
-
-            // LAYOUT
-            Identifier desiredLayout = null;
-            for (CraftApp app : apps) {
-                Identifier l = app.getLayoutPreset();
-                if (l != null) {
-                    desiredLayout = l;
-                }
-            }
-            if (desiredLayout != null) {
-                CraftUILayouts.setActiveLayout(desiredLayout);
-            }
-
-            LayoutManager layoutManager = LayoutManager.getInstance();
-            if (layoutManager.isLayoutUpdate()) {
-                ImGui.loadIniSettingsFromMemory(layoutManager.getActiveLayoutData());
-                layoutManager.setLayoutUpdate(false);
-            }
-
             // PRIMARY RENDER
             for (CraftApp app : apps) {
                 ImGui.pushID(app.getClass().getCanonicalName().hashCode());
