@@ -288,8 +288,11 @@ public final class AppManager {
         forwardMouseInputNextFrame = false;
         forceMouseUnlock = false;
 
-        if (isCleanupFrame && !needsCleanupFrame)
+        if (isCleanupFrame && !needsCleanupFrame) {
+            // Drain events queued by GLFW callbacks while idle so they don't replay once we resume.
+            ImGui.getIO().clearEventsQueue();
             return;
+        }
 
         // STYLE
         StyleManager styleManager = StyleManager.getInstance();
