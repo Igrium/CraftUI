@@ -171,7 +171,8 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         if (FabricImGui.IMGUI instanceof CraftImGuiService service) {
             service.reloadFontsTexture();
         }
-        atlas.clearTexData();
+        // The render backend uploads the font texture lazily and reads the atlas pixels then, so
+        // they must stay resident. clearTexData() would free them early and segfault that upload.
 
         var fontIterator = fonts.entrySet().iterator();
         while (fontIterator.hasNext()) {
