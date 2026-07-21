@@ -1,11 +1,15 @@
 package com.igrium.craftui.impl.render;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
@@ -128,9 +132,23 @@ public class ImGuiImplBlaze3D {
             .withDepthStencilState(Optional.empty())
             .build();
 
+    /** ImGui texture id reserved for the font atlas. Custom textures are numbered from {@code 2}. */
+    private static final long FONT_TEXTURE_ID = 1;
+
     private GpuTexture fontTexture;
     private GpuTextureView fontTextureView;
     private GpuSampler fontSampler;
+
+    /** A texture bound by an ImGui draw command: the GPU view plus an optional custom sampler. */
+    private record TextureBinding(GpuTextureView view, @Nullable GpuSampler sampler) {}
+
+    // Maps ImGui texture ids (the long an ImDrawCmd carries) to their GPU views. ImGui's ImTextureID
+    // can only hold a long, but Blaze3D's RenderPass.bindTexture needs the GpuTextureView object, so
+    // a texture is handed a stable id once (via textureId(...)) and looked up here at bind time. Ids
+    // persist for the backend's lifetime; the font atlas is id 1 and custom ids count up from 2.
+    private final Map<GpuTextureView, Long> idByView = new IdentityHashMap<>();
+    private final Map<Long, TextureBinding> bindingById = new HashMap<>();
+    private long nextTextureId = FONT_TEXTURE_ID + 1;
 
     private GpuBuffer projectionBuffer;
     private final Matrix4f projectionMatrix = new Matrix4f();
@@ -203,8 +221,7 @@ public class ImGuiImplBlaze3D {
                 AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
                 FilterMode.LINEAR, FilterMode.LINEAR, false);
 
-        // We only ever bind the font atlas, so a fixed non-zero id is enough.
-        fontAtlas.setTexID(1);
+        fontAtlas.setTexID(FONT_TEXTURE_ID);
     }
 
     public void destroyFontsTexture() {
@@ -217,6 +234,76 @@ public class ImGuiImplBlaze3D {
             fontTexture = null;
             ImGui.getIO().getFonts().setTexID(0);
         }
+    }
+
+    /**
+     * Returns the ImGui texture id for an already-uploaded GPU texture, to hand to
+     * {@code ImGui.image(...)} / {@code ImGui.imageButton(...)} and friends.
+     *
+     * <p>This is purely a GPU-side handle. The caller owns the {@link GpuTextureView} (however it was
+     * produced — a render target, a manually uploaded texture, etc.) and its lifetime; the backend
+     * never touches CPU pixel data. The id is assigned once and stays stable for the backend's
+     * lifetime, so calling this repeatedly with the same view is cheap and returns the same id — hold
+     * onto the returned {@code long} and use it like you would a GL texture handle. When a texture is
+     * gone for good, call {@link #releaseTextureId(GpuTextureView)} to drop the mapping.
+     *
+     * @param view    the GPU texture view to sample.
+     * @param sampler the sampler to use, or {@code null} for the default linear/clamp sampler.
+     * @return the ImGui texture id (always {@code >= 2}; the font atlas occupies id {@code 1}).
+     */
+    public long textureId(final GpuTextureView view, @Nullable final GpuSampler sampler) {
+        Objects.requireNonNull(view, "view");
+        final Long existing = idByView.get(view);
+        final long id = existing != null ? existing : nextTextureId++;
+        if (existing == null) {
+            idByView.put(view, id);
+        }
+        // Keep the binding current so a caller may swap the sampler for an already-known view.
+        bindingById.put(id, new TextureBinding(view, sampler));
+        return id;
+    }
+
+    /**
+     * Returns the ImGui texture id for a GPU texture, sampled with the default linear/clamp sampler.
+     *
+     * @see #textureId(GpuTextureView, GpuSampler)
+     */
+    public long textureId(final GpuTextureView view) {
+        return textureId(view, null);
+    }
+
+    /**
+     * Drops the ImGui texture id mapping for a view previously passed to {@link #textureId}. Call
+     * this when the underlying texture is being destroyed so the backend stops referencing it. Any
+     * draw command still carrying the stale id is skipped rather than drawn.
+     */
+    public void releaseTextureId(final GpuTextureView view) {
+        final Long id = idByView.remove(view);
+        if (id != null) {
+            bindingById.remove(id);
+        }
+    }
+
+    /**
+     * Looks up the texture for a draw command's id and binds it. Returns {@code false} if the id is
+     * unknown (e.g. a released texture), in which case the caller should skip the command.
+     */
+    private boolean bindDrawTexture(final RenderPass renderPass, final long textureId) {
+        final GpuTextureView view;
+        final GpuSampler sampler;
+        if (textureId == FONT_TEXTURE_ID) {
+            view = fontTextureView;
+            sampler = fontSampler;
+        } else {
+            final TextureBinding binding = bindingById.get(textureId);
+            if (binding == null) {
+                return false;
+            }
+            view = binding.view();
+            sampler = binding.sampler() != null ? binding.sampler() : fontSampler;
+        }
+        renderPass.bindTexture("Texture", view, sampler);
+        return true;
     }
 
     public void renderDrawData(final ImDrawData drawData) {
@@ -299,8 +386,12 @@ public class ImGuiImplBlaze3D {
                     final int scissorHeight = Math.clamp((int) (clipMaxY - clipMinY), 0, renderH - minY);
                     renderPass.enableScissor(minX, minY, scissorWidth, scissorHeight);
 
-                    // We only ever bind the font atlas texture (the mod does not register custom ImGui images yet).
-                    renderPass.bindTexture("Texture", fontTextureView, fontSampler);
+                    // Bind whichever texture this draw command references (font atlas, or a texture
+                    // registered this frame via registerTexture). Skip commands whose id is unknown.
+                    final long textureId = drawData.getCmdListCmdBufferTextureId(n, cmdIdx);
+                    if (!bindDrawTexture(renderPass, textureId)) {
+                        continue;
+                    }
 
                     final int elemCount = drawData.getCmdListCmdBufferElemCount(n, cmdIdx);
                     final int idxOffset = drawData.getCmdListCmdBufferIdxOffset(n, cmdIdx);
