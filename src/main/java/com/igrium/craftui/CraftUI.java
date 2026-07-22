@@ -6,7 +6,9 @@ import com.igrium.craftui.impl.style.LayoutManager;
 import com.igrium.craftui.impl.style.StyleManager;
 import com.igrium.craftui.util.RaycastUtils;
 import lombok.Getter;
+import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.server.packs.PackType;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -34,9 +36,9 @@ public class CraftUI implements ClientModInitializer {
     public void onInitializeClient() {
         initConfig();
 
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(ImFontManager.getInstance());
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(LayoutManager.getInstance());
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(StyleManager.getInstance());
+        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(Identifier.parse("craftui:fonts"), ImFontManager.getInstance());
+        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(Identifier.parse("craftui:layouts"), LayoutManager.getInstance());
+        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(Identifier.parse("craftui:stylemanager"), StyleManager.getInstance());
 
         RaycastUtils.register();
 
