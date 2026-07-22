@@ -246,9 +246,13 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                 }
             }
 
+            if (config.glyphExcludeRanges != null) {
+                imConfig.setGlyphExcludeRanges(zeroTerminate(config.glyphExcludeRanges));
+            }
+
             ImFont font;
             if (config.glyphRanges != null) {
-                font = atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig, config.glyphRanges);
+                font = atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig, zeroTerminate(config.glyphRanges));
             } else {
                 font = atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig);
             }
@@ -267,6 +271,17 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             return font;
         } finally {
             imConfig.destroy();
+        }
+    }
+
+    /**
+     * Append a zero terminator to a glyph range array, as required by imgui
+     */
+    private static short[] zeroTerminate(short[] ranges) {
+        if (ranges.length > 0 && ranges[ranges.length - 1] != 0) {
+            return Arrays.copyOf(ranges, ranges.length + 1);
+        } else {
+            return ranges;
         }
     }
 
@@ -323,9 +338,11 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
          */
         @Nullable UVPair iconGlyphOffset;
 
-        // FIX: Migrated from short[] to int[] for ImGui 32-bit ImWchar requirement
         @JsonAdapter(GlyphRangeTypeAdapter.class)
         short @Nullable [] glyphRanges;
+
+        @JsonAdapter(GlyphRangeTypeAdapter.class)
+        short @Nullable [] glyphExcludeRanges;
 
         /**
          * The icon fonts to load on top of this one.
