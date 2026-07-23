@@ -305,10 +305,7 @@ public final class AppManager {
             return;
         }
 
-        // STYLE and LAYOUT must be applied *before* draw(), because the library's draw() calls
-        // ImGui.newFrame() before invoking this callback. newFrame() reads io.FontDefault to fix the
-        // frame's font size and expects ini settings to be loaded between frames, so setting them
-        // inside the callback would apply the default font a frame late and load ini mid-frame.
+        // Styles must be loaded before newFrame (called by FabricImGui)
         StyleManager styleManager = StyleManager.getInstance();
         if (styleManager.isWantStyleUpdate()) {
             CraftUIStyle activeStyle = styleManager.getActiveStyleData();
@@ -340,20 +337,18 @@ public final class AppManager {
             layoutManager.setLayoutUpdate(false);
         }
 
-        // The library's draw() runs ImGui.newFrame() before and ImGui.render() + backend draw after
-        // this callback, so all widget-emitting work happens inside it. Multi-viewport platform
-        // windows are handled by the library too.
-
         if (currentViewportBounds != null) {
             compositeViewportTarget(client);
         }
 
-        FabricImGui.IMGUI.draw(io -> {
+        // FabricImGui handles newFrame, etc.
+        FabricImGui.IMGUI.draw(_ -> {
             // PRIMARY RENDER
             for (CraftApp app : apps) {
                 ImGui.pushID(app.getClass().getCanonicalName().hashCode());
                 try {
-                    app.render(client);
+                    // Reuse getInstance to avoid reallocating lambda due to captured variable
+                    app.render(Minecraft.getInstance());
                 } catch (Exception e) {
                     crashed = true;
                     CrashReport crashReport = new CrashReport("Error rendering CraftUI app " + app.getClass().getSimpleName(), e);
