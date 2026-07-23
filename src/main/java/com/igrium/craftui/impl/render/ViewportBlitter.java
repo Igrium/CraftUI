@@ -31,19 +31,26 @@ import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
 /**
- * Composites the confined world render into a sub-rectangle of a full-window target by drawing a
- * single textured quad (rather than a raw same-size pixel copy). Ported from the pre-library
- * custom ImGui backend, where this exact technique was used to solve the same problem: a raw copy
- * assumes the source render target's actual size always exactly matches the destination
- * sub-rectangle, and if those ever drift out of sync for a frame (e.g. the world render target's
- * resize lands one frame later than the panel's own layout), a copy leaves a gap or samples the
- * wrong region. A quad draw always fills the destination rectangle exactly, resampling the source
- * to fit, so any such mismatch is invisible instead of leaving a visible black gap.
+ * Composites the confined world render into a sub-rectangle of a full-window target.
+ * <p>
+ * This is done by drawing a single textured quad, rather than a raw same-size pixel copy.
+ * Ported from the pre-library custom ImGui backend, where this exact technique was used to solve
+ * the same problem:
+ * <ul>
+ *     <li>A raw copy assumes the source render target's actual size always exactly matches the
+ *     destination sub-rectangle
+ *     <li>If those ever drift out of sync for a frame (e.g. the world render target's resize
+ *     lands one frame later than the panel's own layout), a copy leaves a gap or samples the
+ *     wrong region.
+ *     <li>A quad draw always fills the destination rectangle exactly, resampling the source to
+ *     fit, so any such mismatch is invisible instead of leaving a visible black gap.
+ *     <li>TODO: figure out why this still breaks even if they're the same size
+ * </ul>
  */
 public class ViewportBlitter {
 
-    private static final Identifier VERTEX_SHADER_ID = Identifier.fromNamespaceAndPath("craftui", "viewport_blit_vertex");
-    private static final Identifier FRAGMENT_SHADER_ID = Identifier.fromNamespaceAndPath("craftui", "viewport_blit_fragment");
+    private static final Identifier VERTEX_SHADER_ID = Identifier.parse("craftui:viewport_blit_vertex");
+    private static final Identifier FRAGMENT_SHADER_ID = Identifier.parse("craftui:viewport_blit_fragment");
 
     private static final String VERTEX_SHADER = """
             #version 410 core
@@ -75,7 +82,9 @@ public class ViewportBlitter {
             VERTEX_SHADER_ID, VERTEX_SHADER,
             FRAGMENT_SHADER_ID, FRAGMENT_SHADER);
 
-    /** Vertex format: pos(2f) + uv(2f) = 16 bytes. */
+    /**
+     * Vertex format: pos(2f) + uv(2f) = 16 bytes.
+     */
     private static final VertexFormat VERTEX_FORMAT = VertexFormat.builder(0)
             .addAttribute("Position", GpuFormat.RG32_FLOAT)
             .addAttribute("UV", GpuFormat.RG32_FLOAT)
@@ -91,7 +100,8 @@ public class ViewportBlitter {
             .withVertexShader(VERTEX_SHADER_ID)
             .withFragmentShader(FRAGMENT_SHADER_ID)
             .withBindGroupLayout(BIND_GROUP_LAYOUT)
-            .withColorTargetState(new ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_ALL))
+            .withColorTargetState(new ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM,
+                    ColorTargetState.WRITE_ALL))
             .withCull(false)
             .withVertexBinding(0, VERTEX_FORMAT)
             .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
@@ -118,7 +128,7 @@ public class ViewportBlitter {
      * of its own actual size. Coordinates are top-left-origin screen pixels of {@code target}.
      */
     public void blit(GpuTextureView target, int fbWidth, int fbHeight, GpuTextureView source,
-                      int x, int y, int w, int h) {
+                     int x, int y, int w, int h) {
         GpuDevice device = RenderSystem.getDevice();
         device.precompilePipeline(BLIT_PIPELINE, ViewportBlitter::getShaderSource);
         CommandEncoder encoder = device.createCommandEncoder();

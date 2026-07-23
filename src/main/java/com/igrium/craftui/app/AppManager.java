@@ -401,14 +401,9 @@ public final class AppManager {
 
         viewportCompositor.ensureSize(realWidth[0], realHeight[0]);
 
-        // ViewportBounds.y is bottom-left origin (see DockSpaceApp.beginViewport), but the blit
-        // target's destY is top-left-origin screen pixels, so convert here.
+        // Fix flipped-y bullshittary
         int destY = realHeight[0] - scaled.y() - scaled.height();
 
-        // Draw the world render as a textured quad rather than a raw same-size pixel copy: a quad
-        // always fills the destination rect exactly (resampling to fit), so if worldRenderTarget's
-        // actual size ever drifts a frame behind the panel's current bounds, it self-corrects instead
-        // of leaving a visible gap or sampling the wrong region.
         viewportBlitter.blit(viewportCompositor.getColorTextureView(), realWidth[0], realHeight[0],
                 worldRenderTarget.getColorTextureView(), scaled.x(), destY, scaled.width(), scaled.height());
 

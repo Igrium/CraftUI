@@ -4,7 +4,6 @@ import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.style.CraftUILayouts;
 import lombok.Getter;
 import lombok.Setter;
-import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.IdentifierException;
 import net.minecraft.resources.Identifier;
@@ -79,9 +78,6 @@ public class LayoutManager implements PreparableReloadListener {
 
     public void setUserLayoutData(Identifier layoutId, String data, boolean save) {
         userLayouts.put(layoutId, data);
-//        if (activeLayout.equals(layoutId)) {
-//            setLayoutUpdate(true);
-//        }
 
         if (save && CraftUI.getConfig().isLayoutPersistent()) {
             saveUserLayout(layoutId);
