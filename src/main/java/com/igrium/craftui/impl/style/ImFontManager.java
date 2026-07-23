@@ -15,6 +15,7 @@ import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortList;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
 import org.apache.commons.io.FilenameUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -39,7 +40,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
-public class ImFontManager implements IdentifiableResourceReloadListener {
+public class ImFontManager implements PreparableReloadListener {
 
     private static ImFontManager instance;
 
@@ -309,11 +310,6 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             return defaultFont;
         }
         return font;
-    }
-
-    @Override
-    public Identifier getFabricId() {
-        return Identifier.parse("craftui:fonts");
     }
 
     private static class FontConfig {

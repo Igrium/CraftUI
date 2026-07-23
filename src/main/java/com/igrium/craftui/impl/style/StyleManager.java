@@ -13,6 +13,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.apache.commons.io.FilenameUtils;
@@ -25,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
-public class StyleManager implements IdentifiableResourceReloadListener {
+public class StyleManager implements PreparableReloadListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("CraftUI StyleManager");
 
@@ -87,12 +88,6 @@ public class StyleManager implements IdentifiableResourceReloadListener {
             return active;
         }
     }
-
-    @Override
-    public Identifier getFabricId() {
-        return Identifier.parse("craftui:stylemanager");
-    }
-
 
     @Override
     public CompletableFuture<Void> reload(SharedState currentReload, Executor prepareExecutor, PreparationBarrier synchronizer, Executor applyExecutor) {

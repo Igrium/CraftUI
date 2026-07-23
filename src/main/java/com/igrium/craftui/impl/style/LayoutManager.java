@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.IdentifierException;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -27,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
-public class LayoutManager implements IdentifiableResourceReloadListener {
+public class LayoutManager implements PreparableReloadListener {
     private static LayoutManager instance;
 
     public static LayoutManager getInstance() {
@@ -215,11 +216,6 @@ public class LayoutManager implements IdentifiableResourceReloadListener {
             }
         }
         setLayoutUpdate(true);
-    }
-
-    @Override
-    public Identifier getFabricId() {
-        return Identifier.parse("craftui:layouts");
     }
 
     @Override
