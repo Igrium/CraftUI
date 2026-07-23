@@ -11,10 +11,14 @@ import java.util.Set;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.impl.input.CursorLockManager;
 import com.igrium.craftui.impl.input.MouseUtils;
+import com.igrium.craftui.impl.render.GameRendererExt;
+import com.igrium.craftui.impl.render.ViewportBlitter;
 import com.igrium.craftui.impl.style.LayoutManager;
 import com.igrium.craftui.impl.style.StyleManager;
 import com.igrium.craftui.style.CraftUILayouts;
 import com.igrium.craftui.style.CraftUIStyle;
+import com.mojang.blaze3d.pipeline.MainTarget;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import imgui.ImFont;
 import imgui.ImGuiIO;
 import lombok.Getter;
@@ -45,7 +49,7 @@ import imgui.flag.ImGuiConfigFlags;
  * Also houses various global functions such as mouse lock overriding.
  */
 public final class AppManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger("CraftUI AppManager");
+    private static final Logger LOGGER = LoggerFactory.getLogger("CraftUI/AppManager");
 
     private static final Set<CraftApp> apps = new HashSet<>();
 
@@ -56,8 +60,6 @@ public final class AppManager {
 
     private static @Nullable ViewportBounds currentViewportBounds;
 
-    private static final ViewportCompositor viewportCompositor = new ViewportCompositor();
-
 
     /**
      * The full-window composite texture that the final frame should be presented from, or
@@ -65,10 +67,7 @@ public final class AppManager {
      * custom viewport is active. Consumed by the render-frame present-blit redirect.
      */
     public static @Nullable GpuTextureView getCompositeTextureView() {
-        // Stubbed: the custom-viewport compositor is disabled while rendering is delegated to the
-        // library (which draws onto the main render target directly). Returning null presents the
-        // main target as-is. viewportCompositor is retained for the deferred dockspace feature.
-        return null;
+        return usingComposite ? viewportCompositor.getColorTextureView() : null;
     }
 
     /**
@@ -90,6 +89,11 @@ public final class AppManager {
     public static Collection<CraftApp> getApps() {
         return Collections.unmodifiableSet(apps);
     }
+
+    private static @Nullable RenderTarget worldRenderTarget;
+    private static final ViewportCompositor viewportCompositor = new ViewportCompositor();
+    private static final ViewportBlitter viewportBlitter = new ViewportBlitter();
+    private static boolean usingComposite;
 
     /**
      * Queue an app for opening. App will be opened at the beginning of the next render cycle.
@@ -143,19 +147,7 @@ public final class AppManager {
         CursorLockManager.onBeginFrame();
 
 
-        ViewportBounds prevViewportBounds = currentViewportBounds;
-        currentViewportBounds = null;
-
-        for (CraftApp app : apps) {
-            ViewportBounds customBounds = app.getCustomViewportBounds();
-            if (customBounds != null) {
-                currentViewportBounds = customBounds;
-            }
-        }
-
-        if (!Objects.equals(prevViewportBounds, currentViewportBounds)) {
-            updateViewportBounds(client);
-        }
+        updateViewportBounds(client);
 
         if (apps.isEmpty())
             return;
@@ -166,25 +158,56 @@ public final class AppManager {
 
     }
 
+    // TODO: should we only init this system when the first app tries to use it?
     private static void updateViewportBounds(Minecraft client) {
         Window window = client.getWindow();
+        int[] realWidth = new int[1];
+        int[] realHeight = new int[1];
+        GLFW.glfwGetFramebufferSize(window.handle(), realWidth, realHeight);
+
+        if (worldRenderTarget == null) {
+            // Take over mainRenderTarget once. From here on, this object is what we'll render into
+            RenderTarget original = client.gameRenderer.mainRenderTarget();
+            original.destroyBuffers();
+
+            LOGGER.info("Injecting custom window render target");
+
+            worldRenderTarget = new MainTarget(realWidth[0], realHeight[0]);
+            GameRendererExt.setMainRenderTarget(client.gameRenderer, worldRenderTarget);
+        } else if (usingComposite) {
+            GameRendererExt.setMainRenderTarget(client.gameRenderer, worldRenderTarget);
+            usingComposite = false;
+        }
+
+        ViewportBounds prevViewportBounds = currentViewportBounds;
+        currentViewportBounds = null;
+
+        for (CraftApp app : apps) {
+            ViewportBounds customBounds = app.getCustomViewportBounds();
+            if (customBounds != null) {
+                currentViewportBounds = customBounds;
+            }
+        }
+
+        // GameRenderer derives both the camera's aspect ratio and mainRenderTarget's auto-resize
+        // guard from Window.getWidth/getHeight (via windowRenderState), not from the render
+        // target's actual texture size. Overriding it here is what actually confines the world
+        // render (and its aspect ratio) to the panel. This is safe for ImGui: its display size
+        // comes straight from GLFW via ImGuiImplGlfw, not from these cached Window fields.
         if (currentViewportBounds != null) {
-            // setWidth/setHeight set the *framebuffer* (physical pixel) size, which drives the
-            // game render target dimensions. Use the DPI-scaled bounds so the world renders at
-            // native resolution and lines up 1:1 with the physical-pixel composite. (getScreenWidth
-            // reports the real logical window size and is untouched here, so mouse mapping is safe.)
             ViewportBounds scaled = currentViewportBounds.scaled();
             window.setWidth(scaled.width());
             window.setHeight(scaled.height());
         } else {
-            int[] width = new int[1];
-            int [] height = new int[1];
-            GLFW.glfwGetFramebufferSize(window.handle(), width, height);
-            window.setWidth(width[0]);
-            window.setHeight(height[0]);
+            window.setWidth(realWidth[0]);
+            window.setHeight(realHeight[0]);
         }
-        client.resizeGui();
-        client.mouseHandler.setIgnoreFirstMove();
+
+        if (!Objects.equals(prevViewportBounds, currentViewportBounds)) {
+            client.resizeGui();
+            client.mouseHandler.setIgnoreFirstMove();
+        }
+
     }
 
     public static @Nullable ViewportBounds getCustomViewportBounds() {
@@ -320,6 +343,11 @@ public final class AppManager {
         // The library's draw() runs ImGui.newFrame() before and ImGui.render() + backend draw after
         // this callback, so all widget-emitting work happens inside it. Multi-viewport platform
         // windows are handled by the library too.
+
+        if (currentViewportBounds != null) {
+            compositeViewportTarget(client);
+        }
+
         FabricImGui.IMGUI.draw(io -> {
             // PRIMARY RENDER
             for (CraftApp app : apps) {
@@ -356,6 +384,36 @@ public final class AppManager {
         }
 
         needsCleanupFrame = !isCleanupFrame;
+    }
+
+    private static void compositeViewportTarget(Minecraft client) {
+        if (currentViewportBounds == null || worldRenderTarget == null) {
+            return; // shouldn't happen
+        }
+
+        Window window = client.getWindow();
+
+        int[] realWidth = new int[1];
+        int[] realHeight = new int[1];
+        GLFW.glfwGetFramebufferSize(window.handle(), realWidth, realHeight);
+
+        ViewportBounds scaled = currentViewportBounds.scaled();
+
+        viewportCompositor.ensureSize(realWidth[0], realHeight[0]);
+
+        // ViewportBounds.y is bottom-left origin (see DockSpaceApp.beginViewport), but the blit
+        // target's destY is top-left-origin screen pixels, so convert here.
+        int destY = realHeight[0] - scaled.y() - scaled.height();
+
+        // Draw the world render as a textured quad rather than a raw same-size pixel copy: a quad
+        // always fills the destination rect exactly (resampling to fit), so if worldRenderTarget's
+        // actual size ever drifts a frame behind the panel's current bounds, it self-corrects instead
+        // of leaving a visible gap or sampling the wrong region.
+        viewportBlitter.blit(viewportCompositor.getColorTextureView(), realWidth[0], realHeight[0],
+                worldRenderTarget.getColorTextureView(), scaled.x(), destY, scaled.width(), scaled.height());
+
+        GameRendererExt.setMainRenderTarget(client.gameRenderer, viewportCompositor);
+        usingComposite = true;
     }
 
 
