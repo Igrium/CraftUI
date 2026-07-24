@@ -95,6 +95,7 @@ public final class AppManager {
     private static final ViewportBlitter viewportBlitter = new ViewportBlitter();
     private static boolean usingComposite;
 
+
     /**
      * Queue an app for opening. App will be opened at the beginning of the next render cycle.
      * @param app The app to open. May not be <code>null</code>.
@@ -105,7 +106,7 @@ public final class AppManager {
             throw new NullPointerException("app may not be null.");
         }
         removeQueue.remove(app);
-        if (app.isOpen() || addQueue.contains(app)) {
+        if (apps.contains(app) || addQueue.contains(app)) {
             LOGGER.warn("CraftApp ({}) is already open!", app);
             return;
         }
@@ -121,11 +122,23 @@ public final class AppManager {
         if (app == null)
             return;
         addQueue.remove(app);
-        if (!app.isOpen() || removeQueue.contains(app)) {
+        if (!apps.contains(app) || removeQueue.contains(app)) {
             LOGGER.warn("CraftApp ({}) is not open!", app);
             return;
         }
         removeQueue.add(app);
+    }
+
+    public static boolean isOpen(CraftApp app, boolean includeQueued) {
+        if (includeQueued) {
+            return (apps.contains(app) || addQueue.contains(app)) && !removeQueue.contains(app);
+        } else {
+            return apps.contains(app);
+        }
+    }
+
+    public static boolean isOpen(CraftApp app) {
+        return isOpen(app, true);
     }
 
     public static void preRender(Minecraft client) {
@@ -260,7 +273,13 @@ public final class AppManager {
         forceMouseUnlock = true;
     }
 
-    private static boolean needsCleanupFrame;
+    /**
+     * App-less frames still owed to ImGui after the last app closes. Two are needed because ImGui
+     * only retires the active widget the frame <em>after</em> it stops being submitted.
+     */
+    private static int cleanupFramesRemaining;
+
+    private static final int CLEANUP_FRAMES = 2;
 
     /**
      * <p>ImGui has a limitation where, if there's a modal popup open, any additional popups will cause it to
@@ -299,9 +318,12 @@ public final class AppManager {
         forwardMouseInputNextFrame = false;
         forceMouseUnlock = false;
 
-        if (isCleanupFrame && !needsCleanupFrame) {
+        if (isCleanupFrame && cleanupFramesRemaining <= 0) {
             // Drain events queued by GLFW callbacks while idle so they don't replay once we resume.
-            ImGui.getIO().clearEventsQueue();
+            ImGuiIO io = ImGui.getIO();
+            io.clearEventsQueue();
+            io.clearInputKeys();
+            io.clearInputMouse();
             return;
         }
 
@@ -378,7 +400,11 @@ public final class AppManager {
             ImGui.getIO().setWantSaveIniSettings(false);
         }
 
-        needsCleanupFrame = !isCleanupFrame;
+        if (isCleanupFrame) {
+            cleanupFramesRemaining--;
+        } else {
+            cleanupFramesRemaining = CLEANUP_FRAMES;
+        }
     }
 
     private static void compositeViewportTarget(Minecraft client) {
