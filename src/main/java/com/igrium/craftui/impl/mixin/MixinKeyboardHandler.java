@@ -10,15 +10,15 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(KeyboardHandler.class)
-public class KeyboardMixin {
+public class MixinKeyboardHandler {
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
-    void craftui$onKey(long window, int action, KeyEvent event, CallbackInfo ci) {
+    void craftui$onKey(long handle, int action, KeyEvent event, CallbackInfo ci) {
         if (AppManager.wantCaptureKeyboard())
             ci.cancel();
     }
 
     @Inject(method = "charTyped", at = @At("HEAD"), cancellable = true)
-    void craftui$onChar(long window, CharacterEvent event, CallbackInfo ci) {
+    void craftui$onChar(long handle, CharacterEvent event, CallbackInfo ci) {
         if (AppManager.wantCaptureKeyboard())
             ci.cancel();
     }

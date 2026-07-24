@@ -13,7 +13,7 @@ import net.minecraft.client.gui.Gui;
  * Intercept mouse re-grab
  */
 @Mixin(Gui.class)
-public class GuiMixin {
+public class MixinGui {
 
     @Redirect(method = "setScreen", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseHandler;grabMouse()V"))
     void craftui$onSetScreen(MouseHandler instance) {

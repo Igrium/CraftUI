@@ -14,7 +14,7 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import net.minecraft.client.Minecraft;
 
 @Mixin(Minecraft.class)
-public class MinecraftClientMixin {
+public class MixinMinecraft {
 
     // Draw the ImGui overlay into the main render target right before it is blitted to the window surface,
     // so it composites on top of the finished game frame (works on both the OpenGL and Vulkan backends).
@@ -27,9 +27,9 @@ public class MinecraftClientMixin {
     // its sub-rectangle, with ImGui drawn over it) instead of the shrunken game render target.
     // Runs after craftui$afterMainBlit, which populates the composite for this frame.
     @Redirect(method = "renderFrame", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/GpuSurface;blitFromTexture(Lcom/mojang/blaze3d/systems/CommandEncoder;Lcom/mojang/blaze3d/textures/GpuTextureView;)V"))
-    void craftui$redirectPresentBlit(GpuSurface surface, CommandEncoder encoder, GpuTextureView colorTexture) {
+    void craftui$redirectPresentBlit(GpuSurface surface, CommandEncoder commandEncoder, GpuTextureView textureView) {
         GpuTextureView composite = AppManager.getCompositeTextureView();
-        surface.blitFromTexture(encoder, composite != null ? composite : colorTexture);
+        surface.blitFromTexture(commandEncoder, composite != null ? composite : textureView);
     }
 
     // Run app pre-render logic near the start of the frame, right after the render-start timer is sampled.
