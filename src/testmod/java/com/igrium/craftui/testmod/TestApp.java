@@ -5,6 +5,7 @@ import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.app.DockSpaceApp;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.file.FileDialogs.FileFilter;
+import com.igrium.craftui.icon.FontAwesome;
 import com.igrium.craftui.icon.NbtIcons;
 import com.igrium.craftui.nbt.NbtEditor;
 import com.igrium.craftui.nbt.NbtEditorFlags;
@@ -138,7 +139,8 @@ public class TestApp extends DockSpaceApp {
                 throw new RuntimeException("Test Exception");
             }
 
-            ImGui.text("Here are some test icons! " + MaterialIcons.ICON_1K + " " + MaterialIcons.ICON_APPLE + " " + MaterialIcons.ICON_PAUSE);
+            ImGui.alignTextToFramePadding();
+            ImGui.text("Here are some test icons! " + FontAwesome.ICON_PAUSE + " " + FontAwesome.ICON_BANDAGE + " " + FontAwesome.BRAND_APP_STORE);
 
             ImGui.text("Here are some test icons: ");
             ImGui.sameLine();

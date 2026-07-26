@@ -1,7 +1,7 @@
 {
-    "size": 1.4,
-    "scaledGlyphOffset": [0, -4],
-    "iconGlyphOffset": [0, 5],
+//    "size": 1.2,
+//    "scaledGlyphOffset": [0, -4],
+//    "iconGlyphOffset": [0, 5],
     "glyphRanges": [
         "0xE007", "0xE8C7",
         "0xF081", "0xF8E8"
