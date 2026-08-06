@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.11-SNAPSHOT'
+    id 'net.fabricmc.fabric-loom' version '1.17.16'
     id 'maven-publish'
     id "io.freefair.lombok" version "8.13.1"
 }
@@ -11,7 +11,13 @@ base {
     archivesName = project.archives_base_name
 }
 
+// Lombok 1.18.46+ is required to support the Java 25 javac internals used by MC 26.2.
+lombok {
+    version = "1.18.46"
+}
+
 repositories {
+    mavenCentral()
     maven {
         name = "Terraformers"
         url = "https://maven.terraformersmc.com/"
@@ -37,23 +43,20 @@ loom {
             source sourceSets.testmod
         }
     }
-    createRemapConfigurations(sourceSets.testmod)
 }
 
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // Minecraft is unobfuscated from 26.1 onwards — no mappings needed.
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    modCompileOnly("com.terraformersmc:modmenu:${project.modmenu_version}")
+    compileOnly("com.terraformersmc:modmenu:${project.modmenu_version}")
 
-    // Dear ImGui
-    api include("io.github.spair:imgui-java-binding:${project.imgui_version}")
-    runtimeOnly include("io.github.spair:imgui-java-natives-windows:${project.imgui_version}")
-    runtimeOnly include("io.github.spair:imgui-java-natives-linux:${project.imgui_version}")
-    runtimeOnly include("io.github.spair:imgui-java-natives-macos:${project.imgui_version}")
+    // Dear ImGui — provides the ImGui context, GLFW input, and render backend.
+    // Pulls in imgui-java (binding + natives) transitively.
+    api "cn.enaium:fabric-gui-imgui:26.2-1.1.0+imgui.1.92.0"
 
     api include("org.lwjgl:lwjgl-nfd:3.3.3")
     runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-windows")
@@ -63,8 +66,10 @@ dependencies {
 
     testmodImplementation sourceSets.main.output
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 processResources {
@@ -76,7 +81,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    it.options.release = 21
+    it.options.release = 25
 }
 
 java {
@@ -85,8 +90,8 @@ java {
     // If you remove this line, sources will not be generated.
     withSourcesJar()
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 jar {

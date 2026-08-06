@@ -7,10 +7,10 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.client.Minecraft;
+import net.minecraft.commands.CommandBuildContext;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.*;
 
 public class CraftUICommand {
 
@@ -18,7 +18,7 @@ public class CraftUICommand {
     private static ImGuiDemoApp screenlessDemoApp;
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher,
-            CommandRegistryAccess registryAccess) {
+            CommandBuildContext registryAccess) {
 
         if (CraftUI.getConfig().isEnableDebugCommands()) {
             dispatcher.register(literal("craftui").then(
@@ -37,10 +37,10 @@ public class CraftUICommand {
         }
 
         demoApp = new CraftAppScreen<>(new ImGuiDemoApp());
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         // Let the chat screen close before we try to open this
-        client.send(() -> {
-            MinecraftClient.getInstance().setScreen(demoApp);
+        client.schedule(() -> {
+            Minecraft.getInstance().setScreenAndShow(demoApp);
         });
         return 1;
     }

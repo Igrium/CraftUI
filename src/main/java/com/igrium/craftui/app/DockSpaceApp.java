@@ -7,7 +7,7 @@ import imgui.flag.ImGuiFocusedFlags;
 import imgui.flag.ImGuiWindowFlags;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -73,7 +73,7 @@ public abstract class DockSpaceApp extends CraftApp {
     }
 
     @Override
-    protected void render(MinecraftClient client) {
+    protected void render(Minecraft client) {
         ImGui.setNextWindowBgAlpha(0f);
         dockSpaceId = ImGui.dockSpaceOverViewport(ImGui.getMainViewport().getID());
         didBeginViewport = false;
@@ -85,11 +85,11 @@ public abstract class DockSpaceApp extends CraftApp {
      */
     // TODO: Find a better place to put this
     protected static boolean mousePressedOverViewport(int mouseButton) {
-        return (ImGui.isWindowHovered() || MinecraftClient.getInstance().mouse.isCursorLocked()) && ImGui.isMouseDown(mouseButton);
+        return (ImGui.isWindowHovered() || Minecraft.getInstance().mouseHandler.isMouseGrabbed()) && ImGui.isMouseDown(mouseButton);
     }
 
     protected static boolean mouseDraggedOverViewport(int mouseButton) {
-        return (ImGui.isWindowHovered() || MinecraftClient.getInstance().mouse.isCursorLocked()) && ImGui.isMouseDragging(mouseButton);
+        return (ImGui.isWindowHovered() || Minecraft.getInstance().mouseHandler.isMouseGrabbed()) && ImGui.isMouseDragging(mouseButton);
     }
 
     /**
@@ -170,7 +170,7 @@ public abstract class DockSpaceApp extends CraftApp {
                 }
                 case ALWAYS -> {
                     ImGui.setWindowFocus(null);
-                    MinecraftClient.getInstance().mouse.lockCursor();
+                    Minecraft.getInstance().mouseHandler.grabMouse();
                 }
             }
         }
@@ -178,7 +178,7 @@ public abstract class DockSpaceApp extends CraftApp {
 
 
         // Force mouse inputs to be forwarded to screen if there is any.
-        if (ImGui.isWindowHovered() && MinecraftClient.getInstance().currentScreen != null) {
+        if (ImGui.isWindowHovered() && Minecraft.getInstance().gui.screen() != null) {
             AppManager.forwardMouseInputNextFrame();
         }
 

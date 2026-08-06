@@ -1,8 +1,5 @@
 package com.igrium.craftui.app;
 
-import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
-import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
-
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -14,17 +11,22 @@ import java.util.Set;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.impl.input.CursorLockManager;
 import com.igrium.craftui.impl.input.MouseUtils;
+import com.igrium.craftui.impl.render.GameRendererExt;
+import com.igrium.craftui.impl.render.ViewportBlitter;
 import com.igrium.craftui.impl.style.LayoutManager;
 import com.igrium.craftui.impl.style.StyleManager;
 import com.igrium.craftui.style.CraftUILayouts;
 import com.igrium.craftui.style.CraftUIStyle;
+import com.mojang.blaze3d.pipeline.MainTarget;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import imgui.ImFont;
 import imgui.ImGuiIO;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.crash.CrashException;
-import net.minecraft.util.crash.CrashReport;
+import net.minecraft.CrashReport;
+import net.minecraft.ReportedException;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.lwjgl.glfw.GLFW;
@@ -33,20 +35,21 @@ import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.app.CraftApp.ViewportBounds;
 import com.igrium.craftui.CraftUIFonts;
-import com.igrium.craftui.impl.render.ImGuiUtil;
+import com.igrium.craftui.impl.render.ViewportCompositor;
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTextureView;
 
+import cn.enaium.fabric.imgui.FabricImGui;
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.Window;
 
 /**
  * Manages global app state, keeping track of active apps, and rendering.
  * Also houses various global functions such as mouse lock overriding.
  */
 public final class AppManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger("CraftUI AppManager");
+    private static final Logger LOGGER = LoggerFactory.getLogger("CraftUI/AppManager");
 
     private static final Set<CraftApp> apps = new HashSet<>();
 
@@ -56,6 +59,16 @@ public final class AppManager {
 
 
     private static @Nullable ViewportBounds currentViewportBounds;
+
+
+    /**
+     * The full-window composite texture that the final frame should be presented from, or
+     * {@code null} to present the game's main render target directly. Non-null only while a
+     * custom viewport is active. Consumed by the render-frame present-blit redirect.
+     */
+    public static @Nullable GpuTextureView getCompositeTextureView() {
+        return usingComposite ? viewportCompositor.getColorTextureView() : null;
+    }
 
     /**
      * The draw function for a popup that renders over everything else
@@ -77,6 +90,12 @@ public final class AppManager {
         return Collections.unmodifiableSet(apps);
     }
 
+    private static @Nullable RenderTarget worldRenderTarget;
+    private static final ViewportCompositor viewportCompositor = new ViewportCompositor();
+    private static final ViewportBlitter viewportBlitter = new ViewportBlitter();
+    private static boolean usingComposite;
+
+
     /**
      * Queue an app for opening. App will be opened at the beginning of the next render cycle.
      * @param app The app to open. May not be <code>null</code>.
@@ -87,7 +106,7 @@ public final class AppManager {
             throw new NullPointerException("app may not be null.");
         }
         removeQueue.remove(app);
-        if (app.isOpen() || addQueue.contains(app)) {
+        if (apps.contains(app) || addQueue.contains(app)) {
             LOGGER.warn("CraftApp ({}) is already open!", app);
             return;
         }
@@ -103,20 +122,27 @@ public final class AppManager {
         if (app == null)
             return;
         addQueue.remove(app);
-        if (!app.isOpen() || removeQueue.contains(app)) {
+        if (!apps.contains(app) || removeQueue.contains(app)) {
             LOGGER.warn("CraftApp ({}) is not open!", app);
             return;
         }
         removeQueue.add(app);
     }
 
-    public static void preRender(MinecraftClient client) {
-        RenderSystem.assertOnRenderThread();
-
-        if (!ImGuiUtil.isInitialized()) {
-            ImGuiUtil.init();
+    public static boolean isOpen(CraftApp app, boolean includeQueued) {
+        if (includeQueued) {
+            return (apps.contains(app) || addQueue.contains(app)) && !removeQueue.contains(app);
+        } else {
+            return apps.contains(app);
         }
+    }
 
+    public static boolean isOpen(CraftApp app) {
+        return isOpen(app, true);
+    }
+
+    public static void preRender(Minecraft client) {
+        RenderSystem.assertOnRenderThread();
 
         while (!removeQueue.isEmpty()) {
             CraftApp app = removeQueue.poll();
@@ -134,19 +160,7 @@ public final class AppManager {
         CursorLockManager.onBeginFrame();
 
 
-        ViewportBounds prevViewportBounds = currentViewportBounds;
-        currentViewportBounds = null;
-
-        for (CraftApp app : apps) {
-            ViewportBounds customBounds = app.getCustomViewportBounds();
-            if (customBounds != null) {
-                currentViewportBounds = customBounds;
-            }
-        }
-
-        if (!Objects.equals(prevViewportBounds, currentViewportBounds)) {
-            updateViewportBounds(client);
-        }
+        updateViewportBounds(client);
 
         if (apps.isEmpty())
             return;
@@ -157,21 +171,56 @@ public final class AppManager {
 
     }
 
-    private static void updateViewportBounds(MinecraftClient client) {
+    // TODO: should we only init this system when the first app tries to use it?
+    private static void updateViewportBounds(Minecraft client) {
         Window window = client.getWindow();
-        if (currentViewportBounds != null) {
-            window.setFramebufferWidth(currentViewportBounds.width());
-            window.setFramebufferHeight(currentViewportBounds.height());
-        } else {
-            int[] width = new int[1];
-            int [] height = new int[1];
-            GLFW.glfwGetFramebufferSize(window.getHandle(), width, height);
-            window.setFramebufferWidth(width[0]);
-            window.setFramebufferHeight(height[0]);
+        int[] realWidth = new int[1];
+        int[] realHeight = new int[1];
+        GLFW.glfwGetFramebufferSize(window.handle(), realWidth, realHeight);
+
+        if (worldRenderTarget == null) {
+            // Take over mainRenderTarget once. From here on, this object is what we'll render into
+            RenderTarget original = client.gameRenderer.mainRenderTarget();
+            original.destroyBuffers();
+
+            LOGGER.info("Injecting custom window render target");
+
+            worldRenderTarget = new MainTarget(realWidth[0], realHeight[0]);
+            GameRendererExt.setMainRenderTarget(client.gameRenderer, worldRenderTarget);
+        } else if (usingComposite) {
+            GameRendererExt.setMainRenderTarget(client.gameRenderer, worldRenderTarget);
+            usingComposite = false;
         }
 
-        client.onResolutionChanged();
-        client.mouse.onResolutionChanged();
+        ViewportBounds prevViewportBounds = currentViewportBounds;
+        currentViewportBounds = null;
+
+        for (CraftApp app : apps) {
+            ViewportBounds customBounds = app.getCustomViewportBounds();
+            if (customBounds != null) {
+                currentViewportBounds = customBounds;
+            }
+        }
+
+        // GameRenderer derives both the camera's aspect ratio and mainRenderTarget's auto-resize
+        // guard from Window.getWidth/getHeight (via windowRenderState), not from the render
+        // target's actual texture size. Overriding it here is what actually confines the world
+        // render (and its aspect ratio) to the panel. This is safe for ImGui: its display size
+        // comes straight from GLFW via ImGuiImplGlfw, not from these cached Window fields.
+        if (currentViewportBounds != null) {
+            ViewportBounds scaled = currentViewportBounds.scaled();
+            window.setWidth(scaled.width());
+            window.setHeight(scaled.height());
+        } else {
+            window.setWidth(realWidth[0]);
+            window.setHeight(realHeight[0]);
+        }
+
+        if (!Objects.equals(prevViewportBounds, currentViewportBounds)) {
+            client.resizeGui();
+            client.mouseHandler.setIgnoreFirstMove();
+        }
+
     }
 
     public static @Nullable ViewportBounds getCustomViewportBounds() {
@@ -192,7 +241,7 @@ public final class AppManager {
             return new Vector2d(globalX, globalY);
         }
 
-        return MouseUtils.calculateViewportMouse(MinecraftClient.getInstance().getWindow(), viewportBounds, globalX, globalY);
+        return MouseUtils.calculateViewportMouse(Minecraft.getInstance().getWindow(), viewportBounds, globalX, globalY);
     }
 
     private static boolean forwardInputNextFrame;
@@ -224,7 +273,13 @@ public final class AppManager {
         forceMouseUnlock = true;
     }
 
-    private static boolean needsCleanupFrame;
+    /**
+     * App-less frames still owed to ImGui after the last app closes. Two are needed because ImGui
+     * only retires the active widget the frame <em>after</em> it stops being submitted.
+     */
+    private static int cleanupFramesRemaining;
+
+    private static final int CLEANUP_FRAMES = 2;
 
     /**
      * <p>ImGui has a limitation where, if there's a modal popup open, any additional popups will cause it to
@@ -245,7 +300,7 @@ public final class AppManager {
      * Draw all open apps to the screen.
      * @param client Minecraft client instance.
      */
-    public static void render(MinecraftClient client) {
+    public static void render(Minecraft client) {
         RenderSystem.assertOnRenderThread();
         if (crashed)
             return;
@@ -253,7 +308,7 @@ public final class AppManager {
         drawnGlobalPopup = false;
         boolean isCleanupFrame = apps.isEmpty();
 
-        if (client.mouse.isCursorLocked()) {
+        if (client.mouseHandler.isMouseGrabbed()) {
             ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NoMouse);
         } else {
             ImGui.getIO().removeConfigFlags(ImGuiConfigFlags.NoMouse);
@@ -263,10 +318,16 @@ public final class AppManager {
         forwardMouseInputNextFrame = false;
         forceMouseUnlock = false;
 
-        if (isCleanupFrame && !needsCleanupFrame)
+        if (isCleanupFrame && cleanupFramesRemaining <= 0) {
+            // Drain events queued by GLFW callbacks while idle so they don't replay once we resume.
+            ImGuiIO io = ImGui.getIO();
+            io.clearEventsQueue();
+            io.clearInputKeys();
+            io.clearInputMouse();
             return;
+        }
 
-        // STYLE
+        // Styles must be loaded before newFrame (called by FabricImGui)
         StyleManager styleManager = StyleManager.getInstance();
         if (styleManager.isWantStyleUpdate()) {
             CraftUIStyle activeStyle = styleManager.getActiveStyleData();
@@ -281,8 +342,6 @@ public final class AppManager {
             styleManager.setWantStyleUpdate(false);
         }
 
-
-        // LAYOUT
         Identifier desiredLayout = null;
         for (CraftApp app : apps) {
             Identifier l = app.getLayoutPreset();
@@ -300,46 +359,40 @@ public final class AppManager {
             layoutManager.setLayoutUpdate(false);
         }
 
-        // PRIMARY RENDER
-        ImGuiUtil.IM_GLFW.newFrame();
-        ImGui.newFrame();
+        if (currentViewportBounds != null) {
+            compositeViewportTarget(client);
+        }
 
-        for (CraftApp app : apps) {
-            ImGui.pushID(app.getClass().getCanonicalName().hashCode());
+        // FabricImGui handles newFrame, etc.
+        FabricImGui.IMGUI.draw(_ -> {
+            // PRIMARY RENDER
+            for (CraftApp app : apps) {
+                ImGui.pushID(app.getClass().getCanonicalName().hashCode());
+                try {
+                    // Reuse getInstance to avoid reallocating lambda due to captured variable
+                    app.render(Minecraft.getInstance());
+                } catch (Exception e) {
+                    crashed = true;
+                    CrashReport crashReport = new CrashReport("Error rendering CraftUI app " + app.getClass().getSimpleName(), e);
+                    throw new ReportedException(crashReport);
+                }
+                ImGui.popID();
+            }
+
             try {
-                app.render(client);
+                drawGlobalPopup();
             } catch (Exception e) {
                 crashed = true;
-                CrashReport crashReport = new CrashReport("Error rendering CraftUI app " + app.getClass().getSimpleName(), e);
-                throw new CrashException(crashReport);
+                CrashReport crashReport = new CrashReport("Error rendering the CraftUI global popup", e);
+                throw new ReportedException(crashReport);
             }
-            ImGui.popID();
-        }
 
-        try {
-            drawGlobalPopup();
-        } catch (Exception e) {
-            crashed = true;
-            CrashReport crashReport = new CrashReport("Error rendering the CraftUI global popup", e);
-            throw new CrashException(crashReport);
-        }
-
-        if (isCleanupFrame) {
-            ImGui.setWindowFocus(null);
-            ImGui.getIO().setWantCaptureKeyboard(false);
-            ImGui.getIO().setWantCaptureMouse(false);
-        }
-
-        ImGui.render();
-        ImGuiUtil.IM_GL3.renderDrawData(ImGui.getDrawData());
-
-        // CLEANUP
-        if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
-            long backupWindowPtr = glfwGetCurrentContext();
-            ImGui.updatePlatformWindows();
-            ImGui.renderPlatformWindowsDefault();
-            glfwMakeContextCurrent(backupWindowPtr);
-        }
+            if (isCleanupFrame) {
+                ImGui.setWindowFocus(null);
+                ImGui.getIO().setWantCaptureKeyboard(false);
+                ImGui.getIO().setWantCaptureMouse(false);
+            }
+        });
 
         if (ImGui.getIO().getWantSaveIniSettings() && CraftUI.getConfig().isLayoutPersistent()) {
             LayoutManager.getInstance().saveUserLayoutData(ImGui.saveIniSettingsToMemory());
@@ -347,7 +400,36 @@ public final class AppManager {
             ImGui.getIO().setWantSaveIniSettings(false);
         }
 
-        needsCleanupFrame = !isCleanupFrame;
+        if (isCleanupFrame) {
+            cleanupFramesRemaining--;
+        } else {
+            cleanupFramesRemaining = CLEANUP_FRAMES;
+        }
+    }
+
+    private static void compositeViewportTarget(Minecraft client) {
+        if (currentViewportBounds == null || worldRenderTarget == null) {
+            return; // shouldn't happen
+        }
+
+        Window window = client.getWindow();
+
+        int[] realWidth = new int[1];
+        int[] realHeight = new int[1];
+        GLFW.glfwGetFramebufferSize(window.handle(), realWidth, realHeight);
+
+        ViewportBounds scaled = currentViewportBounds.scaled();
+
+        viewportCompositor.ensureSize(realWidth[0], realHeight[0]);
+
+        // Fix flipped-y bullshittary
+        int destY = realHeight[0] - scaled.y() - scaled.height();
+
+        viewportBlitter.blit(viewportCompositor.getColorTextureView(), realWidth[0], realHeight[0],
+                worldRenderTarget.getColorTextureView(), scaled.x(), destY, scaled.width(), scaled.height());
+
+        GameRendererExt.setMainRenderTarget(client.gameRenderer, viewportCompositor);
+        usingComposite = true;
     }
 
 
@@ -356,7 +438,7 @@ public final class AppManager {
      * @see ImGuiIO#getWantCaptureMouse()
      */
     public static boolean wantCaptureMouse() {
-        return !forwardMouseInputNextFrame && ImGui.getIO().getWantCaptureKeyboard();
+        return !forwardMouseInputNextFrame && ImGui.getIO().getWantCaptureMouse();
     }
 
     /**

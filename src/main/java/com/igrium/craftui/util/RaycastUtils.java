@@ -1,28 +1,26 @@
 package com.igrium.craftui.util;
 
 
+import com.mojang.blaze3d.platform.Window;
 import java.util.function.Predicate;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.util.Window;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.ClipContext.Block;
+import net.minecraft.world.level.ClipContext.Fluid;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-
-import net.minecraft.client.render.Camera;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.projectile.ProjectileUtil;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
-import net.minecraft.world.RaycastContext.FluidHandling;
-import net.minecraft.world.RaycastContext.ShapeType;
 
 /**
  * A set of utility functions involving raycasting.
@@ -34,19 +32,27 @@ public final class RaycastUtils {
      * Some functions need to register some fabric listeners. Do that here.
      */
     public static void register() {
-        WorldRenderEvents.AFTER_SETUP.register(context -> {
-            lastProjectionMatrix.set(context.projectionMatrix());
-            lastCamera = context.camera();
+        // In 26.2 the fabric world-render events were reworked into LevelRenderEvents, and per-frame
+        // camera data now lives on the level render state rather than on a Camera passed to the event.
+        LevelRenderEvents.START_MAIN.register(context -> {
+            var cameraState = context.levelState().cameraRenderState;
+            lastProjectionMatrix.set(cameraState.projectionMatrix);
+            // Copy the values we need; the render state instance is reused/mutated each frame.
+            lastCameraPos = cameraState.pos;
+            lastCameraOrientation.set(cameraState.orientation);
+            hasCamera = true;
         });
     }
 
     private static final Matrix4f lastProjectionMatrix = new Matrix4f();
+    private static final Quaternionf lastCameraOrientation = new Quaternionf();
     @Nullable
-    private static Camera lastCamera;
+    private static Vec3 lastCameraPos;
+    private static boolean hasCamera;
 
     public static HitResult raycastViewport(float x, float y, float distance, Predicate<Entity> predicate, boolean includeFluids) {
-        Window window = MinecraftClient.getInstance().getWindow();
-        return raycastViewport(x, y, window.getWidth(), window.getHeight(), distance, predicate, includeFluids);
+        Window window = Minecraft.getInstance().getWindow();
+        return raycastViewport(x, y, window.getScreenWidth(), window.getScreenHeight(), distance, predicate, includeFluids);
     }
 
     /**
@@ -63,17 +69,17 @@ public final class RaycastUtils {
      */
     public static HitResult raycastViewport(float x, float y, float width, float height, float distance,
                                             Predicate<Entity> predicate, boolean includeFluids) {
-        Entity cameraEntity = MinecraftClient.getInstance().getCameraEntity();
+        Entity cameraEntity = Minecraft.getInstance().getCameraEntity();
         if (cameraEntity == null) {
             throw new IllegalStateException("No camera entity");
         }
 
-        if (lastCamera == null) {
+        if (!hasCamera) {
             throw new IllegalStateException("No frame has been rendered yet.");
         }
 
-        Vec3d start = lastCamera.getPos();
-        Vec3d end = projectViewportGlobal(x, y, width, height, distance);
+        Vec3 start = lastCameraPos;
+        Vec3 end = projectViewportGlobal(x, y, width, height, distance);
 
         return raycast(cameraEntity, start, end, predicate, includeFluids);
     }
@@ -89,17 +95,17 @@ public final class RaycastUtils {
      * @param distance Distance from the camera to place the point.
      * @return A point in 3D space that falls under the 2D screenspace point.
      */
-    public static Vec3d projectViewportGlobal(float x, float y, float width, float height, float distance) {
-        if (lastCamera == null) {
+    public static Vec3 projectViewportGlobal(float x, float y, float width, float height, float distance) {
+        if (!hasCamera) {
             throw new IllegalStateException("No frame has been rendered yet.");
         }
 
         Vector3f localSpace = projectViewport(x, y, width, height, distance, new Vector3f());
 
         // Add components while constructing the Vec3d to avoid precision error casting to float for Vector3f
-        return new Vec3d(localSpace.x + lastCamera.getPos().x,
-                localSpace.y + lastCamera.getPos().y,
-                localSpace.z + lastCamera.getPos().z);
+        return new Vec3(localSpace.x + lastCameraPos.x,
+                localSpace.y + lastCameraPos.y,
+                localSpace.z + lastCameraPos.z);
     }
 
     /**
@@ -114,7 +120,7 @@ public final class RaycastUtils {
      * @return <code>dest</code>: The 3D point <em>relative to the camera's location</em>
      */
     public static Vector3f projectViewport(float x, float y, float width, float height, float distance, Vector3f dest) {
-        if (lastCamera == null) {
+        if (!hasCamera) {
             throw new IllegalStateException("No frame has been rendered yet.");
         }
 
@@ -128,7 +134,7 @@ public final class RaycastUtils {
 
         cameraProjection.transform(screenspace);
         screenspace.mul(distance);
-        screenspace.rotate(lastCamera.getRotation());
+        screenspace.rotate(lastCameraOrientation);
 
         dest.set(screenspace);
         return dest;
@@ -145,25 +151,25 @@ public final class RaycastUtils {
      * @param includeFluids Whether to include fluids or not.
      * @return The hit result.
      */
-    private static HitResult raycast(Entity sourceEntity, Vec3d start, Vec3d end, Predicate<Entity> predicate, boolean includeFluids) {
+    private static HitResult raycast(Entity sourceEntity, Vec3 start, Vec3 end, Predicate<Entity> predicate, boolean includeFluids) {
         // TODO: Is it worth putting this in the public API?
         double distance = start.distanceTo(end);
-        Box box = Box.of(start, 1, 1, 1)
-                .stretch(sourceEntity.getRotationVec(1).multiply(distance))
-                .expand(1, 1, 1);
+        AABB box = AABB.ofSize(start, 1, 1, 1)
+                .expandTowards(sourceEntity.getViewVector(1).scale(distance))
+                .inflate(1, 1, 1);
 
-        BlockHitResult worldHit = sourceEntity.getWorld().raycast(new RaycastContext(
+        BlockHitResult worldHit = sourceEntity.level().clip(new ClipContext(
                 start,
                 end,
-                ShapeType.OUTLINE,
-                includeFluids ? FluidHandling.ANY : FluidHandling.NONE,
+                Block.OUTLINE,
+                includeFluids ? Fluid.ANY : Fluid.NONE,
                 sourceEntity));
 
-        EntityHitResult entityHit = ProjectileUtil.raycast(sourceEntity, start, end, box, predicate, distance);
+        EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(sourceEntity, start, end, box, predicate, distance);
 
         if (entityHit != null) {
-            double entityDist = start.squaredDistanceTo(entityHit.getPos());
-            double worldDist = start.squaredDistanceTo(worldHit.getPos());
+            double entityDist = start.distanceToSqr(entityHit.getLocation());
+            double worldDist = start.distanceToSqr(worldHit.getLocation());
 
             if (entityDist < worldDist) {
                 return entityHit;

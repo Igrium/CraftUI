@@ -15,7 +15,11 @@ import com.igrium.craftui.file.FileDialogs.FileFilter;
 class AWTFileDialog implements FileDialogInterface {
 
     private static final Executor dialogExecutor = Executors
-            .newSingleThreadExecutor(r -> new Thread(r, "File Dialog Thread"));
+            .newSingleThreadExecutor(r -> {
+                Thread thread = new Thread(r, "File Dialog Thread");
+                thread.setDaemon(true);
+                return thread;
+            });
 
     @Override
     public void init() throws Exception {

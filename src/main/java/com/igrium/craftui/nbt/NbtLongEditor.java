@@ -2,10 +2,10 @@ package com.igrium.craftui.nbt;
 
 import imgui.ImGui;
 import imgui.type.ImLong;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtLong;
+import net.minecraft.nbt.LongTag;
+import net.minecraft.nbt.Tag;
 
-public final class NbtLongEditor extends NbtPrimitiveEditor<NbtLong> {
+public final class NbtLongEditor extends NbtPrimitiveEditor<LongTag> {
     private final ImLong value = new ImLong();
     private final EditableText editable = new EditableText();
 
@@ -22,21 +22,21 @@ public final class NbtLongEditor extends NbtPrimitiveEditor<NbtLong> {
 
     @Override
     protected byte getNbtType() {
-        return NbtElement.LONG_TYPE;
+        return Tag.TAG_LONG;
     }
 
     @Override
-    public NbtLong getNbt() {
-        return NbtLong.of(value.get());
+    public LongTag getNbt() {
+        return LongTag.valueOf(value.get());
     }
 
     @Override
-    public void setNbt(NbtLong nbt) {
+    public void setNbt(LongTag nbt) {
         value.set(nbt.longValue());
     }
 
     @Override
-    protected Class<? extends NbtLong> getNbtClass() {
-        return NbtLong.class;
+    protected Class<? extends LongTag> getNbtClass() {
+        return LongTag.class;
     }
 }

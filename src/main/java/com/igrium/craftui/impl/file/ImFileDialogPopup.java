@@ -8,8 +8,7 @@ import imgui.type.ImBoolean;
 import imgui.type.ImString;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.util.Language;
-
+import net.minecraft.locale.Language;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -48,7 +47,7 @@ public final class ImFileDialogPopup {
             title  = dirMode ? "gui.craftui.fd_selectFolder" : "gui.craftui.fd_selectFile";
         }
 
-        String id = Language.getInstance().get(title) + "###fileDialog";;
+        String id = Language.getInstance().getOrDefault(title) + "###fileDialog";;
 
         if (firstRender) {
             firstRender = false;
@@ -82,6 +81,6 @@ public final class ImFileDialogPopup {
     }
 
     private static String t(String key) {
-        return Language.getInstance().get(key);
+        return Language.getInstance().getOrDefault(key);
     }
 }

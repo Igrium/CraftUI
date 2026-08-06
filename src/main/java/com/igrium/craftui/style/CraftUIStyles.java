@@ -2,7 +2,7 @@ package com.igrium.craftui.style;
 
 import com.igrium.craftui.impl.style.StyleManager;
 import lombok.NonNull;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -15,7 +15,7 @@ public class CraftUIStyles {
     /**
      * The default, "dark" style
      */
-    public static final Identifier DARK = Identifier.of("craftui:dark");
+    public static final Identifier DARK = Identifier.parse("craftui:dark");
 
     /**
      * Find a loaded style from its identifier.

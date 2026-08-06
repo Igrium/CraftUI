@@ -1,4 +1,5 @@
 {
     "size": 1,
-    "icons": ["craftui:material-icons-regular", "craftui:nbt-icons"]
+    "icons": ["craftui:font-awesome-solid", "craftui:font-awesome-brands", "craftui:nbt-icons"],
+    "glyphExcludeRanges": ["0xE000", "0xF8FF"]
 }

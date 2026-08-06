@@ -3,8 +3,7 @@ package com.igrium.craftui;
 import com.igrium.craftui.impl.style.ImFontManager;
 import imgui.ImFont;
 import lombok.experimental.UtilityClass;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.resources.Identifier;
 import java.util.Map;
 
 /**
@@ -12,17 +11,17 @@ import java.util.Map;
  */
 @UtilityClass
 public final class CraftUIFonts {
-    public static final Identifier INTER = Identifier.of("craftui:inter");
+    public static final Identifier INTER = Identifier.parse("craftui:inter");
     public static ImFont inter() {
         return ImFontManager.getInstance().get(INTER);
     }
 
-    public static final Identifier INTER_MEDIUM = Identifier.of("craftui:inter-medium");
+    public static final Identifier INTER_MEDIUM = Identifier.parse("craftui:inter-medium");
     public static ImFont interMedium() {
         return ImFontManager.getInstance().get(INTER_MEDIUM);
     }
 
-    public static final Identifier NBT_ICONS = Identifier.of("craftui:nbt-icons");
+    public static final Identifier NBT_ICONS = Identifier.parse("craftui:nbt-icons");
     public static ImFont nbtIcons() {
         return ImFontManager.getInstance().get(NBT_ICONS);
     }

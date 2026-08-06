@@ -3,7 +3,7 @@ package com.igrium.craftui;
 import imgui.ImFont;
 import imgui.ImGui;
 import lombok.experimental.UtilityClass;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 
 /**
  * CraftUI bundles <a href="https://fonts.google.com/icons?icon.set=Material+Icons">Material Design Icons</a>
@@ -11,8 +11,9 @@ import net.minecraft.util.Identifier;
  */
 
 @UtilityClass
+@Deprecated
 public class MaterialIcons {
-    public static final Identifier FONT_ID = Identifier.of("craftui:material-icons-regular");
+    public static final Identifier FONT_ID = Identifier.parse("craftui:material-icons-regular");
 
     public static final char ICON_10K = 0xE951;
     public static final char ICON_10MP = 0xE952;

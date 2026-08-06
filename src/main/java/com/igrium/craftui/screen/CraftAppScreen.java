@@ -5,8 +5,8 @@ import com.igrium.craftui.app.CraftApp;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * A Minecraft screen that renders a GUI app while it's open.
@@ -22,7 +22,7 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
     private Screen parent;
 
     public CraftAppScreen(T app) {
-        super(Text.empty());
+        super(Component.empty());
         this.app = app;
         app.closeEvent().addListener(this::onAppClosed);
     }
@@ -32,8 +32,8 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
     }
     
     @Override
-    public void onDisplayed() {
-        super.onDisplayed();
+    public void added() {
+        super.added();
         if (!app.isOpen()) {
             AppManager.openApp(app);
         }
@@ -41,16 +41,14 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
 
     @Override
     public void removed() {
-        if (app.isOpen()) {
-            AppManager.closeApp(app);
-        }
+        AppManager.closeApp(app);
         super.removed();
     }
 
     private void onAppClosed() {
         // For some reason, close() doesn't check if the screen's actually open
-        if (client.currentScreen == this) {
-            this.close();
+        if (minecraft.gui.screen() == this) {
+            this.onClose();
         }
     }
 
@@ -65,7 +63,7 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
     }
 
     @Override
-    public void close() {
-        this.client.setScreen(parent);
+    public void onClose() {
+        this.minecraft.setScreenAndShow(parent);
     }
 }

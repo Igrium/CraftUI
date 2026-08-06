@@ -5,10 +5,10 @@ import com.igrium.craftui.app.CraftApp;
 import com.igrium.craftui.screen.CraftAppScreen;
 import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.commands.CommandBuildContext;
 import org.jetbrains.annotations.Nullable;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
 
 public class AppTestCommand {
@@ -18,7 +18,7 @@ public class AppTestCommand {
     private static CraftApp app;
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher,
-            CommandRegistryAccess registryAccess) {
+            CommandBuildContext registryAccess) {
 
         dispatcher.register(literal("apptest").then(
                 literal("open").executes(context -> {

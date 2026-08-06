@@ -1,36 +1,34 @@
 package com.igrium.craftui.impl.util;
 
 import java.io.IOException;
-
+import net.minecraft.client.model.geom.builders.UVPair;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
-import net.minecraft.client.util.math.Vector2f;
-
-public class Vector2fJsonAdapter extends TypeAdapter<Vector2f> {
+public class Vector2fJsonAdapter extends TypeAdapter<UVPair> {
 
     @Override
-    public void write(JsonWriter out, Vector2f value) throws IOException {
+    public void write(JsonWriter out, UVPair value) throws IOException {
         out.beginArray();
-        out.value(value.getX());
-        out.value(value.getY());
+        out.value(value.u());
+        out.value(value.v());
         out.endArray();
     }
 
     @Override
-    public Vector2f read(JsonReader in) throws IOException {
+    public UVPair read(JsonReader in) throws IOException {
         JsonToken next = in.peek();
         if (next == JsonToken.BEGIN_ARRAY) {
             in.beginArray();
             float x = (float) in.nextDouble();
             float y = (float) in.nextDouble();
             in.endArray();
-            return new Vector2f(x, y);
+            return new UVPair(x, y);
         } else {
             float val = (float) in.nextDouble();
-            return new Vector2f(val, val);
+            return new UVPair(val, val);
         }
     }
     

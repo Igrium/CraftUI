@@ -13,10 +13,9 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortList;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
 import org.apache.commons.io.FilenameUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -25,8 +24,9 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.igrium.craftui.event.FontReloadCallback;
+import com.igrium.craftui.impl.render.CraftImGuiService;
 import com.igrium.craftui.impl.util.IdentifierJsonAdapter;
-import com.igrium.craftui.impl.render.ImGuiUtil;
+import cn.enaium.fabric.imgui.FabricImGui;
 import com.igrium.craftui.impl.util.Vector2fJsonAdapter;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -35,12 +35,12 @@ import imgui.ImFontAtlas;
 import imgui.ImFontConfig;
 import imgui.ImGui;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import net.minecraft.client.util.math.Vector2f;
-import net.minecraft.resource.Resource;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.model.geom.builders.UVPair;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
 
-public class ImFontManager implements IdentifiableResourceReloadListener {
+public class ImFontManager implements PreparableReloadListener {
 
     private static ImFontManager instance;
 
@@ -60,7 +60,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
     private final Logger LOGGER = LoggerFactory.getLogger(getClass());
     private final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Identifier.class, new IdentifierJsonAdapter())
-            .registerTypeAdapter(Vector2f.class, new Vector2fJsonAdapter())
+            .registerTypeAdapter(UVPair.class, new Vector2fJsonAdapter())
             .setPrettyPrinting()
             .create();
 
@@ -79,18 +79,19 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
     }
 
     @Override
-    public CompletableFuture<Void> reload(Synchronizer synchronizer, ResourceManager manager, Executor prepareExecutor, Executor applyExecutor) {
+    public CompletableFuture<Void> reload(SharedState currentReload, Executor prepareExecutor, PreparationBarrier synchronizer, Executor applyExecutor) {
+        ResourceManager manager = currentReload.resourceManager();
 
         fontFiles.clear();
 
         List<CompletableFuture<?>> futures = new ArrayList<>();
-        for (var entry : manager.findResources("fonts", id -> isFontExt(id.getPath())).entrySet()) {
+        for (var entry : manager.listResources("fonts", id -> isFontExt(id.getPath())).entrySet()) {
             /* Calculate font ID and create font file entry */
             final Identifier fileName = entry.getKey();
 
             String fontPath = fileName.getPath().substring("fonts/".length());
             fontPath = FilenameUtils.removeExtension(fontPath);
-            final Identifier fontID = Identifier.of(fileName.getNamespace(), fontPath);
+            final Identifier fontID = Identifier.fromNamespaceAndPath(fileName.getNamespace(), fontPath);
 
             final LoadedFontFile file = new LoadedFontFile();
             fontFiles.put(fontID, file);
@@ -99,12 +100,12 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             futures.add(CompletableFuture.runAsync(() -> {
 
                 /* Find and load config */
-                Identifier configId = Identifier.of(fontID.getNamespace(), "fonts/" + fontID.getPath() + ".json");
+                Identifier configId = Identifier.fromNamespaceAndPath(fontID.getNamespace(), "fonts/" + fontID.getPath() + ".json");
                 Optional<Resource> configFile = manager.getResource(configId);
                 FontConfig config = new FontConfig();
 
                 if (configFile.isPresent()) {
-                    try(BufferedReader reader = configFile.get().getReader()) {
+                    try(BufferedReader reader = configFile.get().openAsReader()) {
                         config = GSON.fromJson(reader, FontConfig.class);
                     } catch (Exception e) {
                         // If the config errors, we still have the default config.
@@ -116,7 +117,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
                 /* Load the font file contents itself */
                 LOGGER.info("Loading font {} as {}", fileName, fontID);
-                try(InputStream in = new BufferedInputStream(entry.getValue().getInputStream())) {
+                try(InputStream in = new BufferedInputStream(entry.getValue().open())) {
                     file.fileContents = in.readAllBytes();
                 } catch (Exception e) {
                     LOGGER.error("Error loading font " + fontID, e);
@@ -128,7 +129,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         // After all the above futures are done, fontFiles should be populated with all
         // loaded fonts.
         return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
-                .thenCompose(synchronizer::whenPrepared)
+                .thenCompose(synchronizer::wait)
                 .thenRunAsync(this::renderFonts, applyExecutor);
     }
 
@@ -140,8 +141,7 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
     }
 
     private void renderFonts(Map<Identifier, LoadedFontFile> files) {
-        RenderSystem.assertOnRenderThreadOrInit();
-        ImGuiUtil.ensureInitialized();
+        RenderSystem.assertOnRenderThread();
 
         fonts.clear();
         complainedIds.clear();
@@ -169,8 +169,11 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             }
         }
         atlas.build();
-        ImGuiUtil.IM_GL3.createFontsTexture();
-        atlas.clearTexData();
+        if (FabricImGui.IMGUI instanceof CraftImGuiService service) {
+            service.reloadFontsTexture();
+        }
+        // The render backend uploads the font texture lazily and reads the atlas pixels then, so
+        // they must stay resident. clearTexData() would free them early and segfault that upload.
 
         var fontIterator = fonts.entrySet().iterator();
         while (fontIterator.hasNext()) {
@@ -222,15 +225,15 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                 float offsetY = 0;
 
                 if (config.glyphOffset != null) {
-                    offsetX += config.glyphOffset.getX();
-                    offsetY += config.glyphOffset.getY();
+                    offsetX += config.glyphOffset.u();
+                    offsetY += config.glyphOffset.v();
                 }
                 if (merge && config.iconGlyphOffset != null) {
-                    offsetX += config.iconGlyphOffset.getX() * scale;
-                    offsetY += config.iconGlyphOffset.getY() * scale;
+                    offsetX += config.iconGlyphOffset.u() * scale;
+                    offsetY += config.iconGlyphOffset.v() * scale;
                 } else if (config.scaledGlyphOffset != null) {
-                    offsetX += config.scaledGlyphOffset.getX() * scale;
-                    offsetY += config.scaledGlyphOffset.getY() * scale;
+                    offsetX += config.scaledGlyphOffset.u() * scale;
+                    offsetY += config.scaledGlyphOffset.v() * scale;
                 }
 
                 imConfig.setGlyphOffset(offsetX, offsetY);
@@ -245,9 +248,13 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
                 }
             }
 
+            if (config.glyphExcludeRanges != null) {
+                imConfig.setGlyphExcludeRanges(zeroTerminate(config.glyphExcludeRanges));
+            }
+
             ImFont font;
             if (config.glyphRanges != null) {
-                font = atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig, config.glyphRanges);
+                font = atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig, zeroTerminate(config.glyphRanges));
             } else {
                 font = atlas.addFontFromMemoryTTF(file.fileContents, size, imConfig);
             }
@@ -266,6 +273,17 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
             return font;
         } finally {
             imConfig.destroy();
+        }
+    }
+
+    /**
+     * Append a zero terminator to a glyph range array, as required by imgui
+     */
+    private static short[] zeroTerminate(short[] ranges) {
+        if (ranges.length > 0 && ranges[ranges.length - 1] != 0) {
+            return Arrays.copyOf(ranges, ranges.length + 1);
+        } else {
+            return ranges;
         }
     }
 
@@ -294,11 +312,6 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
         return font;
     }
 
-    @Override
-    public Identifier getFabricId() {
-        return Identifier.of("craftui:fonts");
-    }
-
     private static class FontConfig {
         float size = 1f;
 
@@ -312,19 +325,21 @@ public class ImFontManager implements IdentifiableResourceReloadListener {
 
         @Nullable Float glyphMaxAdvanceX;
 
-        @Nullable Vector2f glyphOffset;
+        @Nullable UVPair glyphOffset;
 
-        @Nullable Vector2f scaledGlyphOffset;
+        @Nullable UVPair scaledGlyphOffset;
 
         /**
          * The glyph offset to use when loading this as an icon font.
          * Overrides <code>scaledGlyphOffset</code>
          */
-        @Nullable Vector2f iconGlyphOffset;
+        @Nullable UVPair iconGlyphOffset;
 
-        // FIX: Migrated from short[] to int[] for ImGui 32-bit ImWchar requirement
         @JsonAdapter(GlyphRangeTypeAdapter.class)
         short @Nullable [] glyphRanges;
+
+        @JsonAdapter(GlyphRangeTypeAdapter.class)
+        short @Nullable [] glyphExcludeRanges;
 
         /**
          * The icon fonts to load on top of this one.

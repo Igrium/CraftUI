@@ -9,9 +9,9 @@ import imgui.type.ImString;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import net.minecraft.util.Language;
 import net.minecraft.util.Util;
-import net.minecraft.util.math.ColorHelper;
+import net.minecraft.locale.Language;
+import net.minecraft.util.ARGB;
 import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -22,6 +22,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Stream;
 
 /**
  * Draws a fully-featured file browser purely within imgui.
@@ -123,24 +124,34 @@ public final class ImFileDialogWidget {
     @Getter
     @Setter
     @NonNull
-    private Executor executor = Util.getIoWorkerExecutor();
+    private Executor executor = Util.ioPool();
 
     /**
      * The files currently being rendered
      */
     private final Map<String, FileEntry> files = new ConcurrentSkipListMap<>();
+
     /// === UI STATE ===
 
     private final ImString directoryString = new ImString(512);
     private boolean wasDirStringActive = false;
-
-    private float prevButtonBarWidth = 0;
 
     private final ImString selectedFileText = new ImString(128);
     private boolean wasSelectedFileTextActive = false;
 
     @Getter
     private boolean selectedFileValid;
+
+    private @Nullable String contextItem;
+
+    private final ImString renameText = new ImString(128);
+    private boolean renameTextValid = false;
+
+    /**
+     * The name of the file being renamed.
+     * <code>null</code> if we're making a new folder
+     */
+    private @Nullable String renameSrc;
 
     /// === CONSTRUCTOR ===
 
@@ -203,8 +214,65 @@ public final class ImFileDialogWidget {
 
     /// === IO ===
 
+    private void newFolder() {
+        String name = renameText.get();
+        if (name.isBlank()) return;
+
+        try {
+            Files.createDirectory(getPath().resolve(name));
+        } catch (IOException e) {
+            LOGGER.error("Could not create directory {}", name, e);
+        }
+        renameText.clear();
+        renameTextValid = false;
+        setPath(path, false);
+    }
+
+    private void rename() {
+        String name = renameText.get();
+        String oldName = renameSrc;
+        if (oldName == null || oldName.isBlank()) return;
+
+        Path src = getPath().resolve(oldName);
+        Path dest = getPath().resolve(name);
+
+        try {
+            Files.move(src, dest);
+        } catch (IOException e) {
+            LOGGER.error("Could not rename {}", name, e);
+        }
+        setPath(path, false);
+    }
+
     private void queryFileStores() {
         // TODO: implement
+    }
+
+    private void delete() {
+        if (contextItem == null || contextItem.isBlank()) return;
+        Path path = getPath().resolve(contextItem);
+        if (Files.isDirectory(path)) {
+            try (Stream<Path> walk = Files.walk(path)) {
+                walk.sorted(Comparator.reverseOrder())
+                        .forEach(f -> {
+                            try {
+                                Files.delete(f);
+                            } catch (IOException e) {
+                                LOGGER.error("Could not delete {}", f, e);
+                            }
+                        });
+            } catch (IOException e) {
+                LOGGER.error("Could not delete directory {}", path, e);
+            }
+        } else {
+            try {
+                Files.delete(path);
+            } catch (IOException e) {
+                LOGGER.error("Could not delete {}", path, e);
+            }
+        }
+        setPath(getPath(), false);
+        contextItem = null;
     }
 
     private void queryDirectory() {
@@ -224,6 +292,7 @@ public final class ImFileDialogWidget {
             }
         }
     }
+
 
     /// === DIALOG CONTROL ===
 
@@ -250,6 +319,51 @@ public final class ImFileDialogWidget {
         }
     }
 
+    private void validateRenameText() {
+        String name = renameText.get();
+        renameTextValid = !name.isBlank() && !Files.exists(getPath().resolve(name));
+    }
+
+    /**
+     * Draw a confirmation dialog
+     * @param name Dialog name (use to open/close)
+     * @param text Text to use
+     * @return 0 = no response, 1 = confirm, 2 = cancel
+     */
+    private int drawConfirmDialog(String name, String text) {
+        int result = 0;
+        if (ImGui.beginPopupModal(name, ImGuiWindowFlags.NoSavedSettings
+                | ImGuiWindowFlags.NoResize
+                | ImGuiWindowFlags.NoMove)) {
+            ImGui.text(text);
+
+            if (ImGui.button(t("gui.cancel"))) {
+                ImGui.closeCurrentPopup();
+                result = 2;
+            }
+            ImGui.sameLine();
+            if (ImGui.isWindowAppearing()) {
+                ImGui.setKeyboardFocusHere();
+            }
+            if (ImGui.button(t("gui.ok"))) {
+                ImGui.closeCurrentPopup();
+                result = 1;
+            }
+
+            if (ImGui.shortcut(ImGuiKey.Enter)) {
+                ImGui.closeCurrentPopup();
+                result = 1;
+            }
+            if (ImGui.shortcut(ImGuiKey.Escape)) {
+                ImGui.closeCurrentPopup();
+                result = 2;
+            }
+
+            ImGui.endPopup();
+        }
+        return result;
+    }
+
     /// === RENDER ===
 
     /**
@@ -259,14 +373,14 @@ public final class ImFileDialogWidget {
         ImGui.beginGroup();
 
         float footerHeight = ImGui.getFrameHeightWithSpacing() + ImGui.getStyle().getItemSpacingY();
-        boolean wantOpenConfirm = false;
+        boolean wantConfirmOverride = false;
 
         ImGui.beginTable("fileBrowser", 2, ImGuiTableFlags.BordersInner | ImGuiTableFlags.Resizable);
 
         ImGui.tableSetupColumn("sidebar", ImGuiTableColumnFlags.WidthFixed, ImGui.getFontSize() * 10, 0);
         ImGui.tableSetupColumn("center", ImGuiTableColumnFlags.WidthStretch, ImGui.getFontSize() * 96, 1);
 
-        ImGui.pushStyleColor(ImGuiCol.Header, ColorHelper.withAlpha(96, ImGui.getColorU32(ImGuiCol.HeaderHovered)));
+        ImGui.pushStyleColor(ImGuiCol.Header, ARGB.color(96, ImGui.getColorU32(ImGuiCol.HeaderHovered)));
 
         /// === NAVIGATION BUTTONS ===
         ImGui.tableNextColumn();
@@ -319,7 +433,7 @@ public final class ImFileDialogWidget {
         ImGui.tableNextColumn();
         ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 5f, 0f);
         if (ImGui.beginChild("sidebar", 0, -footerHeight, ImGuiChildFlags.AlwaysUseWindowPadding)) {
-            ImGui.separatorText("Places");
+            ImGui.separatorText(tt("gui.craftui.fd_places"));
             ImGui.pushStyleVar(ImGuiStyleVar.ItemSpacing, ImGui.getStyle().getItemSpacingX(), 12f);
 
             BOOKMARKS.forEach((name, file) -> {
@@ -334,7 +448,10 @@ public final class ImFileDialogWidget {
         ImGui.popStyleVar();
 
         /// === FILE LIST ===
+
         ImGui.tableNextColumn();
+
+        boolean wantOpenCtxMenu = false;
 
         if (ImGui.beginTable("##files", 1, ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersOuter,
                 -1, ImGui.getContentRegionAvailY() - footerHeight)) {
@@ -354,16 +471,21 @@ public final class ImFileDialogWidget {
                     setSelectedFile(name);
                 }
 
-                if (ImGui.isItemHovered() && ImGui.isMouseDoubleClicked(0)) {
+                if (ImGui.isItemHovered() && ImGui.isMouseDoubleClicked(ImGuiMouseButton.Left)) {
                     if (isDir) {
                         setPath(file.path);
                     } else if (!dirMode) {
                         if (isSaveMode() && files.containsKey(selectedFile)) {
-                            wantOpenConfirm = true;
+                            wantConfirmOverride = true;
                         } else {
                             confirm();
                         }
                     }
+                }
+
+                if (ImGui.isItemClicked(ImGuiMouseButton.Right)) {
+                    contextItem = name;
+                    wantOpenCtxMenu = true;
                 }
 
                 ImGui.endDisabled();
@@ -372,7 +494,85 @@ public final class ImFileDialogWidget {
             if (ImGui.isItemClicked()) {
                 setSelectedFile("");
             }
+
+            if (ImGui.isItemClicked(ImGuiMouseButton.Right) && !wantOpenCtxMenu) {
+                contextItem = null;
+                wantOpenCtxMenu = true;
+            }
         }
+
+        boolean wantConfirmDelete = false;
+        if (ImGui.shortcut(ImGuiKey.Delete) || ImGui.shortcut(ImGuiKey.Backspace)) {
+            contextItem = selectedFile;
+            wantConfirmDelete = true;
+        }
+
+        /// === DIALOGS ===
+
+        if (wantOpenCtxMenu) {
+            ImGui.openPopup("ctxMenu");
+        }
+
+        boolean wantEditName = false;
+
+        if (ImGui.beginPopup("ctxMenu")) {
+            ImGui.beginDisabled(contextItem == null);
+
+            if (ImGui.selectable(t("gui.craftui.fd_rename"))) {
+                ImGui.closeCurrentPopup();
+                renameSrc = contextItem;
+                renameText.set(contextItem);
+                validateRenameText();
+                wantEditName = true;
+            }
+            if (ImGui.selectable(t("gui.craftui.fd_delete"))) {
+                ImGui.closeCurrentPopup();
+                wantConfirmDelete = true;
+            }
+
+            ImGui.endDisabled();
+
+            if (ImGui.selectable(t("gui.craftui.fd_newFolder"))) {
+                contextItem = null;
+                renameSrc = null;
+                renameText.set("");
+                renameTextValid = false;
+                ImGui.closeCurrentPopup();
+                wantEditName = true;
+            }
+
+            ImGui.endPopup();
+        }
+
+        if (wantEditName) {
+            ImGui.openPopup("editName");
+        }
+
+        if (ImGui.beginPopup("editName")) {
+            int bg = renameTextValid ? ImGui.getColorU32(ImGuiCol.FrameBg) : 0xFF000066; // red
+            ImGui.pushStyleColor(ImGuiCol.FrameBg, bg);
+            if (ImGui.isWindowAppearing()) {
+                ImGui.setKeyboardFocusHere();
+            }
+            if (ImGui.inputText(t("gui.craftui.fd_name"), renameText)) {
+                validateRenameText();
+            }
+            ImGui.popStyleColor();
+            if (ImGui.isItemDeactivated()) {
+                ImGui.closeCurrentPopup();
+                validateRenameText();
+                if (renameTextValid) {
+                    if (renameSrc != null && !renameSrc.isBlank()) {
+                        rename();
+                    } else {
+                        newFolder();
+                    }
+                }
+                renameText.clear();
+            }
+            ImGui.endPopup();
+        }
+
 
         ImGui.popStyleColor();
 
@@ -386,7 +586,7 @@ public final class ImFileDialogWidget {
 
             ImGui.tableNextColumn();
 
-            ImGui.text("File name: ");
+            ImGui.text(tt("gui.craftui.fd_fileName"));
             ImGui.sameLine();
             ImGui.setNextItemWidth(ImGui.getContentRegionAvailX());
             ImGui.inputText("##selectedFile", selectedFileText);
@@ -419,7 +619,7 @@ public final class ImFileDialogWidget {
 
             if (ImGui.button(t(confirm))) {
                 if (isSaveMode() && files.containsKey(selectedFile)) {
-                    wantOpenConfirm = true;
+                    wantConfirmOverride = true;
                 } else {
                     confirm();
                 }
@@ -429,39 +629,36 @@ public final class ImFileDialogWidget {
 
         }
 
-        prevButtonBarWidth = ImGui.getItemRectSizeX();
-
         ImGui.endGroup();
 
         String overwriteName = t("gui.craftui.fd_overwrite");
 
-        if (wantOpenConfirm) {
+        if (wantConfirmOverride) {
             ImGui.openPopup(overwriteName);
         }
-        if (ImGui.beginPopupModal(overwriteName, ImGuiWindowFlags.NoSavedSettings
-                | ImGuiWindowFlags.NoResize
-                | ImGuiWindowFlags.NoMove)) {
-            ImGui.text(tt("gui.craftui.fd_exists"));
-
-            if (ImGui.button(t("gui.cancel"))) {
-                ImGui.closeCurrentPopup();
-            }
-            ImGui.sameLine();
-            if (ImGui.button(t("gui.ok"))) {
-                ImGui.closeCurrentPopup();
-                confirm();
-            }
-            ImGui.endPopup();
+        if (drawConfirmDialog(overwriteName, tt("gui.craftui.fd_exists")) == 1) {
+            confirm();
         }
+
+        String deleteName = tt("gui.craftui.fd_deleteConfirm").formatted(contextItem) + "###" + "deleteConfirm";
+
+        if (wantConfirmDelete) {
+            ImGui.openPopup(deleteName);
+        }
+        if (drawConfirmDialog(deleteName, tt("gui.craftui.fd_deleteWarning")) == 1) {
+            delete();
+        }
+
     }
 
     /// === UTILITIES ===
 
     private static String t(String key) {
-        return Language.getInstance().get(key) + "###" + key;
+        return Language.getInstance().getOrDefault(key) + "###" + key;
     }
 
     private static String tt(String key) {
-        return Language.getInstance().get(key);
+        return Language.getInstance().getOrDefault(key);
     }
+
 }
