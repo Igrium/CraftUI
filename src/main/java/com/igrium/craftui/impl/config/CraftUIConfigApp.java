@@ -77,7 +77,7 @@ public class CraftUIConfigApp extends CraftApp {
                         | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings)) {
 
 
-            if (ImGui.isKeyPressed(ImGuiKey.Escape) && ImGui.isWindowFocused()) {
+            if (ImGui.isKeyPressed(ImGuiKey.Escape, false) && ImGui.isWindowFocused()) {
                 close();
             }
 

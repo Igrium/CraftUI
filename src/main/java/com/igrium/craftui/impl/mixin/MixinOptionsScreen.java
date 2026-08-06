@@ -22,13 +22,11 @@ public abstract class MixinOptionsScreen extends Screen {
     }
 
     @Inject(method = "init", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/layouts/HeaderAndFooterLayout;addToContents(Lnet/minecraft/client/gui/layouts/LayoutElement;)Lnet/minecraft/client/gui/layouts/LayoutElement;"))
-    void onInit(CallbackInfo ci, @Local GridLayout.RowHelper adder) {
-        adder.addChild(Button.builder(Component.translatable("options.craftui"), b -> {
+    void onInit(CallbackInfo ci, @Local(name = "helper") GridLayout.RowHelper helper) {
+        helper.addChild(Button.builder(Component.translatable("options.craftui"), b -> {
             var screen = CraftUIConfigApp.createScreen();
             screen.setParent(this);
-            if (this.minecraft != null) {
-                this.minecraft.setScreenAndShow(screen);
-            }
+            this.minecraft.setScreenAndShow(screen);
         }).build());
     }
 

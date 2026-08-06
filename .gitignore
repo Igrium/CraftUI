@@ -44,3 +44,5 @@ iconsrc/glyphter-font.zip
 dev/
 
 *.afdesign~lock~*
+
+.claude/

@@ -21,7 +21,7 @@ import net.minecraft.client.MouseHandler;
 import net.minecraft.client.input.MouseButtonInfo;
 
 @Mixin(MouseHandler.class)
-public class MouseMixin {
+public class MixinMouseHandler {
 
     @Shadow
     @Final
@@ -38,7 +38,8 @@ public class MouseMixin {
 
     @Inject(method = "onMove", at = @At("HEAD"))
     void craftui$onCursorPos(long handle, double mouseX, double mouseY, CallbackInfo ci,
-            @Local(argsOnly = true, ordinal = 0) LocalDoubleRef x, @Local(argsOnly = true, ordinal = 1) LocalDoubleRef y) {
+                             @Local(argsOnly = true, name = "xpos") LocalDoubleRef x,
+                             @Local(argsOnly = true, name = "ypos") LocalDoubleRef y) {
         // Do the if check again because it's easier to mix into the head.
         if (handle != Minecraft.getInstance().getWindow().handle()) {
             return;
@@ -97,7 +98,7 @@ public class MouseMixin {
     }
 
     @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
-    void craftui$onMouseScroll(long handle, double horizontal, double vertical, CallbackInfo ci) {
+    void craftui$onMouseScroll(long handle, double xoffset, double yoffset, CallbackInfo ci) {
         if (AppManager.wantCaptureMouse())
             ci.cancel();
     }

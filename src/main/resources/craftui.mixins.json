@@ -1,16 +1,17 @@
 {
-  "required": true,
-  "package": "com.igrium.craftui.impl.mixin",
-  "compatibilityLevel": "JAVA_21",
-  "client": [
-    "GuiMixin",
-    "KeyboardMixin",
-    "MinecraftClientMixin",
-    "MixinOptionsScreen",
-    "MouseMixin",
-    "WindowMixin"
-  ],
-  "injectors": {
-    "defaultRequire": 1
+    "required": true,
+    "package": "com.igrium.craftui.impl.mixin",
+    "compatibilityLevel": "JAVA_21",
+    "client": [
+        "MixinGui",
+        "MixinKeyboardHandler",
+        "MixinMinecraft",
+        "MixinGameRenderer",
+        "MixinOptionsScreen",
+        "MixinMouseHandler",
+        "MixinWindow"
+    ],
+    "injectors": {
+        "defaultRequire": 1
 	}
 }

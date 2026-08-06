@@ -41,9 +41,7 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
 
     @Override
     public void removed() {
-        if (app.isOpen()) {
-            AppManager.closeApp(app);
-        }
+        AppManager.closeApp(app);
         super.removed();
     }
 
