@@ -1,11 +1,13 @@
 {
-    "size": 1.4,
-    "scaledGlyphOffset": [0, -4],
-    "iconGlyphOffset": [0, 5],
+    "size": 1.1,
+    "scaledGlyphOffset": [0, 1],
     "glyphRanges": [
-        "0xE000", "0xEC31",
-        "0xEF38", "0xF23B",
-        "0xF840", "0xF8FF"
+        "0xE005", "0xE31E",
+        "0xE3AF", "0xE5B4",
+        "0xE678", "0xE69B",
+        "0xE790", "0xE790",
+        "0xE807", "0xE850",
+        "0xF000", "0xF8FF"
     ],
     "glyphMinAdvanceX": 16,
     "glyphMaxAdvanceX": 16,

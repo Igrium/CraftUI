@@ -1,5 +1,6 @@
 package com.igrium.craftui.testmod;
 
+import com.igrium.craftui.FontAwesome;
 import com.igrium.craftui.MaterialIcons;
 import com.igrium.craftui.app.AppManager;
 import com.igrium.craftui.app.DockSpaceApp;
@@ -138,7 +139,7 @@ public class TestApp extends DockSpaceApp {
                 throw new RuntimeException("Test Exception");
             }
 
-            ImGui.text("Here are some test icons! " + MaterialIcons.ICON_1K + " " + MaterialIcons.ICON_APPLE + " " + MaterialIcons.ICON_PAUSE);
+            ImGui.text("Here are some test icons! " + FontAwesome.ICON_ALARM_CLOCK + " " + FontAwesome.ICON_WATER_LADDER + " " + FontAwesome.ICON_PAUSE);
 
             ImGui.text("Here are some test icons: ");
             ImGui.sameLine();

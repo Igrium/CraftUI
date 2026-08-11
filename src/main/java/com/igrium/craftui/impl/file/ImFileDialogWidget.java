@@ -1,7 +1,7 @@
 package com.igrium.craftui.impl.file;
 
 import com.google.common.collect.ImmutableMap;
-import com.igrium.craftui.MaterialIcons;
+import com.igrium.craftui.FontAwesome;
 import com.igrium.craftui.file.FileDialogs.FileFilter;
 import imgui.ImGui;
 import imgui.flag.*;
@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 
 /**
  * Draws a fully-featured file browser purely within imgui.
- * Requires a font with MaterialUI icons installed.
+ * Requires a font with Font Awesome icons installed.
  */
 public final class ImFileDialogWidget {
 
@@ -46,10 +46,10 @@ public final class ImFileDialogWidget {
     private static final Logger LOGGER = LoggerFactory.getLogger(ImFileDialogWidget.class);
 
     private static final Map<String, BookmarkedFile> BOOKMARKS = ImmutableMap.of(
-            "Home", new BookmarkedFile(SystemUtils.getUserHome().toPath(), MaterialIcons.ICON_HOME),
-            "Documents", BookmarkedFile.create("Documents", MaterialIcons.ICON_DESCRIPTION),
-            "Downloads", BookmarkedFile.create("Downloads", MaterialIcons.ICON_DOWNLOAD),
-            "Desktop", BookmarkedFile.create("Desktop", MaterialIcons.ICON_DESKTOP_WINDOWS)
+            "Home", new BookmarkedFile(SystemUtils.getUserHome().toPath(), FontAwesome.ICON_HOUSE),
+            "Documents", BookmarkedFile.create("Documents", FontAwesome.ICON_FILE_LINES),
+            "Downloads", BookmarkedFile.create("Downloads", FontAwesome.ICON_DOWNLOAD),
+            "Desktop", BookmarkedFile.create("Desktop", FontAwesome.ICON_DESKTOP)
     );
 
     /// === DIALOG CONFIG ===
@@ -386,14 +386,14 @@ public final class ImFileDialogWidget {
         ImGui.tableNextColumn();
 
         ImGui.beginDisabled(backStack.isEmpty());
-        if (ImGui.button("" + MaterialIcons.ICON_ARROW_BACK)) {
+        if (ImGui.button("" + FontAwesome.ICON_ARROW_LEFT)) {
             goBack();
         }
         ImGui.sameLine();
         ImGui.endDisabled();
 
         ImGui.beginDisabled(forwardStack.isEmpty());
-        if (ImGui.button("" + MaterialIcons.ICON_ARROW_FORWARD)) {
+        if (ImGui.button("" + FontAwesome.ICON_ARROW_RIGHT)) {
             goForward();
         }
         ImGui.sameLine();
@@ -401,13 +401,13 @@ public final class ImFileDialogWidget {
 
         Path pathParent = getPath().getParent();
         ImGui.beginDisabled(pathParent == null);
-        if (ImGui.button("" + MaterialIcons.ICON_ARROW_UPWARD) && pathParent != null) {
+        if (ImGui.button("" + FontAwesome.ICON_ARROW_UP) && pathParent != null) {
             setPath(pathParent);
         }
         ImGui.endDisabled();
         ImGui.sameLine();
 
-        if (ImGui.button("" + MaterialIcons.ICON_CACHED)) {
+        if (ImGui.button("" + FontAwesome.ICON_ROTATE_RIGHT)) {
             setPath(path, false);
         }
 
@@ -459,7 +459,7 @@ public final class ImFileDialogWidget {
             for (FileEntry file : files.values()) {
                 String name = file.path.getFileName().toString();
                 boolean isDir = file.attrs.isDirectory();
-                char icon = isDir ? MaterialIcons.ICON_FOLDER : MaterialIcons.ICON_TEXT_SNIPPET;
+                char icon = isDir ? FontAwesome.ICON_FOLDER : FontAwesome.ICON_FILE_LINES;
                 String label = icon + " " + name;
 
                 ImGui.tableNextRow();

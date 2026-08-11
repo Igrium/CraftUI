@@ -11,6 +11,7 @@ import net.minecraft.resources.Identifier;
  */
 
 @UtilityClass
+@Deprecated
 public class MaterialIcons {
     public static final Identifier FONT_ID = Identifier.parse("craftui:material-icons-regular");
 
