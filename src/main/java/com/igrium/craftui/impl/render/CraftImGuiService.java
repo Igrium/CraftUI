@@ -29,12 +29,6 @@ public class CraftImGuiService extends DefaultImGui {
         }
     }
 
-    /**
-     * Force the active render backend to re-upload the font atlas after it has been rebuilt (e.g.
-     * on resource reload). The library uploads the font texture lazily and only once, so without
-     * this a rebuilt atlas would never reach the GPU. The backend that {@link DefaultImGui} picks
-     * depends on the graphics API (Blaze3D for Vulkan, GL3 otherwise), so handle both.
-     */
     public void reloadFontsTexture() {
         if (imGuiImplBlaze3D != null) {
             // Cleared here; newFrame() lazily rebuilds the pipeline + font texture from the new atlas.

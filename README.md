@@ -1,27 +1,20 @@
+
 # CraftUI
-A framework to use [Dear ImGui](https://github.com/ocornut/imgui) in Minecraft
+A Minecraft Application Framework
 
 ---
 
-Over the past few years, I've noticed a growing use of ImGui in utility mods such as Flashback. However,
-due to technical constraints, none of these mods can be compatible with each other (and if they are, they're extremely jank).
-
-CraftUI is a framework that attempts to fix this. Being a minecraft-specific wrapper for Dear ImGui, it handles mounting
-and rendering the ImGui native code, cross-mod compatibility, as well as providing a set of extra, Minecraft-specific utility systems.
-
-> Note: This framework is in active development, and public API functionality might change.
-> It also doesn't support all Minecraft versions right now.
+CraftUI is a framework for building fully-featured, desktop applications in Minecraft. It is built upon [Fabric Gui ImGui](https://modrinth.com/mod/fabric-gui-imgui), which itself uses [Dear ImGui](https://github.com/ocornut/imgui). However, while *Fabric Gui ImGui* simply provides bindings to use the library, CraftUI provides a full feature set designed to ease integration with the game,
 
 ## Features
-
-CraftUI is built on [ImGui Java](https://github.com/SpaiR/imgui-java/), and by extension, contains all its features.
-On top of that, it also includes:
-
-* Resource-pack-based font loading
-* User-definable themes (also resource-pack-based)
-* Game viewport resizing via dock-space
+In addition to all the features provided natively, CraftUI includes:
+* Resource-pack-based styles and font management
 * Native file browser access
-* Other various utilities
+* Built-in icon font (Font Awesome)
+* Unified lifecycle control
+* Game viewport resizing
+* Premade, Minecraft-specific widgets (nbt editor, etc)
+* And more!
 
 ## Examples
 
@@ -68,9 +61,16 @@ Now, to open the UI, call:
 AppManager.openApp(new ExampleApp());
 ```
 
-The app will now render atop the game until it is closed with `exampleApp.close()`. See `testmod` for a more in-depth example.
+The app will now render atop the game until it is closed with `exampleApp.close()`.
+
+Alternatively, you can construct a `CraftAppScreen<>` and pass it your app to draw it as a Screen:
+```
+Minecraft.getInstance().setScreenAndShow(new CraftAppScreen<>(new ExampleApp()));
+```
+
+See `testmod` for a more in-depth example.
 
 ## Important Notes:
 
-* Due to the size of the included native libraries, it is *not* recommended to bundle the framework itself with your mod.
+* Due to the nature of how native libraries are loaded, JIJ-including the library is not supported.
 * The package `com.igrium.craftui.impl` is *not* considered part of the public API, and could change without warning!

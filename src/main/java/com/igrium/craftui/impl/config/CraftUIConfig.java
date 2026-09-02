@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.JsonAdapter;
 import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.file.FileDialogs;
-import com.igrium.craftui.impl.util.IdentifierJsonAdapter;
+import com.igrium.craftui.impl.util.JsonAdapters;
 import com.igrium.craftui.style.CraftUIStyles;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,7 +23,7 @@ public final class CraftUIConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    @JsonAdapter(IdentifierJsonAdapter.class)
+    @JsonAdapter(JsonAdapters.IdentifierJsonAdapter.class)
     private Identifier style = CraftUIStyles.DARK;
 
     /**

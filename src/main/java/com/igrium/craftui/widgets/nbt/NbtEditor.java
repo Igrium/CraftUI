@@ -1,7 +1,6 @@
-package com.igrium.craftui.nbt;
+package com.igrium.craftui.widgets.nbt;
 
 import com.igrium.craftui.icon.NbtIcons;
-import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import imgui.ImGui;
 import imgui.flag.ImGuiKey;

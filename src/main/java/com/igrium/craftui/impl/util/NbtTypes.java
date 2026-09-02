@@ -8,8 +8,7 @@ public final class NbtTypes {
 
     public static Tag createElement(byte type) {
         return switch (type) {
-            case Tag.TAG_END -> ByteTag.valueOf((byte) 0);
-            case Tag.TAG_BYTE -> ByteTag.valueOf((byte) 0);
+            case Tag.TAG_END, Tag.TAG_BYTE -> ByteTag.valueOf((byte) 0);
             case Tag.TAG_SHORT -> ShortTag.valueOf((short) 0);
             case Tag.TAG_INT -> IntTag.valueOf(0);
             case Tag.TAG_LONG -> LongTag.valueOf(0L);

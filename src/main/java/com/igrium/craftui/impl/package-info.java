@@ -1,6 +1,7 @@
 /**
  * Implementation details of craftui.
- * Not considered part of the public API, and could change without warning.
+ * <p>
+ * <b><em>Not considered part of the public API, and could change without warning.</em></b>
  */
 
 @ApiStatus.Internal

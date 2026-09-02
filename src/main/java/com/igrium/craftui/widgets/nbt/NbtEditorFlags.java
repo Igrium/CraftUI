@@ -1,4 +1,4 @@
-package com.igrium.craftui.nbt;
+package com.igrium.craftui.widgets.nbt;
 
 import lombok.experimental.UtilityClass;
 

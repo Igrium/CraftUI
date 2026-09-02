@@ -13,6 +13,7 @@ import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import com.igrium.craftui.impl.util.JsonAdapters;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -25,16 +26,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.igrium.craftui.event.FontReloadCallback;
 import com.igrium.craftui.impl.render.CraftImGuiService;
-import com.igrium.craftui.impl.util.IdentifierJsonAdapter;
 import cn.enaium.fabric.imgui.FabricImGui;
-import com.igrium.craftui.impl.util.Vector2fJsonAdapter;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import imgui.ImFont;
 import imgui.ImFontAtlas;
 import imgui.ImFontConfig;
 import imgui.ImGui;
-import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.minecraft.client.model.geom.builders.UVPair;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
@@ -59,8 +57,8 @@ public class ImFontManager implements PreparableReloadListener {
 
     private final Logger LOGGER = LoggerFactory.getLogger(getClass());
     private final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(Identifier.class, new IdentifierJsonAdapter())
-            .registerTypeAdapter(UVPair.class, new Vector2fJsonAdapter())
+            .registerTypeAdapter(Identifier.class, new JsonAdapters.IdentifierJsonAdapter())
+            .registerTypeAdapter(UVPair.class, new JsonAdapters.UVPairJsonAdapter())
             .setPrettyPrinting()
             .create();
 

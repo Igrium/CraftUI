@@ -4,7 +4,7 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.igrium.craftui.impl.util.IdentifierJsonAdapter;
+import com.igrium.craftui.impl.util.JsonAdapters;
 import imgui.ImGuiStyle;
 import imgui.ImVec2;
 import lombok.Getter;
@@ -57,7 +57,7 @@ public class CraftUIStyle {
         }
     }
 
-    @JsonAdapter(IdentifierJsonAdapter.class)
+    @JsonAdapter(JsonAdapters.IdentifierJsonAdapter.class)
     @Getter @Setter @Nullable
     Identifier defaultFont;
 

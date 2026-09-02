@@ -56,7 +56,7 @@ dependencies {
 
     // Dear ImGui — provides the ImGui context, GLFW input, and render backend.
     // Pulls in imgui-java (binding + natives) transitively.
-    api "cn.enaium:fabric-gui-imgui:26.2-1.1.0+imgui.1.92.0"
+    api "cn.enaium:fabric-gui-imgui:${project.imgui_version}";
 
     api include("org.lwjgl:lwjgl-nfd:3.3.3")
     runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-windows")

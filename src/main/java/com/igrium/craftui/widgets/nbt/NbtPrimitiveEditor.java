@@ -1,4 +1,4 @@
-package com.igrium.craftui.nbt;
+package com.igrium.craftui.widgets.nbt;
 
 import com.igrium.craftui.icon.NbtIcons;
 import imgui.ImGui;
@@ -6,9 +6,12 @@ import imgui.flag.ImGuiTreeNodeFlags;
 import imgui.type.ImString;
 import net.minecraft.nbt.Tag;
 
-public abstract sealed class NbtPrimitiveEditor<T extends Tag> extends NbtEditor<T> permits NbtByteEditor, NbtDoubleEditor, NbtFloatEditor, NbtGenericEditor, NbtIntEditor, NbtLongEditor, NbtShortEditor, NbtStringEditor {
+public abstract sealed class NbtPrimitiveEditor<T extends Tag> extends NbtEditor<T> permits NbtByteEditor,
+        NbtDoubleEditor, NbtFloatEditor, NbtGenericEditor, NbtIntEditor,
+        NbtLongEditor, NbtShortEditor, NbtStringEditor {
 
     private final EditableText labelText = new EditableText();
+
     @Override
     public int render(String id, ImString label, int flags) {
         super.render(id, label, flags);

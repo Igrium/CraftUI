@@ -1,4 +1,4 @@
-package com.igrium.craftui.nbt;
+package com.igrium.craftui.widgets.nbt;
 
 import com.igrium.craftui.icon.NbtIcons;
 import com.igrium.craftui.impl.util.NbtTypes;
@@ -7,17 +7,19 @@ import imgui.flag.ImGuiTreeNodeFlags;
 import imgui.type.ImString;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 
-public final class NbtListEditor extends NbtEditor<ListTag> {
+public final class NbtCompoundEditor extends NbtEditor<CompoundTag> {
 
     private static class Entry {
         final String id;
+        final ImString key = new ImString(32);
         NbtEditor<?> value;
 
-        private Entry(String id, NbtEditor<?> value) {
+        private Entry(String id, String key, NbtEditor<?> value) {
             this.id = id;
+            this.key.set(key);
             this.value = value;
         }
     }
@@ -27,7 +29,7 @@ public final class NbtListEditor extends NbtEditor<ListTag> {
     private final EditableText labelText = new EditableText();
 
     /**
-     * We want to keep entry IDs unique but consistent in the context of adding/removing/reordering entries.
+     * We want to keep entry IDs unique but consistent in the context of adding/removing entries.
      */
     private int curId = 0;
 
@@ -38,24 +40,22 @@ public final class NbtListEditor extends NbtEditor<ListTag> {
     }
 
     @Override
-    public ListTag getNbt() {
-        ListTag list = new ListTag();
-        for (Entry entry : entries) {
-            list.add(entry.value.getNbt());
+    public CompoundTag getNbt() {
+        CompoundTag compound = new CompoundTag();
+        for (var entry : entries) {
+            compound.put(entry.key.get(), entry.value.getNbt());
         }
-        return list;
+        return compound;
     }
 
     @Override
-    public void setNbt(ListTag nbt) {
+    public void setNbt(CompoundTag nbt) {
         entries.clear();
-        for (Tag item : nbt) {
-            entries.add(new Entry("entry." + curId++, NbtEditor.of(item)));
+        for (String key : nbt.keySet()) {
+            //noinspection DataFlowIssue
+            entries.add(new Entry("entry." + curId++, key, NbtEditor.of(nbt.get(key))));
         }
     }
-
-    private final ImString idxString = new ImString(3);
-
 
     @Override
     public int render(String id, ImString label, int flags) {
@@ -70,7 +70,7 @@ public final class NbtListEditor extends NbtEditor<ListTag> {
 
         ImGui.alignTextToFramePadding();
         if (openTreeNode) ImGui.setNextItemOpen(true);
-        boolean open = ImGui.treeNodeEx( NbtIcons.ICON_LIST + "##" + id, baseFlags);
+        boolean open = ImGui.treeNodeEx(NbtIcons.ICON_COMPOUND + "##" + id, baseFlags);
 
         if (ImGui.isItemClicked(1)) {
             rFlags |= NbtEditorFlags.RETURN_RIGHT_CLICKED;
@@ -82,7 +82,7 @@ public final class NbtListEditor extends NbtEditor<ListTag> {
         boolean canEditLabel = NbtEditorFlags.canEditLabel(flags);
         if (canEditLabel) {
             if (labelText.editString(id, label, ImGui.getFontSize() * 8)) {
-                rFlags |= NbtEditorFlags.RETURN_MODIFIED_LABEL | NbtEditorFlags.RETURN_MODIFIED;
+                rFlags |= NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_MODIFIED_LABEL;
             }
         } else {
             ImGui.text(label.get());
@@ -100,18 +100,12 @@ public final class NbtListEditor extends NbtEditor<ListTag> {
         }
 
         int childFlags = NbtEditorFlags.prepareForChildren(flags);
-        childFlags |= NbtEditorFlags.READONLY_LABEL;
 
         String removeId = null;
 
-        int toMoveUp = -1;
-        int toMoveDown = -1;
-
         if (open) {
-            int idx = 0;
             for (var item : entries) {
-                idxString.set("[" + idx + "]");
-                int cFlags = item.value.render(item.id, idxString, childFlags);
+                int cFlags = item.value.render(item.id, item.key, childFlags);
 
                 // Mask out clicks! Only let modification flags bubble up to the parent
                 rFlags |= (cFlags & ~(NbtEditorFlags.RETURN_RIGHT_CLICKED | NbtEditorFlags.RETURN_LEFT_CLICKED));
@@ -130,23 +124,9 @@ public final class NbtListEditor extends NbtEditor<ListTag> {
                     if (ImGui.menuItem(t("gui.craftui.nbt_remove"))) {
                         removeId = item.id;
                     }
-
-                    ImGui.beginDisabled(idx <= 0);
-                    if (ImGui.menuItem(t("gui.craftui.nbt_moveUp"))) {
-                        toMoveUp = idx;
-                    }
                     ImGui.endDisabled();
-
-                    ImGui.beginDisabled(idx >= entries.size() - 1);
-                    if (ImGui.menuItem(t("gui.craftui.nbt_moveDown"))) {
-                        toMoveDown = idx;
-                    }
-                    ImGui.endDisabled();
-                    ImGui.endDisabled();
-
                     ImGui.endPopup();
                 }
-                idx++;
             }
             ImGui.treePop();
         }
@@ -156,58 +136,32 @@ public final class NbtListEditor extends NbtEditor<ListTag> {
             rFlags |= NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_REMOVED_ITEM;
         }
 
-        if (0 < toMoveUp && toMoveUp < entries.size()) {
-            Entry other = entries.get(toMoveUp - 1);
-            entries.set(toMoveUp - 1, entries.get(toMoveUp));
-            entries.set(toMoveUp, other);
-            rFlags |= NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_REARRANGED;
-        }
-
-        if (0 <= toMoveDown && toMoveDown < entries.size() - 1) {
-            Entry other = entries.get(toMoveDown + 1);
-            entries.set(toMoveDown + 1, entries.get(toMoveDown));
-            entries.set(toMoveDown, other);
-            rFlags |= NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_REARRANGED;
-        }
-
         openTreeNode = false;
         return rFlags;
     }
 
     @Override
-    protected Class<? extends ListTag> getNbtClass() {
-        return ListTag.class;
+    protected Class<CompoundTag> getNbtClass() {
+        return CompoundTag.class;
     }
 
     @Override
     protected byte getNbtType() {
-        return Tag.TAG_LIST;
+        return Tag.TAG_COMPOUND;
     }
 
     @Override
     protected int drawContextItems(int flags) {
         ImGui.beginDisabled(hasFlag(flags, NbtEditorFlags.READONLY));
         boolean added = false;
-
-        // Can only add items of the same type
-        if (entries.isEmpty()) {
-            if (ImGui.beginMenu(t("gui.craftui.nbt_addChild"))) {
-                byte type = drawTypeChooser();
-                if (type > 0) {
-                    newItem(type);
-                    added = true;
-                }
-                ImGui.endMenu();
-            }
-        } else {
-            var entry = entries.getFirst();
-            byte type = entry.value.getNbtType();
-            if (ImGui.menuItem(NbtIcons.getIcon(type) + " " + t("gui.craftui.nbt_addChild"))) {
+        if (ImGui.beginMenu(t("gui.craftui.nbt_addChild"))) {
+            byte type = drawTypeChooser();
+            if (type > 0) {
                 newItem(type);
                 added = true;
             }
+            ImGui.endMenu();
         }
-
         ImGui.endDisabled();
 
         int rFlags = added ? NbtEditorFlags.RETURN_MODIFIED | NbtEditorFlags.RETURN_ADDED_ITEM : 0;
@@ -217,7 +171,8 @@ public final class NbtListEditor extends NbtEditor<ListTag> {
 
     public void newItem(byte type) {
         NbtEditor<?> editor = NbtEditor.of(NbtTypes.createElement(type));
-        entries.add(new Entry("entry." + curId++, editor));
+        editor.forceEditLabel();
+        entries.add(new Entry("entry." + curId++, NbtIcons.translationSuffix(type), editor));
         openTreeNode();
     }
 }
