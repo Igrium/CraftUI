@@ -49,7 +49,7 @@ public final class NbtEditorFlags {
             flags &= ~START_OPEN_SINGLE;
             flags &= ~START_OPEN;
         }
-        flags &= READONLY_LABEL;
+        flags &= ~READONLY_LABEL;
         flags |= CHILD;
         return flags;
     }
