@@ -36,7 +36,7 @@ public final class NbtIntEditor extends NbtPrimitiveEditor<IntTag> {
     }
 
     @Override
-    protected Class<? extends IntTag> getNbtClass() {
+    protected Class<IntTag> getNbtClass() {
         return IntTag.class;
     }
 }

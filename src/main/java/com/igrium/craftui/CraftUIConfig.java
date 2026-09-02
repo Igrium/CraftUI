@@ -1,9 +1,8 @@
-package com.igrium.craftui.impl.config;
+package com.igrium.craftui;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.JsonAdapter;
-import com.igrium.craftui.CraftUI;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.impl.util.JsonAdapters;
 import com.igrium.craftui.style.CraftUIStyles;
@@ -50,6 +49,8 @@ public final class CraftUIConfig {
         this.preferNativeFileDialog = other.preferNativeFileDialog;
         this.enableViewports = other.enableViewports;
         this.enableDebugCommands = other.enableDebugCommands;
+        this.style = other.style;
+        this.layoutPersistent = other.layoutPersistent;
     }
 
     public void loadConfig(Reader reader) {

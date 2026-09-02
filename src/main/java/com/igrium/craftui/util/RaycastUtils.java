@@ -16,7 +16,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -26,7 +25,7 @@ import org.joml.Vector4f;
  * A set of utility functions involving raycasting.
  */
 public final class RaycastUtils {
-    private RaycastUtils() {};
+    private RaycastUtils() {}
 
     /**
      * Some functions need to register some fabric listeners. Do that here.
@@ -46,10 +45,19 @@ public final class RaycastUtils {
 
     private static final Matrix4f lastProjectionMatrix = new Matrix4f();
     private static final Quaternionf lastCameraOrientation = new Quaternionf();
-    @Nullable
-    private static Vec3 lastCameraPos;
+    private static Vec3 lastCameraPos = Vec3.ZERO;
     private static boolean hasCamera;
 
+    /**
+     * Perform a raycast based on a specific point in screenspace
+     *
+     * @param x             Screenspace X.
+     * @param y             Screenspace Y.
+     * @param distance      Max distance of the raycast.
+     * @param predicate     A filter of which entities are allowed for this raycast.
+     * @param includeFluids Whether to include fluids
+     * @return The hit result.
+     */
     public static HitResult raycastViewport(float x, float y, float distance, Predicate<Entity> predicate, boolean includeFluids) {
         Window window = Minecraft.getInstance().getWindow();
         return raycastViewport(x, y, window.getScreenWidth(), window.getScreenHeight(), distance, predicate, includeFluids);
@@ -152,7 +160,6 @@ public final class RaycastUtils {
      * @return The hit result.
      */
     private static HitResult raycast(Entity sourceEntity, Vec3 start, Vec3 end, Predicate<Entity> predicate, boolean includeFluids) {
-        // TODO: Is it worth putting this in the public API?
         double distance = start.distanceTo(end);
         AABB box = AABB.ofSize(start, 1, 1, 1)
                 .expandTowards(sourceEntity.getViewVector(1).scale(distance))

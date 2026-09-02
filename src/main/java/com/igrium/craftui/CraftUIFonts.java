@@ -4,6 +4,8 @@ import com.igrium.craftui.impl.style.ImFontManager;
 import imgui.ImFont;
 import lombok.experimental.UtilityClass;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Map;
 
 /**
@@ -39,7 +41,7 @@ public final class CraftUIFonts {
      * @param id ID to use.
      * @return The font, or a default font if it does not exist.
      */
-    public static ImFont getFont(Identifier id) {
+    public static @NotNull ImFont getFont(Identifier id) {
         return ImFontManager.getInstance().get(id);
     }
 }

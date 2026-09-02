@@ -50,7 +50,7 @@ Once you have the framework installed and building, you can create a new UI appl
 ```java
 public class ExampleApp extends CraftApp {
     @Override
-    protected void render(MinecraftClient client) {
+    protected void render(Minecraft client) {
         // ImGui rendering code here
     }
 }

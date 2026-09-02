@@ -18,6 +18,7 @@ import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import org.apache.commons.io.FilenameUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -183,7 +184,7 @@ public class ImFontManager implements PreparableReloadListener {
         }
 
         LOGGER.info("Created font atlas with {} font(s)", fonts.size());
-        FontReloadCallback.EVENT.invoker().onFontsReloaded(this);
+        FontReloadCallback.EVENT.invoker().onFontsReloaded();
     }
 
     /**
@@ -298,7 +299,7 @@ public class ImFontManager implements PreparableReloadListener {
      * @param id ID to use.
      * @return The font, or a default font if it does not exist.
      */
-    public ImFont get(Identifier id) {
+    public @NotNull ImFont get(Identifier id) {
         ImFont font = fonts.get(id);
         if (font == null) {
             if (!complainedIds.contains(id)) {

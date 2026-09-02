@@ -6,9 +6,10 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
+import com.igrium.craftui.file.FileDialogInterface;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Util;
-import com.igrium.craftui.file.FileDialogInterface;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;

@@ -16,13 +16,12 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.igrium.craftui.impl.config.CraftUIConfig;
 import com.igrium.craftui.impl.commands.CraftUICommand;
 import com.igrium.craftui.impl.style.ImFontManager;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class CraftUI implements ClientModInitializer {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger("CraftUI");
+    private static final Logger LOGGER = LoggerFactory.getLogger("CraftUI");
 
     @Override
     public void onInitializeClient() {

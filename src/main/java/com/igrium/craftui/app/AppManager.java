@@ -27,6 +27,7 @@ import net.minecraft.CrashReport;
 import net.minecraft.ReportedException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.lwjgl.glfw.GLFW;
@@ -66,6 +67,7 @@ public final class AppManager {
      * {@code null} to present the game's main render target directly. Non-null only while a
      * custom viewport is active. Consumed by the render-frame present-blit redirect.
      */
+    @ApiStatus.Internal
     public static @Nullable GpuTextureView getCompositeTextureView() {
         return usingComposite ? viewportCompositor.getColorTextureView() : null;
     }
@@ -141,6 +143,7 @@ public final class AppManager {
         return isOpen(app, true);
     }
 
+    @ApiStatus.Internal
     public static void preRender(Minecraft client) {
         RenderSystem.assertOnRenderThread();
 
@@ -300,6 +303,7 @@ public final class AppManager {
      * Draw all open apps to the screen.
      * @param client Minecraft client instance.
      */
+    @ApiStatus.Internal
     public static void render(Minecraft client) {
         RenderSystem.assertOnRenderThread();
         if (crashed)

@@ -63,6 +63,7 @@ public abstract class DockSpaceApp extends CraftApp {
     /**
      * If the input mode is set to <code>ViewportInputMode.HOLD</code>,
      * forward viewport input whenever one of these buttons is pressed.
+     * ImGui mouse buttons: 0=left, 1=right, 2=middle.
      * @implNote Currently does not work with left mouse button
      */
     @Getter
@@ -81,13 +82,13 @@ public abstract class DockSpaceApp extends CraftApp {
 
     /**
      * Check if the mouse is currently pressed over the game viewport.
-     * @param mouseButton ImGui mouse button to check. (0=left, 1=middle, 2=right)
+     * @param mouseButton ImGui mouse button to check. (0=left, 1=right, 2=middle)
      */
     // TODO: Find a better place to put this
     protected static boolean mousePressedOverViewport(int mouseButton) {
         return (ImGui.isWindowHovered() || Minecraft.getInstance().mouseHandler.isMouseGrabbed()) && ImGui.isMouseDown(mouseButton);
     }
-
+    
     protected static boolean mouseDraggedOverViewport(int mouseButton) {
         return (ImGui.isWindowHovered() || Minecraft.getInstance().mouseHandler.isMouseGrabbed()) && ImGui.isMouseDragging(mouseButton);
     }
@@ -182,27 +183,22 @@ public abstract class DockSpaceApp extends CraftApp {
             AppManager.forwardMouseInputNextFrame();
         }
 
-        float minX = ImGui.getWindowContentRegionMinX();
-        float maxX = ImGui.getWindowContentRegionMaxX();
-        float minY = ImGui.getWindowContentRegionMinY();
-        float maxY = ImGui.getWindowContentRegionMaxY();
-
         float xPos;
         float yPos;
 
         if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
-            xPos = ImGui.getWindowPosX() - ImGui.getWindowViewport().getPosX() + minX;
-            yPos = ImGui.getWindowPosY() - ImGui.getWindowViewport().getPosY() + minY;
+            xPos = ImGui.getWindowPosX() - ImGui.getWindowViewport().getPosX();
+            yPos = ImGui.getWindowPosY() - ImGui.getWindowViewport().getPosY();
         } else {
-            xPos = ImGui.getWindowPosX() + minX;
-            yPos = ImGui.getWindowPosY() + minY;
+            xPos = ImGui.getWindowPosX();
+            yPos = ImGui.getWindowPosY();
         }
 
         // TODO: Can I deal with the OpenGL flipped y bullshittary better?
-        yPos = ImGui.getWindowViewport().getSizeY() - yPos - (maxY - minY);
+        yPos = ImGui.getWindowViewport().getSizeY() - yPos - ImGui.getWindowSizeY();
 
-        float width = Math.max(maxX - minX, 1);
-        float height = Math.max(maxY - minY, 1);
+        float width = Math.max(ImGui.getWindowSizeX(), 1);
+        float height = Math.max(ImGui.getWindowSizeY(), 1);
 
         viewportBounds = new ViewportBounds((int) xPos, (int) yPos, (int) width, (int) height);
 

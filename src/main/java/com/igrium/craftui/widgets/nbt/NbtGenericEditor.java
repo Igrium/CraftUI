@@ -2,6 +2,7 @@ package com.igrium.craftui.widgets.nbt;
 
 import imgui.ImGui;
 import net.minecraft.nbt.Tag;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A read-only editor that just display's the nbt's toString function
@@ -33,14 +34,14 @@ public final class NbtGenericEditor<T extends Tag> extends NbtPrimitiveEditor<T>
 
     @SuppressWarnings("unchecked")
     @Override
-    public void setNbt(T nbt) {
+    public void setNbt(@NonNull T nbt) {
         element = (T) nbt.copy();
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    protected Class<? extends T> getNbtClass() {
-        return (Class<? extends T>) element.getClass();
+    protected Class<T> getNbtClass() {
+        return (Class<T>) element.getClass();
     }
 
 

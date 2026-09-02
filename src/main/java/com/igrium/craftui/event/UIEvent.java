@@ -77,7 +77,6 @@ class CollectionBackedUIEvent<T> implements UIEvent<T> {
     
     @Override
     public T invoker() {
-        // The factory will never see garbage-collected listeners
         return invokerFactory.apply(unmodifiableListeners);
     }
 }

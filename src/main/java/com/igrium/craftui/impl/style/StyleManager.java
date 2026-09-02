@@ -72,7 +72,7 @@ public class StyleManager implements PreparableReloadListener {
     private Identifier activeStyle = CraftUIStyles.DARK;
 
     public void setActiveStyle(@NonNull Identifier activeStyle) {
-        if (activeStyle != this.activeStyle) {
+        if (!activeStyle.equals(this.activeStyle)) {
             this.activeStyle = activeStyle;
             wantStyleUpdate = true;
         }

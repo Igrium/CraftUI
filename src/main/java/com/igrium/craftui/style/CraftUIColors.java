@@ -1,7 +1,7 @@
 package com.igrium.craftui.style;
 
 import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableBiMap;
 import com.google.gson.JsonParseException;
 import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.JsonAdapter;
@@ -128,63 +128,61 @@ public class CraftUIColors {
     }
 
 
-    public static final BiMap<String, Integer> COLOR_NAMES = HashBiMap.create();
-
-    static {
-        COLOR_NAMES.put("text", ImGuiCol.Text);
-        COLOR_NAMES.put("textDisabled", ImGuiCol.TextDisabled);
-        COLOR_NAMES.put("windowBg", ImGuiCol.WindowBg);
-        COLOR_NAMES.put("childBg", ImGuiCol.ChildBg);
-        COLOR_NAMES.put("popupBg", ImGuiCol.PopupBg);
-        COLOR_NAMES.put("border", ImGuiCol.Border);
-        COLOR_NAMES.put("borderShadow", ImGuiCol.BorderShadow);
-        COLOR_NAMES.put("frameBg", ImGuiCol.FrameBg);
-        COLOR_NAMES.put("frameBgHovered", ImGuiCol.FrameBgHovered);
-        COLOR_NAMES.put("frameBgActive", ImGuiCol.FrameBgActive);
-        COLOR_NAMES.put("titleBg", ImGuiCol.TitleBg);
-        COLOR_NAMES.put("titleBgActive", ImGuiCol.TitleBgActive);
-        COLOR_NAMES.put("titleBgCollapsed", ImGuiCol.TitleBgCollapsed);
-        COLOR_NAMES.put("menuBarBg", ImGuiCol.MenuBarBg);
-        COLOR_NAMES.put("scrollbarBg", ImGuiCol.ScrollbarBg);
-        COLOR_NAMES.put("scrollbarGrab", ImGuiCol.ScrollbarGrab);
-        COLOR_NAMES.put("scrollbarGrabHovered", ImGuiCol.ScrollbarGrabHovered);
-        COLOR_NAMES.put("scrollbarGrabActive", ImGuiCol.ScrollbarGrabActive);
-        COLOR_NAMES.put("checkMark", ImGuiCol.CheckMark);
-        COLOR_NAMES.put("sliderGrab", ImGuiCol.SliderGrab);
-        COLOR_NAMES.put("sliderGrabActive", ImGuiCol.SliderGrabActive);
-        COLOR_NAMES.put("button", ImGuiCol.Button);
-        COLOR_NAMES.put("buttonHovered", ImGuiCol.ButtonHovered);
-        COLOR_NAMES.put("buttonActive", ImGuiCol.ButtonActive);
-        COLOR_NAMES.put("header", ImGuiCol.Header);
-        COLOR_NAMES.put("headerHovered", ImGuiCol.HeaderHovered);
-        COLOR_NAMES.put("headerActive", ImGuiCol.HeaderActive);
-        COLOR_NAMES.put("separator", ImGuiCol.Separator);
-        COLOR_NAMES.put("separatorHovered", ImGuiCol.SeparatorHovered);
-        COLOR_NAMES.put("separatorActive", ImGuiCol.SeparatorActive);
-        COLOR_NAMES.put("resizeGrip", ImGuiCol.ResizeGrip);
-        COLOR_NAMES.put("resizeGripHovered", ImGuiCol.ResizeGripHovered);
-        COLOR_NAMES.put("resizeGripActive", ImGuiCol.ResizeGripActive);
-        COLOR_NAMES.put("tab", ImGuiCol.Tab);
-        COLOR_NAMES.put("tabHovered", ImGuiCol.TabHovered);
-        COLOR_NAMES.put("tabActive", ImGuiCol.TabActive);
-        COLOR_NAMES.put("tabUnfocused", ImGuiCol.TabUnfocused);
-        COLOR_NAMES.put("tabUnfocusedActive", ImGuiCol.TabUnfocusedActive);
-        COLOR_NAMES.put("dockingPreview", ImGuiCol.DockingPreview);
-        COLOR_NAMES.put("dockingEmptyBg", ImGuiCol.DockingEmptyBg);
-        COLOR_NAMES.put("plotLines", ImGuiCol.PlotLines);
-        COLOR_NAMES.put("plotLinesHovered", ImGuiCol.PlotLinesHovered);
-        COLOR_NAMES.put("plotHistogram", ImGuiCol.PlotHistogram);
-        COLOR_NAMES.put("plotHistogramHovered", ImGuiCol.PlotHistogramHovered);
-        COLOR_NAMES.put("tableHeaderBg", ImGuiCol.TableHeaderBg);
-        COLOR_NAMES.put("tableBorderStrong", ImGuiCol.TableBorderStrong);
-        COLOR_NAMES.put("tableBorderLight", ImGuiCol.TableBorderLight);
-        COLOR_NAMES.put("tableRowBg", ImGuiCol.TableRowBg);
-        COLOR_NAMES.put("tableRowBgAlt", ImGuiCol.TableRowBgAlt);
-        COLOR_NAMES.put("textSelectedBg", ImGuiCol.TextSelectedBg);
-        COLOR_NAMES.put("dragDropTarget", ImGuiCol.DragDropTarget);
-        COLOR_NAMES.put("navHighlight", ImGuiCol.NavHighlight);
-        COLOR_NAMES.put("navWindowingHighlight", ImGuiCol.NavWindowingHighlight);
-        COLOR_NAMES.put("navWindowingDimBg", ImGuiCol.NavWindowingDimBg);
-        COLOR_NAMES.put("modalWindowDimBg", ImGuiCol.ModalWindowDimBg);
-    }
+    public static final BiMap<String, Integer> COLOR_NAMES = ImmutableBiMap.<String, Integer>builder()
+            .put("text", ImGuiCol.Text)
+            .put("textDisabled", ImGuiCol.TextDisabled)
+            .put("windowBg", ImGuiCol.WindowBg)
+            .put("childBg", ImGuiCol.ChildBg)
+            .put("popupBg", ImGuiCol.PopupBg)
+            .put("border", ImGuiCol.Border)
+            .put("borderShadow", ImGuiCol.BorderShadow)
+            .put("frameBg", ImGuiCol.FrameBg)
+            .put("frameBgHovered", ImGuiCol.FrameBgHovered)
+            .put("frameBgActive", ImGuiCol.FrameBgActive)
+            .put("titleBg", ImGuiCol.TitleBg)
+            .put("titleBgActive", ImGuiCol.TitleBgActive)
+            .put("titleBgCollapsed", ImGuiCol.TitleBgCollapsed)
+            .put("menuBarBg", ImGuiCol.MenuBarBg)
+            .put("scrollbarBg", ImGuiCol.ScrollbarBg)
+            .put("scrollbarGrab", ImGuiCol.ScrollbarGrab)
+            .put("scrollbarGrabHovered", ImGuiCol.ScrollbarGrabHovered)
+            .put("scrollbarGrabActive", ImGuiCol.ScrollbarGrabActive)
+            .put("checkMark", ImGuiCol.CheckMark)
+            .put("sliderGrab", ImGuiCol.SliderGrab)
+            .put("sliderGrabActive", ImGuiCol.SliderGrabActive)
+            .put("button", ImGuiCol.Button)
+            .put("buttonHovered", ImGuiCol.ButtonHovered)
+            .put("buttonActive", ImGuiCol.ButtonActive)
+            .put("header", ImGuiCol.Header)
+            .put("headerHovered", ImGuiCol.HeaderHovered)
+            .put("headerActive", ImGuiCol.HeaderActive)
+            .put("separator", ImGuiCol.Separator)
+            .put("separatorHovered", ImGuiCol.SeparatorHovered)
+            .put("separatorActive", ImGuiCol.SeparatorActive)
+            .put("resizeGrip", ImGuiCol.ResizeGrip)
+            .put("resizeGripHovered", ImGuiCol.ResizeGripHovered)
+            .put("resizeGripActive", ImGuiCol.ResizeGripActive)
+            .put("tab", ImGuiCol.Tab)
+            .put("tabHovered", ImGuiCol.TabHovered)
+            .put("tabActive", ImGuiCol.TabActive)
+            .put("tabUnfocused", ImGuiCol.TabUnfocused)
+            .put("tabUnfocusedActive", ImGuiCol.TabUnfocusedActive)
+            .put("dockingPreview", ImGuiCol.DockingPreview)
+            .put("dockingEmptyBg", ImGuiCol.DockingEmptyBg)
+            .put("plotLines", ImGuiCol.PlotLines)
+            .put("plotLinesHovered", ImGuiCol.PlotLinesHovered)
+            .put("plotHistogram", ImGuiCol.PlotHistogram)
+            .put("plotHistogramHovered", ImGuiCol.PlotHistogramHovered)
+            .put("tableHeaderBg", ImGuiCol.TableHeaderBg)
+            .put("tableBorderStrong", ImGuiCol.TableBorderStrong)
+            .put("tableBorderLight", ImGuiCol.TableBorderLight)
+            .put("tableRowBg", ImGuiCol.TableRowBg)
+            .put("tableRowBgAlt", ImGuiCol.TableRowBgAlt)
+            .put("textSelectedBg", ImGuiCol.TextSelectedBg)
+            .put("dragDropTarget", ImGuiCol.DragDropTarget)
+            .put("navHighlight", ImGuiCol.NavHighlight)
+            .put("navWindowingHighlight", ImGuiCol.NavWindowingHighlight)
+            .put("navWindowingDimBg", ImGuiCol.NavWindowingDimBg)
+            .put("modalWindowDimBg", ImGuiCol.ModalWindowDimBg)
+            .build();
 }

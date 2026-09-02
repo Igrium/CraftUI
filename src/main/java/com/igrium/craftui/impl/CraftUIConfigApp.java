@@ -1,6 +1,7 @@
-package com.igrium.craftui.impl.config;
+package com.igrium.craftui.impl;
 
 import com.igrium.craftui.CraftUI;
+import com.igrium.craftui.CraftUIConfig;
 import com.igrium.craftui.app.CraftApp;
 import com.igrium.craftui.file.FileDialogs;
 import com.igrium.craftui.screen.CraftAppScreen;
@@ -8,13 +9,11 @@ import com.igrium.craftui.style.CraftUILayouts;
 import com.igrium.craftui.style.CraftUIStyles;
 import imgui.ImGui;
 import imgui.flag.ImGuiCond;
-import imgui.flag.ImGuiHoveredFlags;
 import imgui.flag.ImGuiKey;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

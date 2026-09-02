@@ -15,7 +15,7 @@ public class CraftAppScreen<T extends CraftApp> extends Screen {
 
     private final T app;
 
-    @Setter
+    @Getter @Setter
     private boolean closeOnEsc = true;
 
     @Getter

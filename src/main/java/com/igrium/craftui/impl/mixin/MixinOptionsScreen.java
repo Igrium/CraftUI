@@ -1,6 +1,6 @@
 package com.igrium.craftui.impl.mixin;
 
-import com.igrium.craftui.impl.config.CraftUIConfigApp;
+import com.igrium.craftui.impl.CraftUIConfigApp;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.layouts.GridLayout;
