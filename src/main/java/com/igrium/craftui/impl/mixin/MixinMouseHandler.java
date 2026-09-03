@@ -9,8 +9,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.igrium.craftui.app.AppManager;
-import com.igrium.craftui.app.CraftApp.ViewportBounds;
+import com.igrium.craftui.api.CraftUI;
+import com.igrium.craftui.impl.AppManager;
+import com.igrium.craftui.api.app.CraftApp.ViewportBounds;
 import com.igrium.craftui.impl.input.MouseUtils;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalDoubleRef;
@@ -45,7 +46,7 @@ public class MixinMouseHandler {
             return;
         }
 
-        ViewportBounds viewport = AppManager.getCustomViewportBounds();
+        ViewportBounds viewport = CraftUI.getCustomViewportBounds();
         if (viewport != null) {
             var newPos = MouseUtils.calculateViewportMouse(minecraft.getWindow(), viewport, x.get(), y.get());
             x.set(newPos.x());
@@ -65,7 +66,7 @@ public class MixinMouseHandler {
         // Honestly this should be called in vanilla code. No idea why it's not.
         KeyMapping.releaseAll();
 
-        ViewportBounds viewport = AppManager.getCustomViewportBounds();
+        ViewportBounds viewport = CraftUI.getCustomViewportBounds();
         if (viewport != null) {
 
             this.mouseGrabbed = false;

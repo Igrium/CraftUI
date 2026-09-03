@@ -1,6 +1,6 @@
 package com.igrium.craftui.impl.input;
 
-import com.igrium.craftui.app.CraftApp.ViewportBounds;
+import com.igrium.craftui.api.app.CraftApp.ViewportBounds;
 import com.mojang.blaze3d.platform.Window;
 import lombok.Getter;
 import lombok.Setter;

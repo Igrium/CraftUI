@@ -1,12 +1,10 @@
 package com.igrium.craftui.impl;
 
-import com.igrium.craftui.CraftUI;
-import com.igrium.craftui.CraftUIConfig;
-import com.igrium.craftui.app.CraftApp;
-import com.igrium.craftui.file.FileDialogs;
-import com.igrium.craftui.screen.CraftAppScreen;
-import com.igrium.craftui.style.CraftUILayouts;
-import com.igrium.craftui.style.CraftUIStyles;
+import com.igrium.craftui.api.app.CraftApp;
+import com.igrium.craftui.api.file.FileDialogs;
+import com.igrium.craftui.api.screen.CraftAppScreen;
+import com.igrium.craftui.api.style.CraftUILayouts;
+import com.igrium.craftui.api.style.CraftUIStyles;
 import imgui.ImGui;
 import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiKey;
@@ -30,7 +28,7 @@ public class CraftUIConfigApp extends CraftApp {
     /**
      * Mutable config instance.
      */
-    private final CraftUIConfig config = CraftUI.getConfig();
+    private final CraftUIConfig config = CraftUIEntrypoint.getConfig();
 
     private final ImBoolean preferNativeFileDialog = new ImBoolean(config.isPreferNativeFileDialog());
     private final ImBoolean enableViewports = new ImBoolean(config.isEnableViewports());
@@ -64,7 +62,7 @@ public class CraftUIConfigApp extends CraftApp {
     }
 
     @Override
-    protected void render(Minecraft client) {
+    public void render(Minecraft client) {
         boolean wantsSave = false;
 
         var viewport = ImGui.getMainViewport();
@@ -162,7 +160,7 @@ public class CraftUIConfigApp extends CraftApp {
         config.setEnableViewports(enableViewports.get());
         config.setLayoutPersistent(layoutPersistent.get());
         config.setEnableDebugCommands(enableDebugCommand.get());
-        CraftUI.saveConfig();
+        CraftUIEntrypoint.saveConfig();
     }
 
     public static CraftAppScreen<CraftUIConfigApp> createScreen() {

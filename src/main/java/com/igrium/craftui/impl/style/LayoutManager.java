@@ -1,7 +1,7 @@
 package com.igrium.craftui.impl.style;
 
-import com.igrium.craftui.CraftUI;
-import com.igrium.craftui.style.CraftUILayouts;
+import com.igrium.craftui.impl.CraftUIEntrypoint;
+import com.igrium.craftui.api.style.CraftUILayouts;
 import lombok.Getter;
 import lombok.Setter;
 import net.fabricmc.loader.api.FabricLoader;
@@ -37,7 +37,7 @@ public class LayoutManager implements PreparableReloadListener {
         return instance;
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("CraftUI LayoutManager");
+    private static final Logger LOGGER = LoggerFactory.getLogger("CraftUIEntrypoint LayoutManager");
 
     private LayoutManager() {};
 
@@ -79,7 +79,7 @@ public class LayoutManager implements PreparableReloadListener {
     public void setUserLayoutData(Identifier layoutId, String data, boolean save) {
         userLayouts.put(layoutId, data);
 
-        if (save && CraftUI.getConfig().isLayoutPersistent()) {
+        if (save && CraftUIEntrypoint.getConfig().isLayoutPersistent()) {
             saveUserLayout(layoutId);
         }
     }

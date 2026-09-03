@@ -1,0 +1,47 @@
+package com.igrium.craftui.api.style;
+
+import com.igrium.craftui.impl.style.ImFontManager;
+import imgui.ImFont;
+import lombok.experimental.UtilityClass;
+import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
+
+/**
+ * Interface to access standard CraftUI fonts.
+ */
+@UtilityClass
+public final class CraftUIFonts {
+    public static final Identifier INTER = Identifier.parse("craftui:inter");
+    public static ImFont inter() {
+        return ImFontManager.getInstance().get(INTER);
+    }
+
+    public static final Identifier INTER_MEDIUM = Identifier.parse("craftui:inter-medium");
+    public static ImFont interMedium() {
+        return ImFontManager.getInstance().get(INTER_MEDIUM);
+    }
+
+    public static final Identifier NBT_ICONS = Identifier.parse("craftui:nbt-icons");
+    public static ImFont nbtIcons() {
+        return ImFontManager.getInstance().get(NBT_ICONS);
+    }
+
+    /**
+     * Get a map of all loaded fonts with their identifier.
+     * @return An unmodifiable map of all fonts. Does not include ImGui's default font.
+     */
+    public static Map<Identifier, ImFont> getFonts() {
+        return ImFontManager.getInstance().getFonts();
+    }
+
+    /**
+     * Get a font by its ID.
+     * @param id ID to use.
+     * @return The font, or a default font if it does not exist.
+     */
+    public static @NotNull ImFont getFont(Identifier id) {
+        return ImFontManager.getInstance().get(id);
+    }
+}

@@ -1,13 +1,13 @@
 package com.igrium.craftui.impl.render;
 
 import cn.enaium.fabric.imgui.DefaultImGui;
-import com.igrium.craftui.CraftUI;
+import com.igrium.craftui.impl.CraftUIEntrypoint;
 import imgui.ImGuiIO;
 import imgui.flag.ImGuiConfigFlags;
 import net.minecraft.util.Util;
 
 /**
- * CraftUI's {@link cn.enaium.fabric.imgui.ImGuiService} implementation, registered via
+ * CraftUIEntrypoint's {@link cn.enaium.fabric.imgui.ImGuiService} implementation, registered via
  * {@code META-INF/services}. It reuses the library's context lifecycle, GLFW input, and
  * Blaze3D render backend, only customizing the IO configuration and exposing a font
  * re-upload hook.
@@ -15,7 +15,7 @@ import net.minecraft.util.Util;
 public class CraftImGuiService extends DefaultImGui {
 
     public CraftImGuiService() {
-        // null id -> CraftUI manages layout persistence itself, so no per-mod .ini file.
+        // null id -> CraftUIEntrypoint manages layout persistence itself, so no per-mod .ini file.
         super(null);
     }
 
@@ -24,7 +24,7 @@ public class CraftImGuiService extends DefaultImGui {
         super.configure(io); // default font + build atlas + setIniFilename(null) + DockingEnable
         io.addConfigFlags(ImGuiConfigFlags.NavEnableKeyboard);
         io.setConfigMacOSXBehaviors(Util.getPlatform() == Util.OS.OSX);
-        if (CraftUI.getConfig().isEnableViewports()) {
+        if (CraftUIEntrypoint.getConfig().isEnableViewports()) {
             io.addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
         }
     }

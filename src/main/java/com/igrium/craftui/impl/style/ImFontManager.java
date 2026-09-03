@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.igrium.craftui.event.FontReloadCallback;
+import com.igrium.craftui.api.event.FontReloadCallback;
 import com.igrium.craftui.impl.render.CraftImGuiService;
 import cn.enaium.fabric.imgui.FabricImGui;
 import com.mojang.blaze3d.systems.RenderSystem;

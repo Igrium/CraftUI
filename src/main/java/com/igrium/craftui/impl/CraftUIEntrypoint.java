@@ -1,0 +1,105 @@
+package com.igrium.craftui.impl;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.igrium.craftui.impl.style.LayoutManager;
+import com.igrium.craftui.impl.style.StyleManager;
+import com.igrium.craftui.impl.util.RaycastManager;
+import lombok.Getter;
+import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
+import net.minecraft.server.packs.PackType;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.igrium.craftui.impl.commands.CraftUICommand;
+import com.igrium.craftui.impl.style.ImFontManager;
+
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
+
+public class CraftUIEntrypoint implements ClientModInitializer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger("CraftUIEntrypoint");
+
+    @Override
+    public void onInitializeClient() {
+        initConfig();
+
+        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(Identifier.parse("craftui:fonts"), ImFontManager.getInstance());
+        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(Identifier.parse("craftui:layouts"), LayoutManager.getInstance());
+        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(Identifier.parse("craftui:stylemanager"), StyleManager.getInstance());
+
+        RaycastManager.register();
+
+        if (getConfig().isEnableDebugCommands()) {
+            ClientCommandRegistrationCallback.EVENT.register(CraftUICommand::register);
+        }
+    }
+
+    // CONFIG
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Path CONFIG_FILE = FabricLoader.getInstance().getConfigDir().resolve("craftui.json");
+
+    /**
+     * The primary configuration file for CraftUI
+     */
+    @Getter @NotNull
+    private static final CraftUIConfig config = new CraftUIConfig();
+
+    /**
+     * Load the CraftUIEntrypoint config from file. Log an error if unable to load.
+     * @return If the config loaded successfully.
+     */
+    public static boolean reloadConfig() {
+        LOGGER.info("Loading CraftUI config from {}", CONFIG_FILE);
+        try (var reader = Files.newBufferedReader(CONFIG_FILE)) {
+            config.loadConfig(reader);
+            config.applyConfig();
+            return true;
+        } catch (Exception e) {
+            LOGGER.error("Error loading CraftUI config", e);
+            return false;
+        }
+    }
+
+    private static final Object configMutex = new Object();
+
+    /**
+     * Save the CraftUI config to file. Log an error if unable to save.
+     * @return If the config saved successfully.
+     */
+    public static CompletableFuture<Void> saveConfig() {
+        config.applyConfig();
+
+        return CompletableFuture.runAsync(() -> {
+            synchronized (configMutex) {
+                LOGGER.debug("Saving CraftUI config to {}", CONFIG_FILE);
+                try (var writer = Files.newBufferedWriter(CONFIG_FILE)) {
+                    config.saveConfig(writer);
+                } catch (IOException e) {
+                    LOGGER.error("Error saving CraftUI config", e);
+                    throw ExceptionUtils.asRuntimeException(e);
+                }
+            }
+        }, Util.ioPool());
+    }
+
+    private static void initConfig() {
+        if (Files.isRegularFile(CONFIG_FILE)) {
+            reloadConfig();
+        } else {
+            LOGGER.info("No CraftUI config found. Initializing...");
+            saveConfig();
+        }
+    }
+}

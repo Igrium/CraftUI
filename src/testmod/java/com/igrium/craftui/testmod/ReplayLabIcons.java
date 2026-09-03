@@ -1,6 +1,6 @@
 package com.igrium.craftui.testmod;
 
-import com.igrium.craftui.CraftUIFonts;
+import com.igrium.craftui.api.style.CraftUIFonts;
 import imgui.ImFont;
 import lombok.experimental.UtilityClass;
 import net.minecraft.resources.Identifier;

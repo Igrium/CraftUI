@@ -1,8 +1,8 @@
 package com.igrium.craftui.impl.file;
 
-import com.igrium.craftui.app.AppManager;
-import com.igrium.craftui.file.FileDialogInterface;
-import com.igrium.craftui.file.FileDialogs;
+import com.igrium.craftui.api.CraftUI;
+import com.igrium.craftui.api.file.FileDialogInterface;
+import com.igrium.craftui.api.file.FileDialogs;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -20,9 +20,9 @@ public class ImFileDialog implements FileDialogInterface {
         widget.setDefaultPath(defaultPath);
         widget.setSaveMode(true);
 
-        AppManager.setGlobalPopup(widget::render);
+        CraftUI.setGlobalPopup(widget::render);
         return widget.getFuture()
-                .whenComplete((v, e) -> AppManager.setGlobalPopup(null));
+                .whenComplete((v, e) -> CraftUI.setGlobalPopup(null));
 
     }
 
@@ -31,9 +31,9 @@ public class ImFileDialog implements FileDialogInterface {
         ImFileDialogPopup widget = new ImFileDialogPopup();
         widget.setDefaultPath(defaultPath);
 
-        AppManager.setGlobalPopup(widget::render);
+        CraftUI.setGlobalPopup(widget::render);
         return widget.getFuture()
-                .whenComplete((v, e) -> AppManager.setGlobalPopup(null));
+                .whenComplete((v, e) -> CraftUI.setGlobalPopup(null));
     }
 
     @Override
@@ -42,8 +42,8 @@ public class ImFileDialog implements FileDialogInterface {
         widget.setDefaultPath(defaultPath);
         widget.setDirMode(true);
 
-        AppManager.setGlobalPopup(widget::render);
+        CraftUI.setGlobalPopup(widget::render);
         return widget.getFuture()
-                .whenComplete((v, e) -> AppManager.setGlobalPopup(null));
+                .whenComplete((v, e) -> CraftUI.setGlobalPopup(null));
     }
 }

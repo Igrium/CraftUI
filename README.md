@@ -50,7 +50,7 @@ Once you have the framework installed and building, you can create a new UI appl
 ```java
 public class ExampleApp extends CraftApp {
     @Override
-    protected void render(Minecraft client) {
+    public void render(Minecraft client) {
         // ImGui rendering code here
     }
 }
@@ -58,7 +58,7 @@ public class ExampleApp extends CraftApp {
 
 Now, to open the UI, call:
 ```java
-AppManager.openApp(new ExampleApp());
+CraftUI.openApp(new ExampleApp());
 ```
 
 The app will now render atop the game until it is closed with `exampleApp.close()`.

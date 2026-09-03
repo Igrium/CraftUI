@@ -6,10 +6,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import com.igrium.craftui.file.FileDialogInterface;
+import com.igrium.craftui.api.file.FileDialogInterface;
 import org.jetbrains.annotations.Nullable;
 
-import com.igrium.craftui.file.FileDialogs.FileFilter;
+import com.igrium.craftui.api.file.FileDialogs.FileFilter;
 
 @Deprecated
 class AWTFileDialog implements FileDialogInterface {

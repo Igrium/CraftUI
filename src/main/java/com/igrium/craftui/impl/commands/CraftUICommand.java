@@ -1,8 +1,8 @@
 package com.igrium.craftui.impl.commands;
 
-import com.igrium.craftui.CraftUI;
-import com.igrium.craftui.screen.CraftAppScreen;
-import com.igrium.craftui.app.AppManager;
+import com.igrium.craftui.impl.CraftUIEntrypoint;
+import com.igrium.craftui.api.screen.CraftAppScreen;
+import com.igrium.craftui.api.CraftUI;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 
@@ -20,7 +20,7 @@ public class CraftUICommand {
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher,
             CommandBuildContext registryAccess) {
 
-        if (CraftUI.getConfig().isEnableDebugCommands()) {
+        if (CraftUIEntrypoint.getConfig().isEnableDebugCommands()) {
             dispatcher.register(literal("craftui").then(
                     literal("demo").executes(CraftUICommand::openDemoScreen).then(
                             literal("open").executes(CraftUICommand::openDemo)
@@ -50,7 +50,7 @@ public class CraftUICommand {
             return 0;
 
         screenlessDemoApp = new ImGuiDemoApp();
-        AppManager.openApp(screenlessDemoApp);
+        CraftUI.openApp(screenlessDemoApp);
         return 1;
     }
 

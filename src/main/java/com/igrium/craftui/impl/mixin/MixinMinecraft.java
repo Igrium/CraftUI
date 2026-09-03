@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.igrium.craftui.app.AppManager;
+import com.igrium.craftui.impl.AppManager;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuSurface;
 import com.mojang.blaze3d.textures.GpuTextureView;

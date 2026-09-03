@@ -1,8 +1,8 @@
 package com.igrium.craftui.impl.file;
 
 import com.google.common.collect.ImmutableMap;
-import com.igrium.craftui.icon.FontAwesome;
-import com.igrium.craftui.file.FileDialogs.FileFilter;
+import com.igrium.craftui.api.icon.FontAwesome;
+import com.igrium.craftui.api.file.FileDialogs.FileFilter;
 import imgui.ImGui;
 import imgui.flag.*;
 import imgui.type.ImString;

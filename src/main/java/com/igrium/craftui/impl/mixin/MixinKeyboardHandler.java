@@ -1,6 +1,6 @@
 package com.igrium.craftui.impl.mixin;
 
-import com.igrium.craftui.app.AppManager;
+import com.igrium.craftui.impl.AppManager;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;

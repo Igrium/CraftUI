@@ -7,7 +7,7 @@ import org.jspecify.annotations.Nullable;
 
 public class ViewportCompositor extends RenderTarget {
     public ViewportCompositor() {
-        super("CraftUI Viewport Compositor", false, GpuFormat.RGBA8_UNORM);
+        super("CraftUIEntrypoint Viewport Compositor", false, GpuFormat.RGBA8_UNORM);
     }
 
     public void ensureSize(int width, int height) {

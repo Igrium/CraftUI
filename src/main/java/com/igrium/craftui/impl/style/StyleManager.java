@@ -4,14 +4,13 @@ package com.igrium.craftui.impl.style;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import com.igrium.craftui.style.CraftUIStyle;
-import com.igrium.craftui.style.CraftUIStyles;
+import com.igrium.craftui.api.style.CraftUIStyle;
+import com.igrium.craftui.api.style.CraftUIStyles;
 import com.igrium.craftui.impl.util.JsonUtils;
 import imgui.ImGuiStyle;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
@@ -28,7 +27,7 @@ import java.util.concurrent.Executor;
 
 public class StyleManager implements PreparableReloadListener {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("CraftUI StyleManager");
+    private static final Logger LOGGER = LoggerFactory.getLogger("CraftUIEntrypoint StyleManager");
 
     private static final Gson GSON = new GsonBuilder().create();
 

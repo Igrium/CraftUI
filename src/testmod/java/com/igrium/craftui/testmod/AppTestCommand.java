@@ -1,8 +1,8 @@
 package com.igrium.craftui.testmod;
 
-import com.igrium.craftui.app.AppManager;
-import com.igrium.craftui.app.CraftApp;
-import com.igrium.craftui.screen.CraftAppScreen;
+import com.igrium.craftui.api.CraftUI;
+import com.igrium.craftui.api.app.CraftApp;
+import com.igrium.craftui.api.screen.CraftAppScreen;
 import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.commands.CommandBuildContext;
@@ -26,7 +26,7 @@ public class AppTestCommand {
                         return 0;
 
                     app = new TestApp();
-                    AppManager.openApp(app);
+                    CraftUI.openApp(app);
                     return 1;
                 })
         ).then(

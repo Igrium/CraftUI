@@ -27,10 +27,10 @@
     },
     "entrypoints": {
         "client": [
-            "com.igrium.craftui.CraftUI"
+            "com.igrium.craftui.impl.CraftUIEntrypoint"
         ],
         "modmenu": [
-            "com.igrium.craftui.CraftUIModMenu"
+            "com.igrium.craftui.impl.CraftUIModMenu"
         ]
     }
 }

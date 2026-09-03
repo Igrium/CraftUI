@@ -1,15 +1,14 @@
 package com.igrium.craftui.testmod;
 
-import com.igrium.craftui.icon.FontAwesome;
-import com.igrium.craftui.app.AppManager;
-import com.igrium.craftui.app.DockSpaceApp;
-import com.igrium.craftui.file.FileDialogs;
-import com.igrium.craftui.file.FileDialogs.FileFilter;
-import com.igrium.craftui.icon.NbtIcons;
-import com.igrium.craftui.widgets.nbt.NbtEditor;
-import com.igrium.craftui.widgets.nbt.NbtEditorFlags;
-import com.igrium.craftui.style.CraftUILayouts;
-import com.igrium.craftui.util.RaycastUtils;
+import com.igrium.craftui.api.icon.FontAwesome;
+import com.igrium.craftui.api.CraftUI;
+import com.igrium.craftui.api.app.DockSpaceApp;
+import com.igrium.craftui.api.file.FileDialogs;
+import com.igrium.craftui.api.file.FileDialogs.FileFilter;
+import com.igrium.craftui.api.icon.NbtIcons;
+import com.igrium.craftui.api.nbt.NbtEditor;
+import com.igrium.craftui.api.nbt.NbtEditorFlags;
+import com.igrium.craftui.api.style.CraftUILayouts;
 import imgui.ImGui;
 import imgui.flag.ImGuiFocusedFlags;
 import imgui.type.ImBoolean;
@@ -84,14 +83,9 @@ public class TestApp extends DockSpaceApp {
         nbtEditor = NbtEditor.of(editingNbt);
     }
 
-    @Override
-    protected void onOpen() {
-        super.onOpen();
-    }
-
     private final ImBoolean allowEditNbt = new ImBoolean(true);
 
-    protected void render(Minecraft client) {
+    public void render(Minecraft client) {
         super.render(client);
 
         if (ImGui.begin("Upper Window")) {
@@ -171,7 +165,7 @@ public class TestApp extends DockSpaceApp {
                         }
                     });
                 }
-                AppManager.drawGlobalPopup();
+                CraftUI.drawGlobalPopup();
                 ImGui.endPopup();
             }
         }
@@ -224,12 +218,12 @@ public class TestApp extends DockSpaceApp {
      */
     private static void unlockIfWindowFocused() {
         if (ImGui.isWindowFocused(ImGuiFocusedFlags.AnyWindow)) {
-            AppManager.forceMouseUnlock();
+            CraftUI.forceMouseUnlock();
         }
     }
 
-    @Override
-    protected @Nullable Identifier getLayoutPreset() {
+    @Override @Nullable
+    public Identifier getLayoutPreset() {
         return switch (layout.get()) {
             case 0 -> CraftUILayouts.DEFAULT;
             case 1 -> LAYOUT1;
@@ -246,7 +240,7 @@ public class TestApp extends DockSpaceApp {
         IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
         if (server == null) return;
 
-        HitResult raycast = RaycastUtils.raycastViewport((float)mouse.xpos(), (float)mouse.ypos(), 1000, e -> false, false);
+        HitResult raycast = CraftUI.raycastViewport((float)mouse.xpos(), (float)mouse.ypos(), 1000, e -> false, false);
         LoggerFactory.getLogger(getClass()).info("Position: {} {} {}", raycast.getLocation().x, raycast.getLocation().y, raycast.getLocation().z);
 
         if (raycast.getType() != HitResult.Type.MISS) {
@@ -264,7 +258,7 @@ public class TestApp extends DockSpaceApp {
         IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
         if (server == null) return;
 
-        HitResult raycast = RaycastUtils.raycastViewport((float)mouse.xpos(), (float)mouse.ypos(), 1000, e -> !(e instanceof Player), false);
+        HitResult raycast = CraftUI.raycastViewport((float)mouse.xpos(), (float)mouse.ypos(), 1000, e -> !(e instanceof Player), false);
         if (raycast instanceof EntityHitResult entHit) {
             Entity ent = entHit.getEntity();
 

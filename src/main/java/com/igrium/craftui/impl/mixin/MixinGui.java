@@ -4,7 +4,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-import com.igrium.craftui.app.AppManager;
+import com.igrium.craftui.impl.AppManager;
 
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.Gui;

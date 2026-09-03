@@ -143,7 +143,7 @@ public class ViewportBlitter {
         uploadQuad(device, encoder, x, y, w, h);
 
         try (RenderPass renderPass = encoder.createRenderPass(
-                () -> "CraftUI Viewport Composite",
+                () -> "CraftUIEntrypoint Viewport Composite",
                 target, Optional.of(new Vector4f(0f, 0f, 0f, 1f)))) {
             renderPass.setPipeline(BLIT_PIPELINE);
             renderPass.setUniform("Projection", projection);
@@ -157,7 +157,7 @@ public class ViewportBlitter {
     private GpuBufferSlice getProjectionBuffer(GpuDevice device, CommandEncoder encoder, int fbWidth, int fbHeight) {
         if (projectionBuffer == null) {
             projectionBuffer = device.createBuffer(
-                    () -> "CraftUI Viewport Blit Projection",
+                    () -> "CraftUIEntrypoint Viewport Blit Projection",
                     GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_UNIFORM,
                     RenderSystem.PROJECTION_MATRIX_UBO_SIZE);
         }
@@ -177,11 +177,11 @@ public class ViewportBlitter {
 
     private void uploadQuad(GpuDevice device, CommandEncoder encoder, int x, int y, int w, int h) {
         if (vertexBuffer == null) {
-            vertexBuffer = device.createBuffer(() -> "CraftUI Viewport Blit Vertices",
+            vertexBuffer = device.createBuffer(() -> "CraftUIEntrypoint Viewport Blit Vertices",
                     GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, 4 * 16);
         }
         if (indexBuffer == null) {
-            indexBuffer = device.createBuffer(() -> "CraftUI Viewport Blit Indices",
+            indexBuffer = device.createBuffer(() -> "CraftUIEntrypoint Viewport Blit Indices",
                     GpuBuffer.USAGE_INDEX | GpuBuffer.USAGE_COPY_DST, 6 * 2);
             try (MemoryStack stack = MemoryStack.stackPush()) {
                 ByteBuffer idx = stack.malloc(6 * 2);
