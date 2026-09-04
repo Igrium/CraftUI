@@ -177,8 +177,6 @@ public abstract class DockSpaceApp extends CraftApp {
             }
         }
 
-
-
         // Force mouse inputs to be forwarded to screen if there is any.
         if (ImGui.isWindowHovered() && Minecraft.getInstance().gui.screen() != null) {
             CraftUI.forwardMouseInputNextFrame();
@@ -186,20 +184,25 @@ public abstract class DockSpaceApp extends CraftApp {
 
         float xPos;
         float yPos;
+        float height;
+
+        float headerBottomY = ImGui.getCursorScreenPosY() - ImGui.getStyle().getWindowPaddingY();
 
         if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
             xPos = ImGui.getWindowPosX() - ImGui.getWindowViewport().getPosX();
-            yPos = ImGui.getWindowPosY() - ImGui.getWindowViewport().getPosY();
+            yPos = headerBottomY - ImGui.getWindowViewport().getPosY();
         } else {
             xPos = ImGui.getWindowPosX();
-            yPos = ImGui.getWindowPosY();
+            yPos = headerBottomY;
         }
 
+        height = (ImGui.getWindowPosY() + ImGui.getWindowSizeY()) - headerBottomY;
+
         // TODO: Can I deal with the OpenGL flipped y bullshittary better?
-        yPos = ImGui.getWindowViewport().getSizeY() - yPos - ImGui.getWindowSizeY();
+        yPos = ImGui.getWindowViewport().getSizeY() - yPos - height;
 
         float width = Math.max(ImGui.getWindowSizeX(), 1);
-        float height = Math.max(ImGui.getWindowSizeY(), 1);
+        height = Math.max(height, 1);
 
         viewportBounds = new ViewportBounds((int) xPos, (int) yPos, (int) width, (int) height);
 
