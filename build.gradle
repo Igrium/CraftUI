@@ -55,8 +55,17 @@ dependencies {
     compileOnly("com.terraformersmc:modmenu:${project.modmenu_version}")
 
     // Dear ImGui — provides the ImGui context, GLFW input, and render backend.
-    // Pulls in imgui-java (binding + natives) transitively.
-    api "cn.enaium:fabric-gui-imgui:${project.imgui_version}";
+    api include("cn.enaium:fabric-gui-imgui:${project.imgui_version}")
+
+    // imgui-java libraries used by fabric-gui-imgui, included directly so they're
+    // available on the compile classpath and jarred-in-jar alongside it.
+    api include("io.github.spair:imgui-java-binding:${project.imgui_java_version}")
+    api(include("io.github.spair:imgui-java-lwjgl3:${project.imgui_java_version}")) {
+        exclude group: "org.lwjgl"
+    }
+    api include("io.github.spair:imgui-java-natives-windows:${project.imgui_java_version}")
+    api include("io.github.spair:imgui-java-natives-linux:${project.imgui_java_version}")
+    api include("io.github.spair:imgui-java-natives-macos:${project.imgui_java_version}")
 
     api include("org.lwjgl:lwjgl-nfd:3.3.3")
     runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-windows")
