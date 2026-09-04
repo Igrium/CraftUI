@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -36,6 +37,7 @@ public abstract class CraftApp {
     @Accessors(fluent = true)
     private final UIEvent<Runnable> closeEvent = UIEvent.ofRunnable();
 
+    @ApiStatus.Internal
     public final void onOpen() {
         openEvent.invoker().run();
     }
@@ -82,6 +84,7 @@ public abstract class CraftApp {
         return null;
     }
 
+    @ApiStatus.Internal
     public final void onClose() {
         closeEvent.invoker().run();
     }
