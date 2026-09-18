@@ -3,15 +3,18 @@
     "package": "com.igrium.craftui.impl.mixin",
     "compatibilityLevel": "JAVA_21",
     "client": [
+        "MixinGameRenderer",
         "MixinGui",
         "MixinKeyboardHandler",
         "MixinMinecraft",
-        "MixinGameRenderer",
-        "MixinOptionsScreen",
         "MixinMouseHandler",
+        "MixinOptionsScreen",
         "MixinWindow"
     ],
     "injectors": {
         "defaultRequire": 1
-	}
+    },
+    "mixins": [
+        "AccessorDefaultImGui"
+    ]
 }

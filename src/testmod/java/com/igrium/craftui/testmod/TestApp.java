@@ -1,5 +1,6 @@
 package com.igrium.craftui.testmod;
 
+import cn.enaium.fabric.imgui.TextureBindings;
 import com.igrium.craftui.api.icon.FontAwesome;
 import com.igrium.craftui.api.CraftUI;
 import com.igrium.craftui.api.app.DockSpaceApp;
@@ -9,6 +10,11 @@ import com.igrium.craftui.api.icon.NbtIcons;
 import com.igrium.craftui.api.nbt.NbtEditor;
 import com.igrium.craftui.api.nbt.NbtEditorFlags;
 import com.igrium.craftui.api.style.CraftUILayouts;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.AddressMode;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTexture;
 import imgui.ImGui;
 import imgui.flag.ImGuiFocusedFlags;
 import imgui.type.ImBoolean;
@@ -16,6 +22,7 @@ import imgui.type.ImInt;
 import imgui.type.ImString;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.nbt.*;
 import net.minecraft.network.chat.Component;
@@ -33,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.concurrent.CompletableFuture;
 
 public class TestApp extends DockSpaceApp {
@@ -50,6 +58,7 @@ public class TestApp extends DockSpaceApp {
     private static final Identifier LAYOUT1 = Identifier.fromNamespaceAndPath("craftui-test", "layout1");
     private static final Identifier LAYOUT2 = Identifier.fromNamespaceAndPath("craftui-test", "layout2");
 
+    private final GpuSampler sampler;
     private NbtEditor<?> nbtEditor;
 
     public TestApp() {
@@ -81,6 +90,18 @@ public class TestApp extends DockSpaceApp {
         editingNbt.put("Compound", compound);
 
         nbtEditor = NbtEditor.of(editingNbt);
+
+        sampler = RenderSystem.getDevice().createSampler(
+                AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
+                FilterMode.NEAREST, FilterMode.NEAREST,
+                1, OptionalDouble.empty()
+        );
+
+        this.closeEvent().addListener(this::closed);
+    }
+
+    private void closed() {
+        sampler.close();
     }
 
     private final ImBoolean allowEditNbt = new ImBoolean(true);
@@ -168,6 +189,13 @@ public class TestApp extends DockSpaceApp {
                 CraftUI.drawGlobalPopup();
                 ImGui.endPopup();
             }
+
+
+            var creeperTex = Identifier.withDefaultNamespace("textures/entity/creeper/creeper.png");
+            AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(creeperTex);
+
+            long texId = TextureBindings.INSTANCE.textureId(abstractTexture.getTextureView(), sampler);
+            ImGui.image(texId, abstractTexture.getTexture().getWidth(0) * 8, abstractTexture.getTexture().getHeight(0) * 8);
         }
         ImGui.end();
 
@@ -211,6 +239,7 @@ public class TestApp extends DockSpaceApp {
 //            NbtEditor.drawNbtEditor("NBT Editor##test", editingNbt, 0);
         }
         ImGui.end();
+
     }
 
     /**

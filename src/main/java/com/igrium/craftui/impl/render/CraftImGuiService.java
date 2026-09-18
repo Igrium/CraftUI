@@ -2,6 +2,7 @@ package com.igrium.craftui.impl.render;
 
 import cn.enaium.fabric.imgui.DefaultImGui;
 import com.igrium.craftui.impl.CraftUIEntrypoint;
+import com.igrium.craftui.impl.mixin.AccessorDefaultImGui;
 import imgui.ImGuiIO;
 import imgui.flag.ImGuiConfigFlags;
 import net.minecraft.util.Util;
@@ -30,13 +31,15 @@ public class CraftImGuiService extends DefaultImGui {
     }
 
     public void reloadFontsTexture() {
-        if (imGuiImplBlaze3D != null) {
+        var implBlaze3d = ((AccessorDefaultImGui) this).getImGuiImplBlaze3D();
+        if (implBlaze3d != null) {
             // Cleared here; newFrame() lazily rebuilds the pipeline + font texture from the new atlas.
-            imGuiImplBlaze3D.dispose();
+            implBlaze3d.dispose();
         }
-        if (imGuiImplGl3 != null) {
-            imGuiImplGl3.destroyFontsTexture();
-            imGuiImplGl3.createFontsTexture();
+        var implGl3 = ((AccessorDefaultImGui) this).getImGuiImplGl3();
+        if (implGl3 != null) {
+            implGl3.destroyFontsTexture();
+            implGl3.createFontsTexture();
         }
     }
 }
