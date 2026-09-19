@@ -5,6 +5,7 @@
     "client": [
         "MixinGameRenderer",
         "MixinGui",
+        "MixinImGuiImplBlaze3D",
         "MixinKeyboardHandler",
         "MixinMinecraft",
         "MixinMouseHandler",
@@ -15,6 +16,7 @@
         "defaultRequire": 1
     },
     "mixins": [
-        "AccessorDefaultImGui"
+        "AccessorDefaultImGui",
+        "AccessorRenderPass"
     ]
 }
