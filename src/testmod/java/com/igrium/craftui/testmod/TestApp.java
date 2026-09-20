@@ -11,10 +11,10 @@ import com.igrium.craftui.api.nbt.NbtEditor;
 import com.igrium.craftui.api.nbt.NbtEditorFlags;
 import com.igrium.craftui.api.style.CraftUILayouts;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTexture;
+
+import com.mojang.renderpearl.api.textures.AddressMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
 import imgui.ImGui;
 import imgui.flag.ImGuiFocusedFlags;
 import imgui.type.ImBoolean;

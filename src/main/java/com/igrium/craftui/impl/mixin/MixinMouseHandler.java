@@ -1,7 +1,6 @@
 package com.igrium.craftui.impl.mixin;
 
 import com.igrium.craftui.impl.input.CursorLockManager;
-import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -38,9 +37,9 @@ public class MixinMouseHandler {
     private double ypos;
 
     @Inject(method = "onMove", at = @At("HEAD"))
-    void craftui$onCursorPos(long handle, double mouseX, double mouseY, CallbackInfo ci,
-                             @Local(argsOnly = true, name = "xpos") LocalDoubleRef x,
-                             @Local(argsOnly = true, name = "ypos") LocalDoubleRef y) {
+    void craftui$onCursorPos(long handle, double xpos, double ypos, double xrel, double yrel, CallbackInfo ci,
+                             @Local(argsOnly = true, name = "xpos") LocalDoubleRef x, @Local(argsOnly = true, name =
+                    "ypos") LocalDoubleRef y) {
         // Do the if check again because it's easier to mix into the head.
         if (handle != Minecraft.getInstance().getWindow().handle()) {
             return;
@@ -74,10 +73,12 @@ public class MixinMouseHandler {
             this.xpos = (double) viewport.width() / 2 + viewport.x();
             this.ypos = minecraft.getWindow().getScreenHeight() - ((double) viewport.height() / 2 + viewport.y());
 
-            InputConstants.grabOrReleaseMouse(minecraft.getWindow(), InputConstants.CURSOR_NORMAL, xpos, ypos);
+            InputConstants.releaseMouse(minecraft.getWindow(), xpos, ypos);
 
-            // For some reason, setCursorParameters attempts to set the cursor pos BEFORE changing its mode, making the x and y args useless.
-            GLFW.glfwSetCursorPos(minecraft.getWindow().handle(), xpos, ypos);
+            // For some reason, setCursorParameters attempts to set the cursor pos BEFORE changing its mode, making
+            // the x and y args useless.
+
+//            GLFW.glfwSetCursorPos(minecraft.getWindow().handle(), xpos, ypos);
             ci.cancel();
         }
     }
@@ -95,7 +96,7 @@ public class MixinMouseHandler {
             return;
         }
 
-        MouseUtils.setMousePressed(action == GLFW.GLFW_PRESS);
+        MouseUtils.setMousePressed(action == InputConstants.PRESS);
     }
 
     @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)

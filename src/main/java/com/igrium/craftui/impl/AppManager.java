@@ -19,6 +19,7 @@ import com.igrium.craftui.api.style.CraftUILayouts;
 import com.igrium.craftui.api.style.CraftUIStyle;
 import com.mojang.blaze3d.pipeline.MainTarget;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import imgui.ImFont;
 import imgui.ImGuiIO;
 import lombok.Getter;
@@ -30,7 +31,6 @@ import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +39,6 @@ import com.igrium.craftui.api.style.CraftUIFonts;
 import com.igrium.craftui.impl.render.ViewportCompositor;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
 
 import cn.enaium.fabric.imgui.FabricImGui;
 import imgui.ImGui;
@@ -177,9 +176,13 @@ public final class AppManager {
 
     private static void updateViewportBounds(Minecraft client) {
         Window window = client.getWindow();
-        int[] realWidth = new int[1];
-        int[] realHeight = new int[1];
-        GLFW.glfwGetFramebufferSize(window.handle(), realWidth, realHeight);
+//        int[] realWidth = new int[1];
+//        int[] realHeight = new int[1];
+
+        // Could probably be optimized, but it's only called at most once per frame
+        var size = window.queryFramebufferSize();
+        int realWidth = size.width();
+        int realHeight = size.height();
 
         if (worldRenderTarget == null) {
             // Take over mainRenderTarget once. From here on, this object is what we'll render into
@@ -188,7 +191,7 @@ public final class AppManager {
 
             LOGGER.info("Injecting custom window render target");
 
-            worldRenderTarget = new MainTarget(realWidth[0], realHeight[0]);
+            worldRenderTarget = new MainTarget(realWidth, realHeight);
             GameRendererExt.setMainRenderTarget(client.gameRenderer, worldRenderTarget);
         } else if (usingComposite) {
             GameRendererExt.setMainRenderTarget(client.gameRenderer, worldRenderTarget);
@@ -215,8 +218,8 @@ public final class AppManager {
             window.setWidth(scaled.width());
             window.setHeight(scaled.height());
         } else {
-            window.setWidth(realWidth[0]);
-            window.setHeight(realHeight[0]);
+            window.setWidth(realWidth);
+            window.setHeight(realHeight);
         }
 
         if (!Objects.equals(prevViewportBounds, currentViewportBounds)) {
@@ -401,18 +404,18 @@ public final class AppManager {
 
         Window window = client.getWindow();
 
-        int[] realWidth = new int[1];
-        int[] realHeight = new int[1];
-        GLFW.glfwGetFramebufferSize(window.handle(), realWidth, realHeight);
+        Window.FramebufferSize size = window.queryFramebufferSize();
+        int realWidth = size.width();
+        int realHeight = size.height();
 
         ViewportBounds scaled = currentViewportBounds.scaled();
 
-        viewportCompositor.ensureSize(realWidth[0], realHeight[0]);
+        viewportCompositor.ensureSize(realWidth, realHeight);
 
         // Fix flipped-y bullshittary
-        int destY = realHeight[0] - scaled.y() - scaled.height();
+        int destY = realHeight - scaled.y() - scaled.height();
 
-        viewportBlitter.blit(viewportCompositor.getColorTextureView(), realWidth[0], realHeight[0],
+        viewportBlitter.blit(viewportCompositor.getColorTextureView(), realWidth, realHeight,
                 worldRenderTarget.getColorTextureView(), scaled.x(), destY, scaled.width(), scaled.height());
 
         GameRendererExt.setMainRenderTarget(client.gameRenderer, viewportCompositor);

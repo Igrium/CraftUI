@@ -20,7 +20,7 @@ public class MixinWindow {
     private int framebufferHeight;
 
     @Inject(method = "onFramebufferResize", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/WindowEventHandler;framebufferSizeChanged()V", shift = At.Shift.BEFORE))
-    void craftui$onFramebufferSizeChanged(long handle, int newWidth, int newHeight, CallbackInfo ci) {
+    void craftui$onFramebufferSizeChanged(int newWidth, int newHeight, CallbackInfo ci) {
         ViewportBounds viewportBounds = CraftUI.getCustomViewportBounds();
         if (viewportBounds != null) {
             viewportBounds = viewportBounds.scaled();

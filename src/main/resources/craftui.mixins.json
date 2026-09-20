@@ -3,6 +3,7 @@
     "package": "com.igrium.craftui.impl.mixin",
     "compatibilityLevel": "JAVA_21",
     "client": [
+        "AccessorFrontendRenderPass",
         "MixinGameRenderer",
         "MixinGui",
         "MixinImGuiImplBlaze3D",

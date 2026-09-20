@@ -4,28 +4,22 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Optional;
 
+import com.mojang.blaze3d.buffers.Std140Builder;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.renderpearl.api.pipeline.*;
+import com.mojang.renderpearl.api.textures.AddressMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import org.lwjgl.system.MemoryStack;
 
-import com.mojang.blaze3d.GpuFormat;
-import com.mojang.blaze3d.IndexType;
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.buffers.Std140Builder;
-import com.mojang.blaze3d.pipeline.BindGroupLayout;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.shaders.ShaderType;
-import com.mojang.blaze3d.shaders.UniformType;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.GpuDevice;
-import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
@@ -91,7 +85,7 @@ public class ViewportBlitter {
             .build();
 
     private static final BindGroupLayout BIND_GROUP_LAYOUT = BindGroupLayout.builder()
-            .withSampler("Texture")
+            .withUniform("Texture", UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform("Projection", UniformType.UNIFORM_BUFFER)
             .build();
 
@@ -117,9 +111,23 @@ public class ViewportBlitter {
     private GpuBuffer vertexBuffer;
     private GpuBuffer indexBuffer;
 
-    private static String getShaderSource(final Identifier id, final ShaderType type) {
-        return SHADER_SOURCES.get(id);
-    }
+    private static final ShaderSource SHADER_SOURCE = new ShaderSource() {
+        @Override
+        public String getShader(Identifier id, ShaderType type) {
+            return SHADER_SOURCES.get(id);
+        }
+
+        @Override
+        public CachedIncludeSource getInclude(Identifier id) {
+            return null;
+        }
+
+        @Override
+        public void close() {
+        }
+    };
+
+    private CompiledRenderPipeline compiledPipeline;
 
     /**
      * Draw {@code source} into the ({@code x}, {@code y}, {@code w}, {@code h}) sub-rectangle of
@@ -130,7 +138,10 @@ public class ViewportBlitter {
     public void blit(GpuTextureView target, int fbWidth, int fbHeight, GpuTextureView source,
                      int x, int y, int w, int h) {
         GpuDevice device = RenderSystem.getDevice();
-        device.precompilePipeline(BLIT_PIPELINE, ViewportBlitter::getShaderSource);
+        if (compiledPipeline == null) {
+            compiledPipeline = device.compilePipeline(BLIT_PIPELINE, SHADER_SOURCE, Runnable::run)
+                    .join().finishCompile();
+        }
         CommandEncoder encoder = device.createCommandEncoder();
 
         if (sampler == null) {
@@ -145,11 +156,11 @@ public class ViewportBlitter {
         try (RenderPass renderPass = encoder.createRenderPass(
                 () -> "CraftUIEntrypoint Viewport Composite",
                 target, Optional.of(new Vector4f(0f, 0f, 0f, 1f)))) {
-            renderPass.setPipeline(BLIT_PIPELINE);
+            renderPass.setPipeline(compiledPipeline);
             renderPass.setUniform("Projection", projection);
             renderPass.setVertexBuffer(0, vertexBuffer.slice());
             renderPass.setIndexBuffer(indexBuffer, IndexType.SHORT);
-            renderPass.bindTexture("Texture", source, sampler);
+            renderPass.setUniform("Texture", source, sampler);
             renderPass.drawIndexed(6, 1, 0, 0, 0);
         }
     }
