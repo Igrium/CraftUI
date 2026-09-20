@@ -1,10 +1,11 @@
 package com.igrium.craftui.impl.mixin;
 
 import cn.enaium.fabric.imgui.blaze3d.ImGuiImplBlaze3D;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(ImGuiImplBlaze3D.class)
 public abstract class MixinImGuiImplBlaze3D {
@@ -13,14 +14,17 @@ public abstract class MixinImGuiImplBlaze3D {
      * Clamp the scissor rect to the framebuffer so Blaze3D doesn't throw
      * Patch until ImGui Fabric updates; should not conflict if an update is pushed.
      */
-    @Redirect(method = "renderDrawData", at= @At(value = "INVOKE", target = "Lcom/mojang/renderpearl/api/commands/RenderPass;enableScissor(IIII)V"))
-    private void craftui$clampScissor(RenderPass renderPass, int x, int y, int width, int height) {
+    @WrapOperation(method = "renderDrawData", at= @At(value = "INVOKE", target = "Lcom/mojang/renderpearl/api/commands/RenderPass;enableScissor(IIII)V"))
+    private void craftui$clampScissor(RenderPass renderPass, int x, int y, int width, int height, Operation<Void> original) {
         // If other mods have their own implementation
-        if (!(renderPass instanceof AccessorFrontendRenderPass accessor)) return;
+        if (!(renderPass instanceof AccessorFrontendRenderPass accessor)) {
+            original.call(renderPass, x, y, width, height);
+            return;
+        }
 
         RenderPass.RenderArea area = accessor.getRenderArea();
         if (area == null) {
-            renderPass.enableScissor(x, y, width, height);
+            original.call(renderPass, x, y, width, height);
             return;
         }
 
@@ -42,6 +46,6 @@ public abstract class MixinImGuiImplBlaze3D {
             clampedHeight = 1;
         }
 
-        renderPass.enableScissor(clampedX, clampedY, clampedWidth, clampedHeight);
+        original.call(renderPass, clampedX, clampedY, clampedWidth, clampedHeight);
     }
 }

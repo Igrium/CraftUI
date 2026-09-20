@@ -4,21 +4,17 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
 import com.igrium.craftui.api.app.CraftApp;
 import com.igrium.craftui.impl.input.CursorLockManager;
-import com.igrium.craftui.impl.input.MouseUtils;
-import com.igrium.craftui.impl.render.GameRendererExt;
-import com.igrium.craftui.impl.render.ViewportBlitter;
+import com.igrium.craftui.impl.mixin_helper.ExtWindow;
+import com.igrium.craftui.impl.render.ViewportComposite;
 import com.igrium.craftui.impl.style.LayoutManager;
 import com.igrium.craftui.impl.style.StyleManager;
 import com.igrium.craftui.api.style.CraftUILayouts;
 import com.igrium.craftui.api.style.CraftUIStyle;
-import com.mojang.blaze3d.pipeline.MainTarget;
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import imgui.ImFont;
 import imgui.ImGuiIO;
@@ -30,13 +26,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector2d;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.api.app.CraftApp.ViewportBounds;
 import com.igrium.craftui.api.style.CraftUIFonts;
-import com.igrium.craftui.impl.render.ViewportCompositor;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -69,7 +63,7 @@ public final class AppManager {
      * custom viewport is active. Consumed by the render-frame present-blit redirect.
      */
     public static @Nullable GpuTextureView getCompositeTextureView() {
-        return usingComposite ? viewportCompositor.getColorTextureView() : null;
+        return viewportComposite.getTextureView();
     }
 
     /**
@@ -92,10 +86,7 @@ public final class AppManager {
         return appsUnmod;
     }
 
-    private static @Nullable RenderTarget worldRenderTarget;
-    private static final ViewportCompositor viewportCompositor = new ViewportCompositor();
-    private static final ViewportBlitter viewportBlitter = new ViewportBlitter();
-    private static boolean usingComposite;
+    private static final ViewportComposite viewportComposite = new ViewportComposite();
 
 
     /**
@@ -162,6 +153,7 @@ public final class AppManager {
         CursorLockManager.setForceUnlock(forceMouseUnlock);
         CursorLockManager.onBeginFrame();
 
+        viewportComposite.restoreWorldTarget(client);
 
         updateViewportBounds(client);
 
@@ -175,32 +167,7 @@ public final class AppManager {
     }
 
     private static void updateViewportBounds(Minecraft client) {
-        Window window = client.getWindow();
-//        int[] realWidth = new int[1];
-//        int[] realHeight = new int[1];
-
-        // Could probably be optimized, but it's only called at most once per frame
-        var size = window.queryFramebufferSize();
-        int realWidth = size.width();
-        int realHeight = size.height();
-
-        if (worldRenderTarget == null) {
-            // Take over mainRenderTarget once. From here on, this object is what we'll render into
-            RenderTarget original = client.gameRenderer.mainRenderTarget();
-            original.destroyBuffers();
-
-            LOGGER.info("Injecting custom window render target");
-
-            worldRenderTarget = new MainTarget(realWidth, realHeight);
-            GameRendererExt.setMainRenderTarget(client.gameRenderer, worldRenderTarget);
-        } else if (usingComposite) {
-            GameRendererExt.setMainRenderTarget(client.gameRenderer, worldRenderTarget);
-            usingComposite = false;
-        }
-
-        ViewportBounds prevViewportBounds = currentViewportBounds;
         currentViewportBounds = null;
-
         for (CraftApp app : apps) {
             ViewportBounds customBounds = app.getCustomViewportBounds();
             if (customBounds != null) {
@@ -208,25 +175,8 @@ public final class AppManager {
             }
         }
 
-        // GameRenderer derives both the camera's aspect ratio and mainRenderTarget's auto-resize
-        // guard from Window.getWidth/getHeight (via windowRenderState), not from the render
-        // target's actual texture size. Overriding it here is what actually confines the world
-        // render (and its aspect ratio) to the panel. This is safe for ImGui: its display size
-        // comes straight from GLFW via ImGuiImplGlfw, not from these cached Window fields.
-        if (currentViewportBounds != null) {
-            ViewportBounds scaled = currentViewportBounds.scaled();
-            window.setWidth(scaled.width());
-            window.setHeight(scaled.height());
-        } else {
-            window.setWidth(realWidth);
-            window.setHeight(realHeight);
-        }
-
-        if (!Objects.equals(prevViewportBounds, currentViewportBounds)) {
-            client.resizeGui();
-            client.mouseHandler.setIgnoreFirstMove();
-        }
-
+        Window window = client.getWindow();
+        ExtWindow.setViewportBounds(window, currentViewportBounds, true);
     }
 
     public static @Nullable ViewportBounds getCustomViewportBounds() {
@@ -354,7 +304,7 @@ public final class AppManager {
         }
 
         if (currentViewportBounds != null) {
-            compositeViewportTarget(client);
+            viewportComposite.composite(client, currentViewportBounds);
         }
 
         // FabricImGui handles newFrame, etc.
@@ -400,32 +350,6 @@ public final class AppManager {
             cleanupFramesRemaining = CLEANUP_FRAMES;
         }
     }
-
-    private static void compositeViewportTarget(Minecraft client) {
-        if (currentViewportBounds == null || worldRenderTarget == null) {
-            return; // shouldn't happen
-        }
-
-        Window window = client.getWindow();
-
-        Window.FramebufferSize size = window.queryFramebufferSize();
-        int realWidth = size.width();
-        int realHeight = size.height();
-
-        ViewportBounds scaled = currentViewportBounds.scaled();
-
-        viewportCompositor.ensureSize(realWidth, realHeight);
-
-        // Fix flipped-y bullshittary
-        int destY = realHeight - scaled.y() - scaled.height();
-
-        viewportBlitter.blit(viewportCompositor.getColorTextureView(), realWidth, realHeight,
-                worldRenderTarget.getColorTextureView(), scaled.x(), destY, scaled.width(), scaled.height());
-
-        GameRendererExt.setMainRenderTarget(client.gameRenderer, viewportCompositor);
-        usingComposite = true;
-    }
-
 
     /**
      * If set, mouse inputs will be consumed by the application GUI and should not be processed by Minecraft.
