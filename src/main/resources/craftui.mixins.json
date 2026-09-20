@@ -17,7 +17,6 @@
         "defaultRequire": 1
     },
     "mixins": [
-        "AccessorDefaultImGui",
-        "AccessorRenderPass"
+        "AccessorDefaultImGui"
     ]
 }

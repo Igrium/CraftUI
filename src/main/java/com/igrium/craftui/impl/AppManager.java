@@ -295,6 +295,10 @@ public final class AppManager {
         if (crashed)
             return;
 
+        // Deal with Minecraft's bootstrap frame before ImGui is created
+        if (!FabricImGui.IMGUI.isCreated())
+            return;
+
         drawnGlobalPopup = false;
         boolean isCleanupFrame = apps.isEmpty();
 
