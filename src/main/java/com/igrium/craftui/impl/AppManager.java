@@ -176,7 +176,8 @@ public final class AppManager {
         }
 
         Window window = client.getWindow();
-        ExtWindow.setViewportBounds(window, currentViewportBounds, true);
+        var scaled = currentViewportBounds != null ? currentViewportBounds.scaled() : null;
+        ExtWindow.setViewportBounds(window, scaled, true);
     }
 
     public static @Nullable ViewportBounds getCustomViewportBounds() {
