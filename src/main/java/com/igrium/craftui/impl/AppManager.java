@@ -305,7 +305,7 @@ public final class AppManager {
         }
 
         if (currentViewportBounds != null) {
-            viewportComposite.composite(client, currentViewportBounds);
+            viewportComposite.composite(client, currentViewportBounds.scaled());
         }
 
         // FabricImGui handles newFrame, etc.

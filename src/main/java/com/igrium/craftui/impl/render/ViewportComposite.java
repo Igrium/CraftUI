@@ -45,19 +45,19 @@ public class ViewportComposite {
 
         compositeTexture.ensureSize(realWidth, realHeight);
 
-        ViewportBounds scaled = bounds.scaled();
-        // Fix flipped-y bullshittary
-        int destY = realHeight - scaled.y() - scaled.height();
-
         RenderSystem.assertOnRenderThread();
         CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-        // Do we need to be using the texture views?
         GpuTexture fromTexture = world.getColorTexture();
         GpuTexture toTexture = compositeTexture.getColorTexture();
 
+
         if (fromTexture != null && toTexture != null) {
+            // Because apparently it's better to crash than clamp in copyTextureToTexture
+            int width = Math.min(bounds.width(), toTexture.getWidth(0) - bounds.x());
+            int height = Math.min(bounds.height(), toTexture.getHeight(0) - bounds.y());
+
             encoder.copyTextureToTexture(fromTexture, toTexture,
-                    0, scaled.x(), scaled.y(), 0, 0, scaled.width(), scaled.height());
+                    0, bounds.x(), bounds.y(), 0, 0, width, height);
         }
 
         ExtGameRenderer.setMainRenderTarget(client.gameRenderer, compositeTexture);
