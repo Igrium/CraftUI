@@ -23,6 +23,7 @@ import lombok.Setter;
 import net.minecraft.CrashReport;
 import net.minecraft.ReportedException;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import com.igrium.craftui.api.app.CraftApp.ViewportBounds;
 import com.igrium.craftui.api.style.CraftUIFonts;
+import com.mojang.blaze3d.platform.TextInputManager;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -55,6 +57,11 @@ public final class AppManager {
 
 
     private static @Nullable ViewportBounds currentViewportBounds;
+
+    /**
+     * Owner token for Minecraft's {@link TextInputManager} because SDL3 doesn't send typed chars
+     */
+    private static final Object TEXT_INPUT_OWNER = new Object();
 
 
     /**
@@ -269,6 +276,7 @@ public final class AppManager {
             io.clearEventsQueue();
             io.clearInputKeys();
             io.clearInputMouse();
+            client.textInputManager().stopTextInput(TEXT_INPUT_OWNER);
             return;
         }
 
@@ -339,6 +347,8 @@ public final class AppManager {
             }
         });
 
+        updateTextInput(client);
+
         if (ImGui.getIO().getWantSaveIniSettings() && CraftUIEntrypoint.getConfig().isLayoutPersistent()) {
             LayoutManager.getInstance().saveUserLayoutData(ImGui.saveIniSettingsToMemory());
 
@@ -349,6 +359,23 @@ public final class AppManager {
             cleanupFramesRemaining--;
         } else {
             cleanupFramesRemaining = CLEANUP_FRAMES;
+        }
+    }
+
+    /**
+     * SDL only emits text input events while text input is started.
+     */
+    private static void updateTextInput(Minecraft client) {
+        TextInputManager textInput = client.textInputManager();
+        if (ImGui.getIO().getWantTextInput()) {
+            Screen screen = client.gui.screen();
+            if (screen != null) {
+                screen.clearFocus();
+            }
+            textInput.startTextInput(TEXT_INPUT_OWNER);
+        } else {
+            // Only stops if we're the current owner
+            textInput.stopTextInput(TEXT_INPUT_OWNER);
         }
     }
 
