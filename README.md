@@ -4,7 +4,7 @@ A Minecraft Application Framework
 
 ---
 
-CraftUI is a framework for building fully-featured, desktop applications in Minecraft. It is built upon [Fabric Gui ImGui](https://modrinth.com/mod/fabric-gui-imgui), which itself uses [Dear ImGui](https://github.com/ocornut/imgui). However, while *Fabric Gui ImGui* simply provides bindings to use the library, CraftUI provides a full feature set designed to ease integration with the game,
+CraftUI is a framework for building fully-featured, desktop applications in Minecraft. It is built upon [Fabric Gui ImGui](https://modrinth.com/mod/fabric-gui-imgui), which itself uses [Dear ImGui](https://github.com/ocornut/imgui). However, while Fabric Gui ImGui simply provides bindings to use the library, CraftUI provides a full feature set designed to ease integration with the game,
 
 ## Features
 In addition to all the features provided natively, CraftUI includes:
