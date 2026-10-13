@@ -67,7 +67,9 @@ dependencies {
     api include("io.github.spair:imgui-java-natives-linux:${project.imgui_java_version}")
     api include("io.github.spair:imgui-java-natives-macos:${project.imgui_java_version}")
 
-    api include("org.lwjgl:lwjgl-nfd:3.3.3")
+    api(include("org.lwjgl:lwjgl-nfd:3.4.1")) {
+        exclude group: "org.lwjgl", module: "lwjgl"
+    }
     runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-windows")
     runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-macos")
     runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-macos-arm64")
