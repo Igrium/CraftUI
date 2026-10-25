@@ -91,12 +91,10 @@ public class MixinMouseHandler {
 
     @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
     void craftui$onMouseButton(long handle, MouseButtonInfo rawButtonInfo, int action, CallbackInfo ci) {
-        if (AppManager.wantCaptureMouse()) {
+        // make release pass through to prevent registering it being held when it isn't
+        if (action != InputConstants.RELEASE && AppManager.wantCaptureMouse()) {
             ci.cancel();
-            return;
         }
-
-        MouseUtils.setMousePressed(action == InputConstants.PRESS);
     }
 
     @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
