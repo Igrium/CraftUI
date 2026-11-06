@@ -1,6 +1,7 @@
 package com.igrium.craftui.testmod;
 
 import cn.enaium.fabric.imgui.TextureBindings;
+import com.igrium.craftui.api.controls.ViewportControls;
 import com.igrium.craftui.api.icon.FontAwesome;
 import com.igrium.craftui.api.CraftUI;
 import com.igrium.craftui.api.app.DockSpaceApp;
@@ -17,6 +18,8 @@ import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import imgui.ImGui;
 import imgui.flag.ImGuiFocusedFlags;
+import imgui.flag.ImGuiKey;
+import imgui.flag.ImGuiMouseButton;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import imgui.type.ImString;
@@ -35,7 +38,10 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaterniond;
+import org.joml.Vector3d;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
@@ -61,9 +67,12 @@ public class TestApp extends DockSpaceApp {
     private final GpuSampler sampler;
     private NbtEditor<?> nbtEditor;
 
+    private @Nullable ViewportControls.State viewportControls;
+    private @NotNull ViewportControls.ControlMode viewportControlMode = ViewportControls.ControlMode.ORBIT;
+
     public TestApp() {
         setViewportInputMode(ViewportInputMode.DRAG);
-        setViewportInputButtons(1, 2);
+        setViewportInputButtons(ImGuiMouseButton.Right);
 
         CompoundTag editingNbt = new CompoundTag();
 
@@ -71,14 +80,14 @@ public class TestApp extends DockSpaceApp {
         editingNbt.put("Value2", IntTag.valueOf(69));
 
 
-        editingNbt.put("byteValue", ByteTag.valueOf((byte)2));
-        editingNbt.put("shortValue", ShortTag.valueOf((short)5));
+        editingNbt.put("byteValue", ByteTag.valueOf((byte) 2));
+        editingNbt.put("shortValue", ShortTag.valueOf((short) 5));
         editingNbt.put("intValue", IntTag.valueOf(69));
         editingNbt.put("longValue", LongTag.valueOf(69420));
         editingNbt.put("floatValue", FloatTag.valueOf(2.54f));
         editingNbt.put("doubleValue", DoubleTag.valueOf(2124.2));
 
-        editingNbt.put("longArray", new LongArrayTag(new long[] {543, 22, 48}));
+        editingNbt.put("longArray", new LongArrayTag(new long[]{543, 22, 48}));
 
         CompoundTag compound = new CompoundTag();
         compound.put("NestedStr", StringTag.valueOf("Hello World!"));
@@ -195,7 +204,8 @@ public class TestApp extends DockSpaceApp {
             AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(creeperTex);
 
             long texId = TextureBindings.INSTANCE.textureId(abstractTexture.getTextureView(), sampler);
-            ImGui.image(texId, abstractTexture.getTexture().getWidth(0) * 8, abstractTexture.getTexture().getHeight(0) * 8);
+            ImGui.image(texId, abstractTexture.getTexture().getWidth(0) * 8,
+                    abstractTexture.getTexture().getHeight(0) * 8);
         }
         ImGui.end();
 
@@ -223,6 +233,31 @@ public class TestApp extends DockSpaceApp {
                 ImGui.menuItem("This is the context menu");
                 ImGui.endPopup();
             }
+
+            var player = Minecraft.getInstance().player;
+            if (viewportControls != null) {
+                // Hover is only checked when the drag starts, so the drag continues if the cursor leaves the window.
+                if (ImGui.isAnyMouseDown() && player != null) {
+                    ViewportControls.doViewportMove(viewportControlMode, viewportControls,
+                            ImGui.getIO().getMouseDeltaX(), ImGui.getIO().getMouseDeltaY(), 0);
+
+                    applyViewportControls(viewportControls, player);
+                } else {
+                    viewportControls = null;
+                }
+            } else if (ImGui.isWindowHovered() && player != null) {
+                if (ImGui.isMouseDragging(ImGuiMouseButton.Left)) {
+                    if (ImGui.getIO().getKeyAlt()) {
+                        initViewportControls(ViewportControls.ControlMode.ORBIT, player);
+                    }
+                } else if (ImGui.isMouseDragging(ImGuiMouseButton.Middle)) {
+                    if (ImGui.getIO().getKeyAlt()) {
+                        initViewportControls(ViewportControls.ControlMode.PAN, player);
+                    } else {
+                        initViewportControls(ViewportControls.ControlMode.ZOOM, player);
+                    }
+                }
+            }
         }
         ImGui.end();
 
@@ -235,11 +270,68 @@ public class TestApp extends DockSpaceApp {
                 if (client.player != null) {
                     client.player.sendSystemMessage(Component.literal("New NBT: " + newVal));
                 }
-            };
+            }
+            ;
 //            NbtEditor.drawNbtEditor("NBT Editor##test", editingNbt, 0);
         }
         ImGui.end();
 
+    }
+
+    /**
+     * Orbit distance to use when the viewport raycast doesn't hit anything.
+     */
+    private static final double FALLBACK_ORBIT_DISTANCE = 10;
+
+    private void initViewportControls(ViewportControls.ControlMode controlMode, Player player) {
+        // The camera sits at the player's eyes, not their feet.
+        Vec3 eye = player.getEyePosition();
+        Vector3d pos = new Vector3d(eye.x, eye.y, eye.z);
+
+        // Same rotation Minecraft's Camera builds (see Camera#setRotation); forward is -Z.
+        Quaterniond rot = new Quaterniond().rotationYXZ(
+                Math.PI - Math.toRadians(player.getYRot()),
+                -Math.toRadians(player.getXRot()),
+                0
+        );
+
+        MouseHandler mouse = Minecraft.getInstance().mouseHandler;
+        HitResult raycast = CraftUI.raycastViewport((float) mouse.xpos(), (float) mouse.ypos(), 1000,
+                e -> e != player, false);
+
+        Vector3d center;
+        if (raycast.getType() != HitResult.Type.MISS) {
+            Vec3 hitPos = raycast.getLocation();
+            center = new Vector3d(hitPos.x, hitPos.y, hitPos.z);
+        } else {
+            // Nothing hit: orbit around a point a fixed distance in front of the camera,
+            // otherwise pan/zoom speed (which scales with distance) would be enormous.
+            center = rot.transform(new Vector3d(0, 0, -1)).mul(FALLBACK_ORBIT_DISTANCE).add(pos);
+        }
+
+        this.viewportControls = new ViewportControls.State(center, pos, rot);
+        this.viewportControlMode = controlMode;
+    }
+
+    private static void applyViewportControls(ViewportControls.State state, Player player) {
+        Vector3d camPos = state.evalPos();
+        Vector3d forward = state.evalRot().transform(new Vector3d(0, 0, -1));
+
+        // Inverse of Entity#calculateViewVector: forward = (-sin(yaw)cos(pitch), -sin(pitch), cos(yaw)cos(pitch))
+        float yaw = (float) Math.toDegrees(Math.atan2(-forward.x, forward.z));
+        float pitch = (float) Math.toDegrees(Math.asin(Math.clamp(-forward.y, -1, 1)));
+
+        double feetY = camPos.y - player.getEyeHeight();
+        player.setPos(camPos.x, feetY, camPos.z);
+        player.setYRot(yaw);
+        player.setXRot(pitch);
+        player.setYHeadRot(yaw);
+
+        // Sync the previous-tick values so render interpolation doesn't lag/stutter behind.
+        player.xo = player.xOld = camPos.x;
+        player.yo = player.yOld = feetY;
+        player.zo = player.zOld = camPos.z;
+        player.setOldRot();
     }
 
     /**
@@ -251,7 +343,8 @@ public class TestApp extends DockSpaceApp {
         }
     }
 
-    @Override @Nullable
+    @Override
+    @Nullable
     public Identifier getLayoutPreset() {
         return switch (layout.get()) {
             case 0 -> CraftUILayouts.DEFAULT;
@@ -263,14 +356,14 @@ public class TestApp extends DockSpaceApp {
 
     private void raycastExplosion() {
         MouseHandler mouse = Minecraft.getInstance().mouseHandler;
-//        float mouseX = ImGui.getMousePosX();
-//        float mouseY = ImGui.getMousePosY();
 
         IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
         if (server == null) return;
 
-        HitResult raycast = CraftUI.raycastViewport((float)mouse.xpos(), (float)mouse.ypos(), 1000, e -> false, false);
-        LoggerFactory.getLogger(getClass()).info("Position: {} {} {}", raycast.getLocation().x, raycast.getLocation().y, raycast.getLocation().z);
+        HitResult raycast = CraftUI.raycastViewport((float) mouse.xpos(), (float) mouse.ypos(), 1000, e -> false,
+                false);
+        LoggerFactory.getLogger(getClass()).info("Position: {} {} {}", raycast.getLocation().x,
+                raycast.getLocation().y, raycast.getLocation().z);
 
         if (raycast.getType() != HitResult.Type.MISS) {
             Vec3 pos = raycast.getLocation();
@@ -287,7 +380,8 @@ public class TestApp extends DockSpaceApp {
         IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
         if (server == null) return;
 
-        HitResult raycast = CraftUI.raycastViewport((float)mouse.xpos(), (float)mouse.ypos(), 1000, e -> !(e instanceof Player), false);
+        HitResult raycast = CraftUI.raycastViewport((float) mouse.xpos(), (float) mouse.ypos(), 1000,
+                e -> !(e instanceof Player), false);
         if (raycast instanceof EntityHitResult entHit) {
             Entity ent = entHit.getEntity();
 
