@@ -7,10 +7,10 @@ import imgui.flag.ImGuiKey;
 import imgui.flag.ImGuiMouseButton;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -23,8 +23,10 @@ import org.joml.Vector3dc;
 /**
  * Automatically handles activating viewport controls based on the active MC player
  * <p><b>The local client must have full control over player positioning!</b> This usually means spectator mode.</p>
+ * <p>Can be used as-is, or subclassed to customize behavior.</p>
  */
-public final class ViewportControlHelper {
+@Accessors(chain = true)
+public class ViewportControlHelper {
     @Getter
     private @Nullable ViewportControls.State state;
 
@@ -52,16 +54,25 @@ public final class ViewportControlHelper {
     @Getter @Setter
     private double fallbackOrbitDistance = 10;
 
+    @Getter @Setter
+    private float maxRaycastDistance = 1000;
+
     /**
      * @see ViewportControls.Flags
      */
     @Getter @Setter
     private int flags = 0;
 
-    public boolean isMoving() {
+    public final boolean isMoving() {
         return state != null;
     }
 
+    /**
+     * End the current viewport move, if any.
+     */
+    public void endMove() {
+        state = null;
+    }
 
     /**
      * Apply a discrete, single-frame move.
@@ -71,53 +82,97 @@ public final class ViewportControlHelper {
      * @param dy          Effective mouse Y delta
      */
     public void applyDiscreteMove(ViewportControls.ControlMode controlMode, float dx, float dy) {
-        MouseHandler mouse = Minecraft.getInstance().mouseHandler;
+        Entity camera = getCameraEntity();
+        if (camera == null || !canBeginMove()) return;
 
-        Player player = Minecraft.getInstance().player;
-        if (player == null) return;
-
-        Vector3d pos = new Vector3d();
-        Quaterniond rot = new Quaterniond();
-        getCameraPos(player, pos, rot);
-
-        Vector3d center = doRaycast(pos, rot, (float) mouse.xpos(), (float) mouse.ypos(), player);
-
-        var state = new ViewportControls.State(center, pos, rot);
-        ViewportControls.doViewportMove(controlMode, state, dx, dy, flags);
-        setCameraPos(player, state.evalPos(), state.evalRot());
+        var state = createState(camera);
+        performMove(controlMode, state, dx, dy);
+        setCameraTransform(camera, state.evalPos(), state.evalRot());
     }
 
     /**
      * To be called during viewport draw
      */
     public void handleViewportControls() {
-        Player player = Minecraft.getInstance().player;
+        Entity camera = getCameraEntity();
 
         if (state != null) {
-            if (ImGui.isAnyMouseDown() && player != null) {
+            if (camera != null && shouldContinueMove()) {
                 // Continue move
-                ViewportControls.doViewportMove(controlMode, state,
-                        ImGui.getIO().getMouseDeltaX(), ImGui.getIO().getMouseDeltaY(), flags);
-                applyViewportMove(state, player);
+                performMove(controlMode, state, ImGui.getIO().getMouseDeltaX(), ImGui.getIO().getMouseDeltaY());
+                setCameraTransform(camera, state.evalPos(), state.evalRot());
             } else {
-                // End move
-                state = null;
+                endMove();
             }
-        } else if (ImGui.isWindowHovered() && player != null && !ImGuizmo.isOver() && !ImGuizmo.isUsing()) {
-            int mods = ImGui.getIO().getKeyMods();
-
-            // Try begin move
-            if (ImGui.isMouseDragging(orbitButton) && mods == orbitMods) {
-                beginViewportMove(ViewportControls.ControlMode.ORBIT, player);
-            } else if (ImGui.isMouseDragging(panButton) && mods == panMods) {
-                beginViewportMove(ViewportControls.ControlMode.PAN, player);
-            } else if (ImGui.isMouseDragging(zoomButton) && mods == zoomMods) {
-                beginViewportMove(ViewportControls.ControlMode.ZOOM, player);
+        } else if (camera != null && canBeginMove()) {
+            ViewportControls.ControlMode mode = pollBeginMove();
+            if (mode != null) {
+                beginMove(mode, camera);
             }
         }
     }
 
-    private static void getCameraPos(Entity ent, Vector3d outPos, Quaterniond outRot) {
+    /**
+     * Get the entity that the viewport controls should move.
+     *
+     * @return The camera entity, or <code>null</code> if there is none.
+     */
+    protected @Nullable Entity getCameraEntity() {
+        return Minecraft.getInstance().player;
+    }
+
+    /**
+     * Check whether a new viewport move is allowed to begin this frame.
+     */
+    protected boolean canBeginMove() {
+        return ImGui.isWindowHovered() && !ImGuizmo.isOver() && !ImGuizmo.isUsing();
+    }
+
+    /**
+     * Determine which control mode, if any, the user is currently trying to begin.
+     *
+     * @return The control mode to begin, or <code>null</code> to not begin a move.
+     */
+    protected @Nullable ViewportControls.ControlMode pollBeginMove() {
+        int mods = ImGui.getIO().getKeyMods();
+
+        if (ImGui.isMouseDragging(orbitButton) && mods == orbitMods) {
+            return ViewportControls.ControlMode.ORBIT;
+        } else if (ImGui.isMouseDragging(panButton) && mods == panMods) {
+            return ViewportControls.ControlMode.PAN;
+        } else if (ImGui.isMouseDragging(zoomButton) && mods == zoomMods) {
+            return ViewportControls.ControlMode.ZOOM;
+        }
+        return null;
+    }
+
+    /**
+     * Check whether the current viewport move should continue this frame.
+     */
+    protected boolean shouldContinueMove() {
+        return ImGui.isAnyMouseDown();
+    }
+
+    /**
+     * Apply mouse movement to a viewport state.
+     *
+     * @param controlMode Control mode to use
+     * @param state       State to update
+     * @param dx          Mouse X delta
+     * @param dy          Mouse Y delta
+     */
+    protected void performMove(ViewportControls.ControlMode controlMode, ViewportControls.State state, float dx, float dy) {
+        ViewportControls.doViewportMove(controlMode, state, dx, dy, flags);
+    }
+
+    /**
+     * Read the current transform of the camera entity.
+     *
+     * @param ent    Camera entity
+     * @param outPos Destination for the camera position
+     * @param outRot Destination for the camera rotation
+     */
+    protected void getCameraTransform(Entity ent, Vector3d outPos, Quaterniond outRot) {
         Vec3 eye = ent.getEyePosition();
         outPos.set(eye.x, eye.y, eye.z);
 
@@ -129,20 +184,45 @@ public final class ViewportControlHelper {
         );
     }
 
-    private void beginViewportMove(ViewportControls.ControlMode controlMode, Player player) {
-        Vector3d pos = new Vector3d();
-        Quaterniond rot = new Quaterniond();
-        getCameraPos(player, pos, rot);
-
-        MouseHandler mouse = Minecraft.getInstance().mouseHandler;
-        Vector3d center = doRaycast(pos, rot, (float) mouse.xpos(), (float) mouse.ypos(), player);
-
-        this.state = new ViewportControls.State(center, pos, rot);
+    /**
+     * Begin a continuous viewport move.
+     *
+     * @param controlMode Control mode to use
+     * @param camera      Camera entity
+     */
+    protected void beginMove(ViewportControls.ControlMode controlMode, Entity camera) {
+        this.state = createState(camera);
         this.controlMode = controlMode;
     }
 
-    private Vector3d doRaycast(Vector3dc pos, Quaterniondc rot, float mouseX, float mouseY, Player except) {
-        HitResult raycast = CraftUI.raycastViewport(mouseX, mouseY, 1000, e -> e != except, false);
+    /**
+     * Create a viewport state from the camera's current transform.
+     *
+     * @param camera Camera entity
+     * @return The new state
+     */
+    protected ViewportControls.State createState(Entity camera) {
+        Vector3d pos = new Vector3d();
+        Quaterniond rot = new Quaterniond();
+        getCameraTransform(camera, pos, rot);
+
+        Vector3d center = computeOrbitCenter(pos, rot, camera);
+        return new ViewportControls.State(center, pos, rot);
+    }
+
+    /**
+     * Compute the point that orbit/zoom moves should center around.
+     * Defaults to a raycast under the mouse, falling back to a point {@link #getFallbackOrbitDistance()} in front of the camera.
+     *
+     * @param pos    Camera position
+     * @param rot    Camera rotation
+     * @param camera Camera entity
+     * @return The orbit center
+     */
+    protected Vector3d computeOrbitCenter(Vector3dc pos, Quaterniondc rot, Entity camera) {
+        MouseHandler mouse = Minecraft.getInstance().mouseHandler;
+        HitResult raycast = CraftUI.raycastViewport((float) mouse.xpos(), (float) mouse.ypos(),
+                maxRaycastDistance, e -> e != camera, false);
         if (raycast.getType() != HitResult.Type.MISS) {
             Vec3 hitPos = raycast.getLocation();
             return new Vector3d(hitPos.x, hitPos.y, hitPos.z);
@@ -151,11 +231,14 @@ public final class ViewportControlHelper {
         }
     }
 
-//    private HitResult doRaycast(float mouseX, float mouseY, @Nullable Entity except) {
-//        return CraftUI.raycastViewport(mouseX, mouseY, 1000, e -> e != except, false);
-//    }
-
-    private static void setCameraPos(Entity ent, Vector3dc pos, Quaterniondc rot) {
+    /**
+     * Apply a transform to the camera entity.
+     *
+     * @param ent Camera entity
+     * @param pos New camera (eye) position
+     * @param rot New camera rotation
+     */
+    protected void setCameraTransform(Entity ent, Vector3dc pos, Quaterniondc rot) {
         Vector3d forward = rot.transform(new Vector3d(0, 0, -1));
 
         // Inverse of Entity#calculateViewVector: forward = (-sin(yaw)cos(pitch), -sin(pitch), cos(yaw)cos(pitch))
@@ -168,9 +251,5 @@ public final class ViewportControlHelper {
         ent.setYRot(yaw);
         ent.setYHeadRot(yaw);
         ent.setXRot(pitch);
-    }
-
-    private void applyViewportMove(ViewportControls.State state, Player player) {
-        setCameraPos(player, state.evalPos(), state.evalRot());
     }
 }
