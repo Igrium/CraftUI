@@ -235,6 +235,14 @@ public class TestApp extends DockSpaceApp {
             }
 
             viewportControls.handleViewportControls();
+
+            if (ImGui.isWindowHovered()) {
+                float scrollY = ImGui.getIO().getMouseWheel();
+                if (Math.abs(scrollY) > .01f) {
+                    // I eyeballed the -12
+                    viewportControls.applyDiscreteMove(ViewportControls.ControlMode.ZOOM, 0, scrollY * -12 );
+                }
+            }
         }
         ImGui.end();
 
