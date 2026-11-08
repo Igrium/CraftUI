@@ -1,13 +1,11 @@
 package com.igrium.craftui.impl;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 
+import com.google.common.collect.ImmutableSet;
 import com.igrium.craftui.api.app.CraftApp;
+import com.igrium.craftui.api.event.CraftUIRenderEvents;
+import com.igrium.craftui.api.event.CraftUIRenderContext;
 import com.igrium.craftui.impl.input.CursorLockManager;
 import com.igrium.craftui.impl.mixin_helper.ExtWindow;
 import com.igrium.craftui.impl.render.ViewportComposite;
@@ -165,6 +163,8 @@ public final class AppManager {
 
         updateViewportBounds(client);
 
+        CraftUIRenderEvents.PRE_RENDER.invoker().preRender(ImmutableSet.copyOf(apps));
+
         if (apps.isEmpty())
             return;
 
@@ -184,6 +184,8 @@ public final class AppManager {
         }
 
         Window window = client.getWindow();
+        currentViewportBounds = CraftUIRenderEvents.COMPUTE_VIEWPORT_BOUNDS
+                .invoker().computeViewportBounds(currentViewportBounds);
         var scaled = currentViewportBounds != null ? currentViewportBounds.scaled() : null;
         ExtWindow.setViewportBounds(window, scaled, true);
     }
@@ -258,6 +260,9 @@ public final class AppManager {
         if (!FabricImGui.IMGUI.isCreated())
             return;
 
+        CraftUIRenderContext ctx = new RenderContext(ImmutableSet.copyOf(apps));
+        CraftUIRenderEvents.BEGIN_FRAME.invoker().beginFrame(ctx);
+
         drawnGlobalPopup = false;
         boolean isCleanupFrame = apps.isEmpty();
 
@@ -278,13 +283,17 @@ public final class AppManager {
             io.clearInputKeys();
             io.clearInputMouse();
             client.textInputManager().stopTextInput(TEXT_INPUT_OWNER);
+            CraftUIRenderEvents.END_FRAME.invoker().endFrame(ctx);
             return;
         }
 
         // Styles must be loaded before newFrame (called by FabricImGui)
         StyleManager styleManager = StyleManager.getInstance();
         if (styleManager.isWantStyleUpdate()) {
-            CraftUIStyle activeStyle = styleManager.getActiveStyleData();
+            // Copy so event listeners don't fuck up the registry
+            CraftUIStyle activeStyle = styleManager.getActiveStyleData().copy();
+
+            CraftUIRenderEvents.UPDATE_STYLE.invoker().updateStyle(ctx, activeStyle);
             activeStyle.buildStyle(ImGui.getStyle());
 
             Identifier font = activeStyle.getDefaultFont();
@@ -322,12 +331,13 @@ public final class AppManager {
             ImGuizmo.setOrthographic(false); // TODO: should this be exposed to clients somehow?
             ImGuizmo.beginFrame();
 
+            CraftUIRenderEvents.BEGIN_RENDER.invoker().beginRender(ctx);
+
             // PRIMARY RENDER
-            for (CraftApp app : apps) {
+            for (CraftApp app : ctx.getApps()) {
                 ImGui.pushID(app.getClass().getCanonicalName().hashCode());
                 try {
-                    // Re-call getInstance to avoid reallocating lambda due to captured variable
-                    app.render(Minecraft.getInstance());
+                    app.render(client);
                 } catch (Exception e) {
                     crashed = true;
                     CrashReport crashReport = new CrashReport("Error rendering CraftUIEntrypoint app " + app.getClass().getSimpleName(), e);
@@ -349,6 +359,9 @@ public final class AppManager {
                 ImGui.getIO().setWantCaptureKeyboard(false);
                 ImGui.getIO().setWantCaptureMouse(false);
             }
+
+            CraftUIRenderEvents.END_RENDER.invoker().endRender(ctx);
+
         });
 
         updateTextInput(client);
@@ -364,6 +377,8 @@ public final class AppManager {
         } else {
             cleanupFramesRemaining = CLEANUP_FRAMES;
         }
+
+        CraftUIRenderEvents.END_FRAME.invoker().endFrame(ctx);
     }
 
     /**
@@ -397,5 +412,13 @@ public final class AppManager {
      */
     public static boolean wantCaptureKeyboard() {
         return !forwardInputNextFrame && ImGui.getIO().getWantCaptureKeyboard();
+    }
+
+    private record RenderContext(ImmutableSet<CraftApp> apps) implements CraftUIRenderContext {
+
+        @Override
+        public Collection<? extends CraftApp> getApps() {
+            return apps;
+        }
     }
 }

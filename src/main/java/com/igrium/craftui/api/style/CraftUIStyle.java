@@ -247,6 +247,58 @@ public final class CraftUIStyle {
         CraftUIColors.buildStyle(style, colors);
     }
 
+    /**
+     * Create a deep copy of this style. The copy shares no mutable state with this one.
+     * @return The new style.
+     */
+    public CraftUIStyle copy() {
+        CraftUIStyle c = new CraftUIStyle();
+        c.defaultFont = defaultFont; // Identifier is immutable
+        c.alpha = alpha;
+        c.disabledAlpha = disabledAlpha;
+        c.windowPadding = windowPadding; // StyleVec2 is an immutable record
+        c.windowRounding = windowRounding;
+        c.windowBorderSize = windowBorderSize;
+        c.windowMinSize = windowMinSize;
+        c.windowTitleAlign = windowTitleAlign;
+        c.windowMenuButtonPosition = windowMenuButtonPosition;
+        c.childRounding = childRounding;
+        c.childBorderSize = childBorderSize;
+        c.popupRounding = popupRounding;
+        c.popupBorderSize = popupBorderSize;
+        c.framePadding = framePadding;
+        c.frameRounding = frameRounding;
+        c.frameBorderSize = frameBorderSize;
+        c.itemSpacing = itemSpacing;
+        c.itemInnerSpacing = itemInnerSpacing;
+        c.cellPadding = cellPadding;
+        c.touchExtraPadding = touchExtraPadding;
+        c.indentSpacing = indentSpacing;
+        c.columnsMinSpacing = columnsMinSpacing;
+        c.scrollbarSize = scrollbarSize;
+        c.scrollbarRounding = scrollbarRounding;
+        c.grabMinSize = grabMinSize;
+        c.grabRounding = grabRounding;
+        c.logSliderDeadzone = logSliderDeadzone;
+        c.tabRounding = tabRounding;
+        c.tabBorderSize = tabBorderSize;
+        c.tabCloseButtonMinWidthSelected = tabCloseButtonMinWidthSelected;
+        c.tabCloseButtonMinWidthUnselected = tabCloseButtonMinWidthUnselected;
+        c.colorButtonPosition = colorButtonPosition;
+        c.buttonTextAlign = buttonTextAlign;
+        c.selectableTextAlign = selectableTextAlign;
+        c.displayWindowPadding = displayWindowPadding;
+        c.displaySafeAreaPadding = displaySafeAreaPadding;
+        c.mouseCursorScale = mouseCursorScale;
+        c.antiAliasedLines = antiAliasedLines;
+        c.antiAliasedLinesUseTex = antiAliasedLinesUseTex;
+        c.antiAliasedFill = antiAliasedFill;
+        c.curveTessellationTol = curveTessellationTol;
+        c.circleTessellationMaxError = circleTessellationMaxError;
+        c.colors.putAll(colors); // UIColor is an immutable record; the map itself is new
+        return c;
+    }
+
     public void fromNativeStyle(ImGuiStyle style) {
         this.alpha = style.getAlpha();
         this.disabledAlpha = style.getDisabledAlpha();
