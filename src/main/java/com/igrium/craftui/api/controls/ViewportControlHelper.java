@@ -83,7 +83,7 @@ public class ViewportControlHelper {
      */
     public void applyDiscreteMove(ViewportControls.ControlMode controlMode, float dx, float dy) {
         Entity camera = getCameraEntity();
-        if (camera == null || !canBeginMove()) return;
+        if (camera == null) return;
 
         var state = createState(camera);
         performMove(controlMode, state, dx, dy);

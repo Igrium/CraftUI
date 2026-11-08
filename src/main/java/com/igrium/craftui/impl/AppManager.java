@@ -18,6 +18,7 @@ import com.igrium.craftui.api.style.CraftUIStyle;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import imgui.ImFont;
 import imgui.ImGuiIO;
+import imgui.extension.imguizmo.ImGuizmo;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.CrashReport;
@@ -318,6 +319,9 @@ public final class AppManager {
 
         // FabricImGui handles newFrame, etc.
         FabricImGui.IMGUI.draw(_ -> {
+            ImGuizmo.setOrthographic(false); // TODO: should this be exposed to clients somehow?
+            ImGuizmo.beginFrame();
+
             // PRIMARY RENDER
             for (CraftApp app : apps) {
                 ImGui.pushID(app.getClass().getCanonicalName().hashCode());

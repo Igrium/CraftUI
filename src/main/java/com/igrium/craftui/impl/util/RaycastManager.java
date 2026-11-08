@@ -1,12 +1,11 @@
 package com.igrium.craftui.impl.util;
 
 
-import com.igrium.craftui.api.gizmo.CameraState;
+import com.igrium.craftui.api.gizmo.GizmoHelper;
 import com.mojang.blaze3d.platform.Window;
 import java.util.function.Predicate;
 
 import lombok.experimental.UtilityClass;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
@@ -18,9 +17,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -64,7 +61,7 @@ public final class RaycastManager {
             throw new IllegalStateException("No camera entity");
         }
 
-        Vec3 start = CameraState.getCameraPos();
+        Vec3 start = GizmoHelper.getCameraPos();
         Vec3 end = projectViewportGlobal(x, y, width, height, distance);
 
         return raycast(cameraEntity, start, end, predicate, includeFluids);
@@ -86,7 +83,7 @@ public final class RaycastManager {
         Vector3f localSpace = projectViewport(x, y, width, height, distance, new Vector3f());
 
         // Add components while constructing the Vec3d to avoid precision error casting to float for Vector3f
-        var lastCameraPos = CameraState.getCameraPos();
+        var lastCameraPos = GizmoHelper.getCameraPos();
         return new Vec3(localSpace.x + lastCameraPos.x,
                 localSpace.y + lastCameraPos.y,
                 localSpace.z + lastCameraPos.z);
@@ -110,12 +107,12 @@ public final class RaycastManager {
         // WHY does OpenGL flip Y...
         screenspace.y = -screenspace.y;
 
-        Matrix4f cameraProjection = new Matrix4f(CameraState.getProjectionMatrix());
+        Matrix4f cameraProjection = new Matrix4f(GizmoHelper.getProjectionMatrix());
         cameraProjection.invert();
 
         cameraProjection.transform(screenspace);
         screenspace.mul(distance);
-        screenspace.rotate(CameraState.getCameraRot());
+        screenspace.rotate(GizmoHelper.getCameraRot());
 
         dest.set(screenspace);
         return dest;
