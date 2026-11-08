@@ -222,10 +222,6 @@ public sealed abstract class NbtEditor<T extends Tag> permits NbtCompoundEditor,
         return tripleHash >= 0 ? label.substring(tripleHash + 3) : label;
     }
 
-    protected static boolean selectableText(String text) {
-        return ImGui.selectable(text, ImGui.calcTextSizeX(text, true), ImGui.calcTextSizeY(text, true));
-    }
-
     protected static byte drawTypeChooser() {
         for (byte i = 1; i <= 12; i++) {
             if (ImGui.menuItem(NbtIcons.getIcon(i) + " " + tt(NbtIcons.translation(i)))) {

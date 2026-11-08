@@ -1,6 +1,7 @@
 package com.igrium.craftui.api.nbt;
 
 import imgui.ImGui;
+import imgui.flag.ImGuiSelectableFlags;
 import imgui.type.*;
 import lombok.Setter;
 
@@ -67,6 +68,7 @@ class EditableText {
     }
 
     private static void selectableText(String text) {
-        ImGui.selectable(text, ImGui.calcTextSizeX(text, true), ImGui.calcTextSizeY(text, true));
+        ImGui.selectable(text, ImGuiSelectableFlags.NoAutoClosePopups, ImGui.calcTextSizeX(text, true),
+                ImGui.calcTextSizeY(text, true));
     }
 }

@@ -285,6 +285,18 @@ public class TestApp extends DockSpaceApp {
         // NBT EDITOR
         if (ImGui.begin("NBT Editor")) {
             ImGui.checkbox("Allow Editing NBT", allowEditNbt);
+            if (ImGui.button("Open NBT Editor in popup")) {
+                ImGui.openPopup("nbtEditor");
+            }
+            if (ImGui.beginPopup("nbtEditor")) {
+                if (nbtEditor.render("NBT editor##test", allowEditNbt.get() ? 0 : NbtEditorFlags.READONLY)) {
+                    Tag newVal = nbtEditor.getNbt();
+                    if (client.player != null) {
+                        client.player.sendSystemMessage(Component.literal("New NBT: " + newVal));
+                    }
+                }
+                ImGui.endPopup();
+            }
             ImGui.separator();
             if (nbtEditor.render("NBT editor##test", allowEditNbt.get() ? 0 : NbtEditorFlags.READONLY)) {
                 Tag newVal = nbtEditor.getNbt();
@@ -292,8 +304,6 @@ public class TestApp extends DockSpaceApp {
                     client.player.sendSystemMessage(Component.literal("New NBT: " + newVal));
                 }
             }
-            ;
-//            NbtEditor.drawNbtEditor("NBT Editor##test", editingNbt, 0);
         }
         ImGui.end();
 
