@@ -123,27 +123,27 @@ public class ViewportControls {
     /**
      * Orbit rotation speed, in radians per pixel.
      */
-    public static double ORBIT_SENSITIVITY = 0.008;
+    private static final double ORBIT_SENSITIVITY = 0.008;
 
     /**
      * Pan speed, in world units per pixel <i>per unit of distance</i> from the orbit center.
      * The default roughly matches a 70 degree vertical FOV on a 1080p viewport, so geometry
      * at the center's depth stays approximately under the cursor.
      */
-    public static double PAN_SENSITIVITY = 0.0013;
+    private static final double PAN_SENSITIVITY = 0.0013;
 
     /**
      * Zoom speed. Orbit distance is scaled by <code>e^(pixels * ZOOM_SENSITIVITY)</code>,
      * so zooming is exponential: always proportional to the current distance, and never
      * passes through the center.
      */
-    public static double ZOOM_SENSITIVITY = 0.01;
+    private static final double ZOOM_SENSITIVITY = 0.01;
 
     /**
      * Minimum distance used when scaling pan speed, so panning still works when the
      * camera is (nearly) on top of the orbit center.
      */
-    public static double MIN_PAN_DISTANCE = 0.1;
+    private static final double MIN_PAN_DISTANCE = 0.1;
 
     private static final double EPSILON = 1e-8;
 

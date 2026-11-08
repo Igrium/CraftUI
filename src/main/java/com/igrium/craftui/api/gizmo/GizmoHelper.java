@@ -9,18 +9,18 @@ import lombok.experimental.UtilityClass;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Quaternionfc;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 @UtilityClass
 public final class GizmoHelper {
     /**
      * The absolute position of the camera in world-space
      */
-    public static @NonNull Vec3 getCameraPos() {
+    public static @NotNull Vec3 getCameraPos() {
         return CameraStateImpl.getCameraPos();
     }
 
