@@ -1,22 +1,29 @@
 package com.igrium.craftui.impl;
 
-import java.util.*;
-
+import cn.enaium.fabric.imgui.FabricImGui;
 import com.google.common.collect.ImmutableSet;
 import com.igrium.craftui.api.app.CraftApp;
+import com.igrium.craftui.api.app.CraftApp.ViewportBounds;
 import com.igrium.craftui.api.event.CraftUIRenderEvents;
-import com.igrium.craftui.api.event.CraftUIRenderContext;
+import com.igrium.craftui.api.event.ctx.CraftUIPreRenderContext;
+import com.igrium.craftui.api.event.ctx.CraftUIRenderContext;
+import com.igrium.craftui.api.style.CraftUIFonts;
+import com.igrium.craftui.api.style.CraftUILayouts;
+import com.igrium.craftui.api.style.CraftUIStyle;
 import com.igrium.craftui.impl.input.CursorLockManager;
 import com.igrium.craftui.impl.mixin_helper.ExtWindow;
 import com.igrium.craftui.impl.render.ViewportComposite;
 import com.igrium.craftui.impl.style.LayoutManager;
 import com.igrium.craftui.impl.style.StyleManager;
-import com.igrium.craftui.api.style.CraftUILayouts;
-import com.igrium.craftui.api.style.CraftUIStyle;
+import com.mojang.blaze3d.platform.TextInputManager;
+import com.mojang.blaze3d.platform.Window;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import imgui.ImFont;
+import imgui.ImGui;
 import imgui.ImGuiIO;
 import imgui.extension.imguizmo.ImGuizmo;
+import imgui.flag.ImGuiConfigFlags;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.CrashReport;
@@ -29,15 +36,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.igrium.craftui.api.app.CraftApp.ViewportBounds;
-import com.igrium.craftui.api.style.CraftUIFonts;
-import com.mojang.blaze3d.platform.TextInputManager;
-import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.systems.RenderSystem;
-
-import cn.enaium.fabric.imgui.FabricImGui;
-import imgui.ImGui;
-import imgui.flag.ImGuiConfigFlags;
+import java.util.*;
 
 /**
  * Manages global app state, keeping track of active apps, and rendering.
@@ -156,14 +155,16 @@ public final class AppManager {
             app.onOpen();
         }
 
+        CraftUIPreRenderContext ctx = new PreRenderContext(ImmutableSet.copyOf(apps), client);
+
         CursorLockManager.setForceUnlock(forceMouseUnlock);
         CursorLockManager.onBeginFrame();
 
         viewportComposite.restoreWorldTarget(client);
 
-        updateViewportBounds(client);
+        updateViewportBounds(ctx);
 
-        CraftUIRenderEvents.PRE_RENDER.invoker().preRender(ImmutableSet.copyOf(apps));
+        CraftUIRenderEvents.PRE_RENDER.invoker().preRender(ctx);
 
         if (apps.isEmpty())
             return;
@@ -174,7 +175,7 @@ public final class AppManager {
 
     }
 
-    private static void updateViewportBounds(Minecraft client) {
+    private static void updateViewportBounds(CraftUIPreRenderContext ctx) {
         currentViewportBounds = null;
         for (CraftApp app : apps) {
             ViewportBounds customBounds = app.getCustomViewportBounds();
@@ -183,9 +184,9 @@ public final class AppManager {
             }
         }
 
-        Window window = client.getWindow();
+        Window window = ctx.getClient().getWindow();
         currentViewportBounds = CraftUIRenderEvents.COMPUTE_VIEWPORT_BOUNDS
-                .invoker().computeViewportBounds(currentViewportBounds);
+                .invoker().computeViewportBounds(ctx, currentViewportBounds);
         var scaled = currentViewportBounds != null ? currentViewportBounds.scaled() : null;
         ExtWindow.setViewportBounds(window, scaled, true);
     }
@@ -260,11 +261,13 @@ public final class AppManager {
         if (!FabricImGui.IMGUI.isCreated())
             return;
 
-        CraftUIRenderContext ctx = new RenderContext(ImmutableSet.copyOf(apps));
-        CraftUIRenderEvents.BEGIN_FRAME.invoker().beginFrame(ctx);
-
         drawnGlobalPopup = false;
         boolean isCleanupFrame = apps.isEmpty();
+
+        CraftUIRenderContext ctx = new RenderContext(ImmutableSet.copyOf(apps), client,
+                currentViewportBounds, isCleanupFrame);
+        CraftUIRenderEvents.BEGIN_FRAME.invoker().beginFrame(ctx);
+
 
         if (client.mouseHandler.isMouseGrabbed()) {
             ImGui.getIO().addConfigFlags(ImGuiConfigFlags.NoMouse);
@@ -324,7 +327,10 @@ public final class AppManager {
 
         if (currentViewportBounds != null) {
             viewportComposite.composite(client, currentViewportBounds.scaled());
+            CraftUIRenderEvents.POST_COMPOSITE.invoker().postComposite(ctx);
         }
+
+        CraftUIRenderEvents.BEFORE_RENDER.invoker().beforeRender(ctx);
 
         // FabricImGui handles newFrame, etc.
         FabricImGui.IMGUI.draw(_ -> {
@@ -363,6 +369,7 @@ public final class AppManager {
             CraftUIRenderEvents.END_RENDER.invoker().endRender(ctx);
 
         });
+        CraftUIRenderEvents.AFTER_RENDER.invoker().afterRender(ctx);
 
         updateTextInput(client);
 
@@ -414,7 +421,35 @@ public final class AppManager {
         return !forwardInputNextFrame && ImGui.getIO().getWantCaptureKeyboard();
     }
 
-    private record RenderContext(ImmutableSet<CraftApp> apps) implements CraftUIRenderContext {
+    private record RenderContext(ImmutableSet<CraftApp> apps, Minecraft client, @Nullable ViewportBounds viewportBounds,
+                                 boolean cleanupFrame) implements CraftUIRenderContext {
+
+        @Override
+        public Collection<? extends CraftApp> getApps() {
+            return apps;
+        }
+
+        @Override
+        public @Nullable CraftApp.ViewportBounds getViewportBounds() {
+            return viewportBounds;
+        }
+
+        @Override
+        public Minecraft getClient() {
+            return client;
+        }
+
+        @Override
+        public boolean isCleanupFrame() {
+            return cleanupFrame;
+        }
+    }
+
+    private record PreRenderContext(ImmutableSet<CraftApp> apps, Minecraft client) implements CraftUIPreRenderContext {
+        @Override
+        public Minecraft getClient() {
+            return client;
+        }
 
         @Override
         public Collection<? extends CraftApp> getApps() {
