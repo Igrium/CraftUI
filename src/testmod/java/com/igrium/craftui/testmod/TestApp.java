@@ -356,6 +356,8 @@ public class TestApp extends DockSpaceApp {
             }
         }
         ImGui.end();
+
+        RenderEventTester.renderWindow();
     }
 
     private void resetGizmo(Minecraft client) {

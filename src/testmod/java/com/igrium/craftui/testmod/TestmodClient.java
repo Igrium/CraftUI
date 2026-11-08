@@ -13,6 +13,7 @@ public class TestmodClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register(AppTestCommand::register);
+        RenderEventTester.register();
     }
     
 }
