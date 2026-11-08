@@ -1,6 +1,7 @@
 package com.igrium.craftui.impl.util;
 
 
+import com.igrium.craftui.api.gizmo.CameraState;
 import com.mojang.blaze3d.platform.Window;
 import java.util.function.Predicate;
 
@@ -28,26 +29,6 @@ import org.joml.Vector4f;
  */
 @UtilityClass
 public final class RaycastManager {
-    /**
-     * Some functions need to register some fabric listeners. Do that here.
-     */
-    public static void register() {
-        // In 26.2 the fabric world-render events were reworked into LevelRenderEvents, and per-frame
-        // camera data now lives on the level render state rather than on a Camera passed to the event.
-        LevelRenderEvents.START_MAIN.register(context -> {
-            var cameraState = context.levelState().cameraRenderState;
-            lastProjectionMatrix.set(cameraState.projectionMatrix);
-            // Copy the values we need; the render state instance is reused/mutated each frame.
-            lastCameraPos = cameraState.pos;
-            lastCameraOrientation.set(cameraState.orientation);
-            hasCamera = true;
-        });
-    }
-
-    private static final Matrix4f lastProjectionMatrix = new Matrix4f();
-    private static final Quaternionf lastCameraOrientation = new Quaternionf();
-    private static Vec3 lastCameraPos = Vec3.ZERO;
-    private static boolean hasCamera;
 
     /**
      * Perform a raycast based on a specific point in screenspace
@@ -83,11 +64,7 @@ public final class RaycastManager {
             throw new IllegalStateException("No camera entity");
         }
 
-        if (!hasCamera) {
-            throw new IllegalStateException("No frame has been rendered yet.");
-        }
-
-        Vec3 start = lastCameraPos;
+        Vec3 start = CameraState.getCameraPos();
         Vec3 end = projectViewportGlobal(x, y, width, height, distance);
 
         return raycast(cameraEntity, start, end, predicate, includeFluids);
@@ -105,13 +82,11 @@ public final class RaycastManager {
      * @return A point in 3D space that falls under the 2D screenspace point.
      */
     public static Vec3 projectViewportGlobal(float x, float y, float width, float height, float distance) {
-        if (!hasCamera) {
-            throw new IllegalStateException("No frame has been rendered yet.");
-        }
 
         Vector3f localSpace = projectViewport(x, y, width, height, distance, new Vector3f());
 
         // Add components while constructing the Vec3d to avoid precision error casting to float for Vector3f
+        var lastCameraPos = CameraState.getCameraPos();
         return new Vec3(localSpace.x + lastCameraPos.x,
                 localSpace.y + lastCameraPos.y,
                 localSpace.z + lastCameraPos.z);
@@ -129,21 +104,18 @@ public final class RaycastManager {
      * @return <code>dest</code>: The 3D point <em>relative to the camera's location</em>
      */
     public static Vector3f projectViewport(float x, float y, float width, float height, float distance, Vector3f dest) {
-        if (!hasCamera) {
-            throw new IllegalStateException("No frame has been rendered yet.");
-        }
 
         Vector4f screenspace = new Vector4f(2 * x / width - 1, 2 * y / height - 1, -1, 1);
 
         // WHY does OpenGL flip Y...
         screenspace.y = -screenspace.y;
 
-        Matrix4f cameraProjection = new Matrix4f(lastProjectionMatrix);
+        Matrix4f cameraProjection = new Matrix4f(CameraState.getProjectionMatrix());
         cameraProjection.invert();
 
         cameraProjection.transform(screenspace);
         screenspace.mul(distance);
-        screenspace.rotate(lastCameraOrientation);
+        screenspace.rotate(CameraState.getCameraRot());
 
         dest.set(screenspace);
         return dest;
