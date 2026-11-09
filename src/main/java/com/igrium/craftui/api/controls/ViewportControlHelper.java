@@ -138,7 +138,7 @@ public class ViewportControlHelper {
 
         if (ImGui.isMouseDragging(getOrbitButton()) && mods == getOrbitMods()) {
             return ViewportControls.ControlMode.ORBIT;
-        } else if (ImGui.isMouseDragging(getPanButton()) && mods == getPanButton()) {
+        } else if (ImGui.isMouseDragging(getPanButton()) && mods == getPanMods()) {
             return ViewportControls.ControlMode.PAN;
         } else if (ImGui.isMouseDragging(getZoomButton()) && mods == getZoomMods()) {
             return ViewportControls.ControlMode.ZOOM;
