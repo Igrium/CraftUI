@@ -67,11 +67,13 @@ dependencies {
     api include("io.github.spair:imgui-java-natives-linux:${project.imgui_java_version}")
     api include("io.github.spair:imgui-java-natives-macos:${project.imgui_java_version}")
 
-    api include("org.lwjgl:lwjgl-nfd:3.3.3")
-    runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-windows")
-    runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-macos")
-    runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-macos-arm64")
-    runtimeOnly include("org.lwjgl:lwjgl-nfd:3.3.3:natives-linux")
+    // LWJGL core is provided by Minecraft. Exclude it so CraftUI never forces a core version on consumers
+    def excludeLwjglCore = { exclude group: "org.lwjgl", module: "lwjgl" }
+    api(include("org.lwjgl:lwjgl-nfd:${project.lwjgl_version}"), excludeLwjglCore)
+    runtimeOnly(include("org.lwjgl:lwjgl-nfd:${project.lwjgl_version}:natives-windows"), excludeLwjglCore)
+    runtimeOnly(include("org.lwjgl:lwjgl-nfd:${project.lwjgl_version}:natives-macos"), excludeLwjglCore)
+    runtimeOnly(include("org.lwjgl:lwjgl-nfd:${project.lwjgl_version}:natives-macos-arm64"), excludeLwjglCore)
+    runtimeOnly(include("org.lwjgl:lwjgl-nfd:${project.lwjgl_version}:natives-linux"), excludeLwjglCore)
 
     testmodImplementation sourceSets.main.output
 
