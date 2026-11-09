@@ -23,7 +23,6 @@ import imgui.extension.imguizmo.ImGuizmo;
 import imgui.extension.imguizmo.flag.Mode;
 import imgui.extension.imguizmo.flag.Operation;
 import imgui.flag.ImGuiFocusedFlags;
-import imgui.flag.ImGuiKey;
 import imgui.flag.ImGuiMouseButton;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
@@ -43,10 +42,8 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
-import org.joml.Quaterniond;
 import org.joml.Quaternionf;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -389,7 +386,7 @@ public class TestApp extends DockSpaceApp {
 
         // Visualize the full transform with a cube
         GizmoHelper.getViewRotationMatrix().get(gizmoViewBuffer);
-        GizmoHelper.getGizmoProjectionMatrix().get(gizmoProjBuffer);
+        GizmoHelper.getProjectionMatrix().get(gizmoProjBuffer);
         gizmoMatrix.get(gizmoModelBuffer);
         ImGuizmo.drawCubes(gizmoViewBuffer, gizmoProjBuffer, gizmoModelBuffer);
 

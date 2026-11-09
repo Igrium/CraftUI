@@ -50,18 +50,18 @@ public final class GizmoHelper {
      * @apiNote May return a live view over the cache
      * @see CameraRenderState#projectionMatrix
      */
-    public static Matrix4fc getProjectionMatrix() {
-        return CameraStateImpl.getProjectionMatrix();
+    public static Matrix4fc getRawProjectionMatrix() {
+        return CameraStateImpl.getRawProjectionMatrix();
     }
 
     /**
-     * A variation if the projection matrix which is inverted back to "proper" coordinates
+     * A variation if the game's projection matrix which is inverted back to "proper" coordinates
      * for use with ImGuizmo
      *
      * @apiNote May return a live view over the cache
      */
-    public static Matrix4fc getGizmoProjectionMatrix() {
-        return CameraStateImpl.getGizmoProjectionMatrix();
+    public static Matrix4fc getProjectionMatrix() {
+        return CameraStateImpl.getProjectionMatrix();
     }
 
     /**
@@ -170,7 +170,7 @@ public final class GizmoHelper {
      */
     public static void manipulateView(int operation, int mode, Matrix4f modelMatrix,
                                       @Nullable Matrix4f deltaMatrix, float @Nullable [] snap) {
-        manipulate(getViewRotationMatrix(), getGizmoProjectionMatrix(), operation, mode, modelMatrix, deltaMatrix,
+        manipulate(getViewRotationMatrix(), getProjectionMatrix(), operation, mode, modelMatrix, deltaMatrix,
                 snap);
     }
 

@@ -107,7 +107,7 @@ public final class RaycastManager {
         // WHY does OpenGL flip Y...
         screenspace.y = -screenspace.y;
 
-        Matrix4f cameraProjection = new Matrix4f(GizmoHelper.getProjectionMatrix());
+        Matrix4f cameraProjection = new Matrix4f(GizmoHelper.getRawProjectionMatrix());
         cameraProjection.invert();
 
         cameraProjection.transform(screenspace);

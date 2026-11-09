@@ -17,7 +17,7 @@ public class CameraStateImpl {
             var cameraState = context.levelState().cameraRenderState;
 
             viewRotationMatrix.set(cameraState.viewRotationMatrix);
-            projectionMatrix.set(cameraState.projectionMatrix);
+            rawProjectionMatrix.set(cameraState.projectionMatrix);
 
 
             cameraPos = cameraState.pos;
@@ -29,7 +29,7 @@ public class CameraStateImpl {
             float near = 0.05f;
             float far = cameraState.depthFar;
 
-            gizmoProjectionMatrix.set(cameraState.projectionMatrix)
+            projectionMatrix.set(cameraState.projectionMatrix)
                     .m22((far + near) / (near - far))
                     .m32(2 * far * near / (near - far));
 
@@ -46,10 +46,10 @@ public class CameraStateImpl {
     private static final Matrix4f viewRotationMatrix = new Matrix4f();
 
     @Getter
-    private static final Matrix4f projectionMatrix = new Matrix4f();
+    private static final Matrix4f rawProjectionMatrix = new Matrix4f();
 
     @Getter
-    private static final Matrix4f gizmoProjectionMatrix = new Matrix4f();
+    private static final Matrix4f projectionMatrix = new Matrix4f();
 
     @Getter @Setter
     private static float tickDelta;
