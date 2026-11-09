@@ -185,7 +185,7 @@ public final class CraftUIStyle {
     float circleTessellationMaxError;
 
     @Getter @NonNull
-    final Map<String, CraftUIColors.UIColor> colors = new HashMap<>();
+    Map<String, CraftUIColors.UIColor> colors = new HashMap<>();
 
     /**
      * Convert this style into a native ImGui style.
