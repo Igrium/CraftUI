@@ -27,10 +27,10 @@ import org.joml.Vector3dc;
  */
 @Accessors(chain = true)
 public class ViewportControlHelper {
-    @Getter
+    @Getter @Accessors(makeFinal = true)
     private @Nullable ViewportControls.State state;
 
-    @Getter
+    @Getter @Accessors(makeFinal = true)
     private @NotNull ViewportControls.ControlMode controlMode = ViewportControls.ControlMode.ORBIT;
 
     @Getter @Setter
@@ -96,11 +96,11 @@ public class ViewportControlHelper {
     public void handleViewportControls() {
         Entity camera = getCameraEntity();
 
-        if (state != null) {
+        if (getState() != null) {
             if (camera != null && shouldContinueMove()) {
                 // Continue move
-                performMove(controlMode, state, ImGui.getIO().getMouseDeltaX(), ImGui.getIO().getMouseDeltaY());
-                setCameraTransform(camera, state.evalPos(), state.evalRot());
+                performMove(getControlMode(), getState(), ImGui.getIO().getMouseDeltaX(), ImGui.getIO().getMouseDeltaY());
+                setCameraTransform(camera, getState().evalPos(), getState().evalRot());
             } else {
                 endMove();
             }
@@ -136,11 +136,11 @@ public class ViewportControlHelper {
     protected @Nullable ViewportControls.ControlMode pollBeginMove() {
         int mods = ImGui.getIO().getKeyMods();
 
-        if (ImGui.isMouseDragging(orbitButton) && mods == orbitMods) {
+        if (ImGui.isMouseDragging(getOrbitButton()) && mods == getOrbitMods()) {
             return ViewportControls.ControlMode.ORBIT;
-        } else if (ImGui.isMouseDragging(panButton) && mods == panMods) {
+        } else if (ImGui.isMouseDragging(getPanButton()) && mods == getPanButton()) {
             return ViewportControls.ControlMode.PAN;
-        } else if (ImGui.isMouseDragging(zoomButton) && mods == zoomMods) {
+        } else if (ImGui.isMouseDragging(getZoomButton()) && mods == getZoomMods()) {
             return ViewportControls.ControlMode.ZOOM;
         }
         return null;
@@ -162,7 +162,7 @@ public class ViewportControlHelper {
      * @param dy          Mouse Y delta
      */
     protected void performMove(ViewportControls.ControlMode controlMode, ViewportControls.State state, float dx, float dy) {
-        ViewportControls.doViewportMove(controlMode, state, dx, dy, flags);
+        ViewportControls.doViewportMove(controlMode, state, dx, dy, getFlags());
     }
 
     /**
@@ -222,12 +222,12 @@ public class ViewportControlHelper {
     protected Vector3d computeOrbitCenter(Vector3dc pos, Quaterniondc rot, Entity camera) {
         MouseHandler mouse = Minecraft.getInstance().mouseHandler;
         HitResult raycast = CraftUI.raycastViewport((float) mouse.xpos(), (float) mouse.ypos(),
-                maxRaycastDistance, e -> e != camera, false);
+                getMaxRaycastDistance(), e -> e != camera, false);
         if (raycast.getType() != HitResult.Type.MISS) {
             Vec3 hitPos = raycast.getLocation();
             return new Vector3d(hitPos.x, hitPos.y, hitPos.z);
         } else {
-            return rot.transform(new Vector3d(0, 0, -1)).mul(fallbackOrbitDistance).add(pos);
+            return rot.transform(new Vector3d(0, 0, -1)).mul(getFallbackOrbitDistance()).add(pos);
         }
     }
 
@@ -251,5 +251,6 @@ public class ViewportControlHelper {
         ent.setYRot(yaw);
         ent.setYHeadRot(yaw);
         ent.setXRot(pitch);
+        ent.setOldPosAndRot();
     }
 }
