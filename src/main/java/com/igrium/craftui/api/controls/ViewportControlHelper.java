@@ -1,6 +1,7 @@
 package com.igrium.craftui.api.controls;
 
 import com.igrium.craftui.api.CraftUI;
+import com.igrium.craftui.api.controls.ViewportControls.ControlMode;
 import imgui.ImGui;
 import imgui.extension.imguizmo.ImGuizmo;
 import imgui.flag.ImGuiKey;
@@ -27,40 +28,51 @@ import org.joml.Vector3dc;
  */
 @Accessors(chain = true)
 public class ViewportControlHelper {
-    @Getter @Accessors(makeFinal = true)
+    @Getter
+    @Accessors(makeFinal = true)
     private @Nullable ViewportControls.State state;
 
-    @Getter @Accessors(makeFinal = true)
-    private @NotNull ViewportControls.ControlMode controlMode = ViewportControls.ControlMode.ORBIT;
+    @Getter
+    @Accessors(makeFinal = true)
+    private @NotNull ControlMode controlMode = ControlMode.ORBIT;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private int orbitButton = ImGuiMouseButton.Left;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private int orbitMods = ImGuiKey.ImGuiMod_Alt;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private int panButton = ImGuiMouseButton.Middle;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private int panMods = ImGuiKey.ImGuiMod_Alt;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private int zoomButton = ImGuiMouseButton.Middle;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private int zoomMods = 0;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private double fallbackOrbitDistance = 10;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private float maxRaycastDistance = 1000;
 
     /**
      * @see ViewportControls.Flags
      */
-    @Getter @Setter
+    @Getter
+    @Setter
     private int flags = 0;
 
     public final boolean isMoving() {
@@ -81,7 +93,7 @@ public class ViewportControlHelper {
      * @param dx          Effective mouse X delta
      * @param dy          Effective mouse Y delta
      */
-    public void applyDiscreteMove(ViewportControls.ControlMode controlMode, float dx, float dy) {
+    public void applyDiscreteMove(ControlMode controlMode, float dx, float dy) {
         Entity camera = getCameraEntity();
         if (camera == null) return;
 
@@ -99,17 +111,33 @@ public class ViewportControlHelper {
         if (getState() != null) {
             if (camera != null && shouldContinueMove()) {
                 // Continue move
-                performMove(getControlMode(), getState(), ImGui.getIO().getMouseDeltaX(), ImGui.getIO().getMouseDeltaY());
+                performMove(getControlMode(), getState(), ImGui.getIO().getMouseDeltaX(),
+                        ImGui.getIO().getMouseDeltaY());
                 setCameraTransform(camera, getState().evalPos(), getState().evalRot());
             } else {
                 endMove();
             }
         } else if (camera != null && canBeginMove()) {
-            ViewportControls.ControlMode mode = pollBeginMove();
+            ControlMode mode = pollBeginMove();
             if (mode != null) {
                 beginMove(mode, camera);
             }
         }
+
+        float scrollY = getMouseWheel();
+        if (Math.abs(scrollY) > .01f) {
+            applyDiscreteMove(ControlMode.ZOOM, 0, scrollY);
+        }
+    }
+
+    /**
+     * Return the amount that the viewport should zoom due to the mouse wheel on this frame
+     *
+     * @apiNote Called every frame, even if the viewport is not hovered.
+     */
+    protected float getMouseWheel() {
+        // I eyeballed the -12
+        return ImGui.isWindowHovered() ? ImGui.getIO().getMouseWheel() * -12 : 0;
     }
 
     /**
@@ -133,15 +161,15 @@ public class ViewportControlHelper {
      *
      * @return The control mode to begin, or <code>null</code> to not begin a move.
      */
-    protected @Nullable ViewportControls.ControlMode pollBeginMove() {
+    protected @Nullable ControlMode pollBeginMove() {
         int mods = ImGui.getIO().getKeyMods();
 
         if (ImGui.isMouseDragging(getOrbitButton()) && mods == getOrbitMods()) {
-            return ViewportControls.ControlMode.ORBIT;
+            return ControlMode.ORBIT;
         } else if (ImGui.isMouseDragging(getPanButton()) && mods == getPanMods()) {
-            return ViewportControls.ControlMode.PAN;
+            return ControlMode.PAN;
         } else if (ImGui.isMouseDragging(getZoomButton()) && mods == getZoomMods()) {
-            return ViewportControls.ControlMode.ZOOM;
+            return ControlMode.ZOOM;
         }
         return null;
     }
@@ -161,7 +189,8 @@ public class ViewportControlHelper {
      * @param dx          Mouse X delta
      * @param dy          Mouse Y delta
      */
-    protected void performMove(ViewportControls.ControlMode controlMode, ViewportControls.State state, float dx, float dy) {
+    protected void performMove(ControlMode controlMode, ViewportControls.State state, float dx,
+                               float dy) {
         ViewportControls.doViewportMove(controlMode, state, dx, dy, getFlags());
     }
 
@@ -190,7 +219,7 @@ public class ViewportControlHelper {
      * @param controlMode Control mode to use
      * @param camera      Camera entity
      */
-    protected void beginMove(ViewportControls.ControlMode controlMode, Entity camera) {
+    protected void beginMove(ControlMode controlMode, Entity camera) {
         this.state = createState(camera);
         this.controlMode = controlMode;
     }
@@ -212,7 +241,8 @@ public class ViewportControlHelper {
 
     /**
      * Compute the point that orbit/zoom moves should center around.
-     * Defaults to a raycast under the mouse, falling back to a point {@link #getFallbackOrbitDistance()} in front of the camera.
+     * Defaults to a raycast under the mouse, falling back to a point {@link #getFallbackOrbitDistance()} in front of
+     * the camera.
      *
      * @param pos    Camera position
      * @param rot    Camera rotation
