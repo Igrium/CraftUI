@@ -1,6 +1,8 @@
 package com.igrium.craftui.testmod;
 
 import cn.enaium.fabric.imgui.TextureBindings;
+import com.igrium.craftui.api.controls.ViewportControlHelper;
+import com.igrium.craftui.api.controls.ViewportControls;
 import com.igrium.craftui.api.icon.FontAwesome;
 import com.igrium.craftui.api.CraftUI;
 import com.igrium.craftui.api.app.DockSpaceApp;
@@ -15,8 +17,13 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.igrium.craftui.api.gizmo.GizmoHelper;
 import imgui.ImGui;
+import imgui.extension.imguizmo.ImGuizmo;
+import imgui.extension.imguizmo.flag.Mode;
+import imgui.extension.imguizmo.flag.Operation;
 import imgui.flag.ImGuiFocusedFlags;
+import imgui.flag.ImGuiMouseButton;
 import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import imgui.type.ImString;
@@ -36,6 +43,10 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
@@ -61,9 +72,34 @@ public class TestApp extends DockSpaceApp {
     private final GpuSampler sampler;
     private NbtEditor<?> nbtEditor;
 
+    private final ViewportControlHelper viewportControls = new ViewportControlHelper();
+
+    // GIZMO TEST
+    private final ImBoolean showGizmo = new ImBoolean(true);
+    private final ImInt gizmoOperation = new ImInt(0);
+    private final ImInt gizmoMode = new ImInt(0);
+    private final ImBoolean gizmoSnap = new ImBoolean(false);
+    private final float[] gizmoSnapValues = new float[]{1, 1, 1};
+
+    private static final int[] GIZMO_OPERATIONS = {Operation.TRANSLATE, Operation.ROTATE, Operation.SCALE, Operation.UNIVERSAL};
+    private static final int[] GIZMO_MODES = {Mode.LOCAL, Mode.WORLD};
+
+    // Stored in world-space, independent of the camera, so precision doesn't drift as the camera moves.
+    private final Vector3d gizmoPos = new Vector3d();
+    private final Quaternionf gizmoRot = new Quaternionf();
+    private final Vector3f gizmoScale = new Vector3f(1);
+    private boolean gizmoInitialized;
+
+    // Camera-relative model matrix, rebuilt every frame.
+    private final Matrix4f gizmoMatrix = new Matrix4f();
+
+    private final float[] gizmoViewBuffer = new float[16];
+    private final float[] gizmoProjBuffer = new float[16];
+    private final float[] gizmoModelBuffer = new float[16];
+
     public TestApp() {
         setViewportInputMode(ViewportInputMode.DRAG);
-        setViewportInputButtons(1, 2);
+        setViewportInputButtons(ImGuiMouseButton.Right);
 
         CompoundTag editingNbt = new CompoundTag();
 
@@ -71,14 +107,14 @@ public class TestApp extends DockSpaceApp {
         editingNbt.put("Value2", IntTag.valueOf(69));
 
 
-        editingNbt.put("byteValue", ByteTag.valueOf((byte)2));
-        editingNbt.put("shortValue", ShortTag.valueOf((short)5));
+        editingNbt.put("byteValue", ByteTag.valueOf((byte) 2));
+        editingNbt.put("shortValue", ShortTag.valueOf((short) 5));
         editingNbt.put("intValue", IntTag.valueOf(69));
         editingNbt.put("longValue", LongTag.valueOf(69420));
         editingNbt.put("floatValue", FloatTag.valueOf(2.54f));
         editingNbt.put("doubleValue", DoubleTag.valueOf(2124.2));
 
-        editingNbt.put("longArray", new LongArrayTag(new long[] {543, 22, 48}));
+        editingNbt.put("longArray", new LongArrayTag(new long[]{543, 22, 48}));
 
         CompoundTag compound = new CompoundTag();
         compound.put("NestedStr", StringTag.valueOf("Hello World!"));
@@ -195,7 +231,8 @@ public class TestApp extends DockSpaceApp {
             AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(creeperTex);
 
             long texId = TextureBindings.INSTANCE.textureId(abstractTexture.getTextureView(), sampler);
-            ImGui.image(texId, abstractTexture.getTexture().getWidth(0) * 8, abstractTexture.getTexture().getHeight(0) * 8);
+            ImGui.image(texId, abstractTexture.getTexture().getWidth(0) * 8,
+                    abstractTexture.getTexture().getHeight(0) * 8);
         }
         ImGui.end();
 
@@ -205,13 +242,19 @@ public class TestApp extends DockSpaceApp {
             boolean mousePressed = mousePressedOverViewport(0);
             ImGui.text("Mouse down: " + mousePressed);
 
+            // Draw before handling viewport controls / clicks so ImGuizmo.isOver() & isUsing() are current
+            if (showGizmo.get()) {
+                drawGizmo(client);
+            }
+            boolean gizmoBusy = showGizmo.get() && (ImGuizmo.isOver() || ImGuizmo.isUsing());
+
             if (doClickExplosion.get()) {
-                if (ImGui.isWindowHovered() && ImGui.isMouseClicked(0)) {
+                if (ImGui.isWindowHovered() && ImGui.isMouseClicked(0) && !gizmoBusy) {
                     raycastExplosion();
                 }
             }
 
-            if (ImGui.isWindowHovered() && ImGui.isMouseClicked(2)) {
+            if (ImGui.isWindowHovered() && ImGui.isMouseClicked(2) && !gizmoBusy) {
                 clickNbt();
             }
 
@@ -223,25 +266,145 @@ public class TestApp extends DockSpaceApp {
                 ImGui.menuItem("This is the context menu");
                 ImGui.endPopup();
             }
+
+            viewportControls.handleViewportControls();
+
+            if (ImGui.isWindowHovered()) {
+                float scrollY = ImGui.getIO().getMouseWheel();
+                if (Math.abs(scrollY) > .01f) {
+                    // I eyeballed the -12
+                    viewportControls.applyDiscreteMove(ViewportControls.ControlMode.ZOOM, 0, scrollY * -12 );
+                }
+            }
         }
         ImGui.end();
 
         // NBT EDITOR
         if (ImGui.begin("NBT Editor")) {
             ImGui.checkbox("Allow Editing NBT", allowEditNbt);
+            if (ImGui.button("Open NBT Editor in popup")) {
+                ImGui.openPopup("nbtEditor");
+            }
+            if (ImGui.beginPopup("nbtEditor")) {
+                if (nbtEditor.render("NBT editor##test", allowEditNbt.get() ? 0 : NbtEditorFlags.READONLY)) {
+                    Tag newVal = nbtEditor.getNbt();
+                    if (client.player != null) {
+                        client.player.sendSystemMessage(Component.literal("New NBT: " + newVal));
+                    }
+                }
+                ImGui.endPopup();
+            }
             ImGui.separator();
             if (nbtEditor.render("NBT editor##test", allowEditNbt.get() ? 0 : NbtEditorFlags.READONLY)) {
                 Tag newVal = nbtEditor.getNbt();
                 if (client.player != null) {
                     client.player.sendSystemMessage(Component.literal("New NBT: " + newVal));
                 }
-            };
-//            NbtEditor.drawNbtEditor("NBT Editor##test", editingNbt, 0);
+            }
         }
         ImGui.end();
 
+        // GIZMO SETTINGS
+        if (ImGui.begin("Gizmo")) {
+            ImGui.checkbox("Show Gizmo", showGizmo);
+
+            ImGui.radioButton("Translate", gizmoOperation, 0);
+            ImGui.sameLine();
+            ImGui.radioButton("Rotate", gizmoOperation, 1);
+            ImGui.sameLine();
+            ImGui.radioButton("Scale", gizmoOperation, 2);
+            ImGui.sameLine();
+            ImGui.radioButton("Universal", gizmoOperation, 3);
+
+            ImGui.radioButton("Local", gizmoMode, 0);
+            ImGui.sameLine();
+            ImGui.radioButton("World", gizmoMode, 1);
+
+            ImGui.checkbox("Snap", gizmoSnap);
+            if (gizmoSnap.get()) {
+                ImGui.inputFloat3("Snap Values", gizmoSnapValues);
+            }
+
+            ImGui.separator();
+
+            Vector3f euler = gizmoRot.getEulerAnglesXYZ(new Vector3f());
+            ImGui.text(String.format("Position: %.3f, %.3f, %.3f", gizmoPos.x, gizmoPos.y, gizmoPos.z));
+            ImGui.text(String.format("Rotation: %.1f, %.1f, %.1f", Math.toDegrees(euler.x),
+                    Math.toDegrees(euler.y), Math.toDegrees(euler.z)));
+            ImGui.text(String.format("Scale: %.3f, %.3f, %.3f", gizmoScale.x, gizmoScale.y, gizmoScale.z));
+
+            Vec3 cam = CraftUI.getCameraPos();
+            ImGui.text(String.format("Camera: %.3f, %.3f, %.3f", cam.x, cam.y, cam.z));
+            ImGui.text("Using: " + ImGuizmo.isUsing() + "  Over: " + ImGuizmo.isOver());
+
+            if (ImGui.button("Reset to Player")) {
+                resetGizmo(client);
+            }
+            ImGui.sameLine();
+            if (ImGui.button("Summon TNT at Gizmo")) {
+                IntegratedServer server = client.getSingleplayerServer();
+                if (server != null) {
+                    double x = gizmoPos.x, y = gizmoPos.y, z = gizmoPos.z;
+                    server.execute(() -> {
+                        PrimedTnt entity = new PrimedTnt(server.overworld(), x, y, z, null);
+                        server.overworld().addFreshEntity(entity);
+                    });
+                }
+            }
+        }
+        ImGui.end();
+
+        RenderEventTester.renderWindow();
     }
 
+    private void resetGizmo(Minecraft client) {
+        if (client.player != null) {
+            Vec3 pos = client.player.position();
+            gizmoPos.set(pos.x, pos.y, pos.z);
+        }
+        gizmoRot.identity();
+        gizmoScale.set(1);
+        gizmoInitialized = true;
+    }
+
+    /**
+     * Draw the test gizmo. Must be called inside the viewport window.
+     */
+    private void drawGizmo(Minecraft client) {
+        if (!gizmoInitialized) {
+            resetGizmo(client);
+        }
+
+        GizmoHelper.setupGizmos();
+
+        // Minecraft model matrices are relative to the camera
+        Vec3 cam = CraftUI.getCameraPos();
+        gizmoMatrix.translation((float) (gizmoPos.x - cam.x), (float) (gizmoPos.y - cam.y),
+                        (float) (gizmoPos.z - cam.z))
+                .rotate(gizmoRot)
+                .scale(gizmoScale);
+
+        // Visualize the full transform with a cube
+        CraftUI.getViewRotationMatrix().get(gizmoViewBuffer);
+        CraftUI.getProjectionMatrix().get(gizmoProjBuffer);
+        gizmoMatrix.get(gizmoModelBuffer);
+        ImGuizmo.drawCubes(gizmoViewBuffer, gizmoProjBuffer, gizmoModelBuffer);
+
+        GizmoHelper.manipulateView(GIZMO_OPERATIONS[gizmoOperation.get()], GIZMO_MODES[gizmoMode.get()],
+                gizmoMatrix, null, gizmoSnap.get() ? gizmoSnapValues : null);
+
+        if (ImGuizmo.isUsing()) {
+            Vector3f translation = gizmoMatrix.getTranslation(new Vector3f());
+            gizmoPos.set(translation.x + cam.x, translation.y + cam.y, translation.z + cam.z);
+            gizmoMatrix.getScale(gizmoScale);
+            // getNormalizedRotation() assumes the basis columns are already unit length, which they aren't
+            // once the matrix is scaled (or after float drift). Its error feeds back every frame and blows up.
+            // Skip a degenerate (zero-scale) basis, which would otherwise divide by zero.
+            if (gizmoScale.x > 1e-6f && gizmoScale.y > 1e-6f && gizmoScale.z > 1e-6f) {
+                gizmoMatrix.getUnnormalizedRotation(gizmoRot).normalize();
+            }
+        }
+    }
     /**
      * If any window is focused, unlock the mouse
      */
@@ -251,7 +414,8 @@ public class TestApp extends DockSpaceApp {
         }
     }
 
-    @Override @Nullable
+    @Override
+    @Nullable
     public Identifier getLayoutPreset() {
         return switch (layout.get()) {
             case 0 -> CraftUILayouts.DEFAULT;
@@ -263,14 +427,14 @@ public class TestApp extends DockSpaceApp {
 
     private void raycastExplosion() {
         MouseHandler mouse = Minecraft.getInstance().mouseHandler;
-//        float mouseX = ImGui.getMousePosX();
-//        float mouseY = ImGui.getMousePosY();
 
         IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
         if (server == null) return;
 
-        HitResult raycast = CraftUI.raycastViewport((float)mouse.xpos(), (float)mouse.ypos(), 1000, e -> false, false);
-        LoggerFactory.getLogger(getClass()).info("Position: {} {} {}", raycast.getLocation().x, raycast.getLocation().y, raycast.getLocation().z);
+        HitResult raycast = CraftUI.raycastViewport((float) mouse.xpos(), (float) mouse.ypos(), 1000, e -> false,
+                false);
+        LoggerFactory.getLogger(getClass()).info("Position: {} {} {}", raycast.getLocation().x,
+                raycast.getLocation().y, raycast.getLocation().z);
 
         if (raycast.getType() != HitResult.Type.MISS) {
             Vec3 pos = raycast.getLocation();
@@ -287,7 +451,8 @@ public class TestApp extends DockSpaceApp {
         IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
         if (server == null) return;
 
-        HitResult raycast = CraftUI.raycastViewport((float)mouse.xpos(), (float)mouse.ypos(), 1000, e -> !(e instanceof Player), false);
+        HitResult raycast = CraftUI.raycastViewport((float) mouse.xpos(), (float) mouse.ypos(), 1000,
+                e -> !(e instanceof Player), false);
         if (raycast instanceof EntityHitResult entHit) {
             Entity ent = entHit.getEntity();
 

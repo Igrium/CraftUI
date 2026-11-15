@@ -39,28 +39,6 @@ public class AppTestCommand {
                     return 1;
                 })
         ));
-//        dispatcher.register(literal("apptest").then(
-//            literal("open").executes(c -> {
-//                if (appInstance != null && appInstance.getApp().isOpen())
-//                    return 0;
-//                appInstance = new CraftAppScreen<>(new TestApp());
-//                // appInstance.setCloseOnEsc(false);
-//                // Execute async so chat window has a chance to close
-//                MinecraftClient.getInstance().send(() -> {
-//                    MinecraftClient.getInstance().setScreen(appInstance);
-//                });
-//                return 1;
-//            })
-//        ).then(
-//            literal("close").executes(C -> {
-//                if (appInstance == null)
-//                    return 0;
-//
-//                appInstance.close();
-//                appInstance = null;
-//                return 1;
-//            })
-//        ));
     }
     
 }

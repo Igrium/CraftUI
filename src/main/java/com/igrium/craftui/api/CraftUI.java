@@ -2,19 +2,18 @@ package com.igrium.craftui.api;
 
 import com.igrium.craftui.api.app.CraftApp;
 import com.igrium.craftui.impl.AppManager;
+import com.igrium.craftui.impl.gizmo.CameraStateImpl;
 import com.igrium.craftui.impl.input.MouseUtils;
 import com.igrium.craftui.impl.util.RaycastManager;
 import lombok.experimental.UtilityClass;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
-import org.joml.Vector2d;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import org.joml.*;
 
 import java.util.Collection;
 import java.util.function.Predicate;
@@ -189,5 +188,59 @@ public final class CraftUI {
      */
     public static Vector3f projectViewport(float x, float y, float width, float height, float distance, Vector3f dest) {
         return RaycastManager.projectViewport(x, y, width, height, distance, dest);
+    }
+
+    /**
+     * The absolute position of the camera in world-space
+     */
+    public static @NotNull Vec3 getCameraPos() {
+        return CameraStateImpl.getCameraPos();
+    }
+
+    /**
+     * The orientation of the camera expressed as a quaternion
+     *
+     * @apiNote May return a live view over the cache
+     * @see CameraRenderState#orientation
+     */
+    public static Quaternionfc getCameraRot() {
+        return CameraStateImpl.getCameraRot();
+    }
+
+    /**
+     * Minecraft's native view-rotation matrix
+     *
+     * @apiNote May return a live view over the cache
+     * @see CameraRenderState#viewRotationMatrix
+     */
+    public static Matrix4fc getViewRotationMatrix() {
+        return CameraStateImpl.getViewRotationMatrix();
+    }
+
+    /**
+     * Minecraft's native camera projection matrix
+     *
+     * @apiNote May return a live view over the cache
+     * @see CameraRenderState#projectionMatrix
+     */
+    public static Matrix4fc getRawProjectionMatrix() {
+        return CameraStateImpl.getRawProjectionMatrix();
+    }
+
+    /**
+     * A variation of the game's projection matrix which is inverted back to "proper" coordinates
+     * for use with ImGuizmo
+     *
+     * @apiNote May return a live view over the cache
+     */
+    public static Matrix4fc getProjectionMatrix() {
+        return CameraStateImpl.getProjectionMatrix();
+    }
+
+    /**
+     * Minecraft's "partial ticks" (or "tick delta" as per Yarn names)
+     */
+    public static float getTickDelta() {
+        return CameraStateImpl.getTickDelta();
     }
 }

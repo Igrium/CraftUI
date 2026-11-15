@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.igrium.craftui.impl.style.LayoutManager;
 import com.igrium.craftui.impl.style.StyleManager;
+import com.igrium.craftui.impl.gizmo.CameraStateImpl;
 import com.igrium.craftui.impl.util.RaycastManager;
 import lombok.Getter;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
@@ -39,7 +40,7 @@ public class CraftUIEntrypoint implements ClientModInitializer {
         ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(Identifier.parse("craftui:layouts"), LayoutManager.getInstance());
         ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(Identifier.parse("craftui:stylemanager"), StyleManager.getInstance());
 
-        RaycastManager.register();
+        CameraStateImpl.register();
 
         if (getConfig().isEnableDebugCommands()) {
             ClientCommandRegistrationCallback.EVENT.register(CraftUICommand::register);
@@ -47,7 +48,6 @@ public class CraftUIEntrypoint implements ClientModInitializer {
     }
 
     // CONFIG
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_FILE = FabricLoader.getInstance().getConfigDir().resolve("craftui.json");
 
     /**
