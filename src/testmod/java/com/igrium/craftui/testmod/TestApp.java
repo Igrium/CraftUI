@@ -333,7 +333,7 @@ public class TestApp extends DockSpaceApp {
                     Math.toDegrees(euler.y), Math.toDegrees(euler.z)));
             ImGui.text(String.format("Scale: %.3f, %.3f, %.3f", gizmoScale.x, gizmoScale.y, gizmoScale.z));
 
-            Vec3 cam = GizmoHelper.getCameraPos();
+            Vec3 cam = CraftUI.getCameraPos();
             ImGui.text(String.format("Camera: %.3f, %.3f, %.3f", cam.x, cam.y, cam.z));
             ImGui.text("Using: " + ImGuizmo.isUsing() + "  Over: " + ImGuizmo.isOver());
 
@@ -375,18 +375,18 @@ public class TestApp extends DockSpaceApp {
             resetGizmo(client);
         }
 
-        GizmoHelper.setupGizmos(getCustomViewportBounds());
+        GizmoHelper.setupGizmos();
 
         // Minecraft model matrices are relative to the camera
-        Vec3 cam = GizmoHelper.getCameraPos();
+        Vec3 cam = CraftUI.getCameraPos();
         gizmoMatrix.translation((float) (gizmoPos.x - cam.x), (float) (gizmoPos.y - cam.y),
                         (float) (gizmoPos.z - cam.z))
                 .rotate(gizmoRot)
                 .scale(gizmoScale);
 
         // Visualize the full transform with a cube
-        GizmoHelper.getViewRotationMatrix().get(gizmoViewBuffer);
-        GizmoHelper.getProjectionMatrix().get(gizmoProjBuffer);
+        CraftUI.getViewRotationMatrix().get(gizmoViewBuffer);
+        CraftUI.getProjectionMatrix().get(gizmoProjBuffer);
         gizmoMatrix.get(gizmoModelBuffer);
         ImGuizmo.drawCubes(gizmoViewBuffer, gizmoProjBuffer, gizmoModelBuffer);
 

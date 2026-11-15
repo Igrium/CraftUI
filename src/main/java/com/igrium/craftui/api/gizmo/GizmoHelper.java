@@ -1,74 +1,27 @@
 package com.igrium.craftui.api.gizmo;
 
+import com.igrium.craftui.api.CraftUI;
 import com.igrium.craftui.api.app.CraftApp.ViewportBounds;
-import com.igrium.craftui.impl.gizmo.CameraStateImpl;
 import imgui.ImGui;
 import imgui.ImGuiViewport;
 import imgui.extension.imguizmo.ImGuizmo;
 import lombok.experimental.UtilityClass;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
-import org.joml.Quaternionfc;
 
 @UtilityClass
 public final class GizmoHelper {
-    /**
-     * The absolute position of the camera in world-space
-     */
-    public static @NotNull Vec3 getCameraPos() {
-        return CameraStateImpl.getCameraPos();
-    }
 
     /**
-     * The orientation of the camera expressed as a quaternion
+     * Configures ImGuizmo to draw properly inside the viewport window (projection, etc.).
+     * Call inside the viewport ImGui window, before attempting to draw any gizmos
      *
-     * @apiNote May return a live view over the cache
-     * @see CameraRenderState#orientation
+     * @implSpec Uses the viewport bounds returned by {@link CraftUI#getCustomViewportBounds()}
      */
-    public static Quaternionfc getCameraRot() {
-        return CameraStateImpl.getCameraRot();
-    }
-
-    /**
-     * Minecraft's native view-rotation matrix
-     *
-     * @apiNote May return a live view over the cache
-     * @see CameraRenderState#viewRotationMatrix
-     */
-    public static Matrix4fc getViewRotationMatrix() {
-        return CameraStateImpl.getViewRotationMatrix();
-    }
-
-    /**
-     * Minecraft's native camera projection matrix
-     *
-     * @apiNote May return a live view over the cache
-     * @see CameraRenderState#projectionMatrix
-     */
-    public static Matrix4fc getRawProjectionMatrix() {
-        return CameraStateImpl.getRawProjectionMatrix();
-    }
-
-    /**
-     * A variation if the game's projection matrix which is inverted back to "proper" coordinates
-     * for use with ImGuizmo
-     *
-     * @apiNote May return a live view over the cache
-     */
-    public static Matrix4fc getProjectionMatrix() {
-        return CameraStateImpl.getProjectionMatrix();
-    }
-
-    /**
-     * Minecraft's "partial ticks" (or "tick delta" as per Yarn names)
-     */
-    public static float getTickDelta() {
-        return CameraStateImpl.getTickDelta();
+    public static void setupGizmos() {
+        setupGizmos(CraftUI.getCustomViewportBounds());
     }
 
     /**
@@ -87,7 +40,7 @@ public final class GizmoHelper {
         float rectX = viewportBounds != null ? viewportBounds.x() : 0;
         float rectY = viewportBounds != null
                 ? screenHeight - viewportBounds.y() - viewportBounds.height()
-                : screenHeight;
+                : 0;
 
         ImGuiViewport vp = ImGui.getMainViewport();
         rectX += vp.getPosX();
@@ -170,7 +123,7 @@ public final class GizmoHelper {
      */
     public static void manipulateView(int operation, int mode, Matrix4f modelMatrix,
                                       @Nullable Matrix4f deltaMatrix, float @Nullable [] snap) {
-        manipulate(getViewRotationMatrix(), getProjectionMatrix(), operation, mode, modelMatrix, deltaMatrix,
+        manipulate(CraftUI.getViewRotationMatrix(), CraftUI.getProjectionMatrix(), operation, mode, modelMatrix, deltaMatrix,
                 snap);
     }
 

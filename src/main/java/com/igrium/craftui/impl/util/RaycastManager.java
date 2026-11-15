@@ -1,7 +1,7 @@
 package com.igrium.craftui.impl.util;
 
 
-import com.igrium.craftui.api.gizmo.GizmoHelper;
+import com.igrium.craftui.api.CraftUI;
 import com.mojang.blaze3d.platform.Window;
 import java.util.function.Predicate;
 
@@ -61,7 +61,7 @@ public final class RaycastManager {
             throw new IllegalStateException("No camera entity");
         }
 
-        Vec3 start = GizmoHelper.getCameraPos();
+        Vec3 start = CraftUI.getCameraPos();
         Vec3 end = projectViewportGlobal(x, y, width, height, distance);
 
         return raycast(cameraEntity, start, end, predicate, includeFluids);
@@ -83,7 +83,7 @@ public final class RaycastManager {
         Vector3f localSpace = projectViewport(x, y, width, height, distance, new Vector3f());
 
         // Add components while constructing the Vec3d to avoid precision error casting to float for Vector3f
-        var lastCameraPos = GizmoHelper.getCameraPos();
+        var lastCameraPos = CraftUI.getCameraPos();
         return new Vec3(localSpace.x + lastCameraPos.x,
                 localSpace.y + lastCameraPos.y,
                 localSpace.z + lastCameraPos.z);
@@ -107,12 +107,12 @@ public final class RaycastManager {
         // WHY does OpenGL flip Y...
         screenspace.y = -screenspace.y;
 
-        Matrix4f cameraProjection = new Matrix4f(GizmoHelper.getRawProjectionMatrix());
+        Matrix4f cameraProjection = new Matrix4f(CraftUI.getRawProjectionMatrix());
         cameraProjection.invert();
 
         cameraProjection.transform(screenspace);
         screenspace.mul(distance);
-        screenspace.rotate(GizmoHelper.getCameraRot());
+        screenspace.rotate(CraftUI.getCameraRot());
 
         dest.set(screenspace);
         return dest;
